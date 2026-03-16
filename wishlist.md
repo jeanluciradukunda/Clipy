@@ -4,6 +4,17 @@ Track upcoming features. Mark `[x]` when complete.
 
 ---
 
+## Memory & ARC (Critical)
+- [ ] **Fix retain cycles in VaultAuthService auth callbacks** — `SnippetPickerPanel` and `ModernSnippetsEditor` capture view state without `[weak self]` in `VaultAuthService.shared.authenticate` completion closures. If user dismisses during biometric auth, entire SwiftUI view hierarchy stays retained by LAContext callback
+- [ ] **Stop recreating NSHostingView on every show()** — `SnippetPickerWindowController.show()` and `ModernSnippetsWindowController.showWindow()` create a new NSHostingView each call, leaking old Combine subscriptions and @StateObject view models. Reuse existing hosting view or properly tear down old one
+- [ ] **Fix Realm cross-instance object access** — `ClipService.save()` creates a CPYClip on one Realm instance then adds it to a different instance inside `DispatchQueue.main.async`. Realm objects are instance-specific — risks invalidation errors and data corruption
+- [ ] **Cache clip data for search filtering** — `ClipSearchPanel` deserializes every clip from disk via `NSKeyedUnarchiver` during search (N+1). With 1000 clips this causes 100MB+ memory spikes on main thread. Add an in-memory searchable text cache
+- [ ] **Materialize Realm Results before iteration** — `SnippetPickerPanel` and `ModernSnippetsEditor` iterate live `Results<CPYFolder>` without converting to `Array`. If Realm state changes mid-iteration, invalidation crash
+- [ ] **Fix Task cancellation race in ClipboardQueueService** — polling Task sleeps 200ms between cancellation checks, so clipboard monitoring continues ~200ms after `cancel()`. Check `Task.isCancelled` after sleep
+- [ ] **Cache `timeAgo` computed property** — recalculated for every clip on every render (500+ calls per view update including off-screen clips). Cache with periodic refresh
+- [ ] **Set thumbnail cache size limit** — `ClipService.thumbnailCache` NSCache has no `totalCostLimit`, can grow unbounded with large image histories
+- [ ] **Cancel Combine subscription in CollectModeIndicator** — `$isCollecting` subscription is never explicitly cancelled, leaks subscription object
+
 ## Privacy & Security
 - [ ] **Auto-expiring clips** — detect copies from password managers (1Password, Bitwarden) or banking apps and auto-delete after 30s. Use existing exclude app detection to identify source apps and apply per-app TTL rules
 - [ ] **Incognito mode** — hotkey-activated toggle that pauses clipboard recording. Status bar icon changes to indicate paused state. Useful during screen sharing or handling sensitive data
