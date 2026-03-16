@@ -169,6 +169,74 @@ class SnippetsEditorViewModel: ObservableObject {
         folders.reduce(0) { $0 + $1.snippets.count }
     }
 
+    // MARK: - Arrow Key Navigation
+
+    /// Flat list of all selectable items (folders and their snippets) for arrow key navigation
+    private var flatItems: [(kind: String, id: String, folderID: String?)] {
+        var items = [(kind: String, id: String, folderID: String?)]()
+        for folder in filteredFolders {
+            items.append(("folder", folder.id, nil))
+            // Only include snippets if this folder is expanded (selected)
+            if selectedFolderID == folder.id {
+                for snippet in folder.snippets {
+                    items.append(("snippet", snippet.id, folder.id))
+                }
+            }
+        }
+        return items
+    }
+
+    func moveSelectionUp() {
+        let items = flatItems
+        guard !items.isEmpty else { return }
+
+        // Find current position
+        let currentIndex: Int?
+        if let sid = selectedSnippetID {
+            currentIndex = items.firstIndex(where: { $0.kind == "snippet" && $0.id == sid })
+        } else if let fid = selectedFolderID {
+            currentIndex = items.firstIndex(where: { $0.kind == "folder" && $0.id == fid })
+        } else {
+            currentIndex = nil
+        }
+
+        let targetIndex = (currentIndex ?? items.count) - 1
+        guard targetIndex >= 0 else { return }
+        selectItem(items[targetIndex])
+    }
+
+    func moveSelectionDown() {
+        let items = flatItems
+        guard !items.isEmpty else { return }
+
+        let currentIndex: Int?
+        if let sid = selectedSnippetID {
+            currentIndex = items.firstIndex(where: { $0.kind == "snippet" && $0.id == sid })
+        } else if let fid = selectedFolderID {
+            currentIndex = items.firstIndex(where: { $0.kind == "folder" && $0.id == fid })
+        } else {
+            currentIndex = nil
+        }
+
+        let targetIndex = (currentIndex ?? -1) + 1
+        guard targetIndex < items.count else { return }
+        selectItem(items[targetIndex])
+    }
+
+    private func selectItem(_ item: (kind: String, id: String, folderID: String?)) {
+        if item.kind == "folder" {
+            if hasUnsavedChanges { saveCurrentSnippet() }
+            selectedFolderID = item.id
+            selectedSnippetID = nil
+            editingTitle = ""
+            editingContent = ""
+            hasUnsavedChanges = false
+        } else if let snippet = folders.flatMap({ $0.snippets }).first(where: { $0.id == item.id }) {
+            selectedFolderID = item.folderID
+            selectSnippet(snippet)
+        }
+    }
+
     var filteredFolders: [FolderItem] {
         guard !sidebarFilter.isEmpty else { return folders }
         let query = sidebarFilter.lowercased()
@@ -280,6 +348,7 @@ class SnippetsEditorViewModel: ObservableObject {
 // swiftlint:disable:next type_body_length
 struct ModernSnippetsEditorView: View {
     @StateObject private var viewModel = SnippetsEditorViewModel()
+    @FocusState private var sidebarFocused: Bool
     let onClose: () -> Void
 
     var body: some View {
@@ -354,6 +423,12 @@ struct ModernSnippetsEditorView: View {
             sidebarFooter
         }
         .background(.black.opacity(0.03))
+        .focusable()
+        .focused($sidebarFocused)
+        .onAppear { sidebarFocused = true }
+        .onKeyPress(.upArrow, phases: [.down, .repeat]) { _ in viewModel.moveSelectionUp(); return .handled }
+        .onKeyPress(.downArrow, phases: [.down, .repeat]) { _ in viewModel.moveSelectionDown(); return .handled }
+        .onKeyPress(.escape) { onClose(); return .handled }
     }
 
     private var sidebarFooter: some View {
@@ -846,17 +921,21 @@ struct SnippetToolbarButton: View {
 // MARK: - Window Controller
 class ModernSnippetsWindowController: NSWindowController {
     static let shared = ModernSnippetsWindowController()
+    private var keyMonitor: Any?
 
     private init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 740, height: 520),
-            styleMask: [.borderless, .fullSizeContentView],
+            styleMask: [.titled, .fullSizeContentView],
             backing: .buffered,
             defer: true
         )
         window.title = "Snippets"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
+        window.standardWindowButton(.closeButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
         window.isMovableByWindowBackground = true
         window.backgroundColor = .clear
         window.isOpaque = false
@@ -896,6 +975,22 @@ class ModernSnippetsWindowController: NSWindowController {
         window?.center()
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 { // Escape
+                self?.close()
+                return nil
+            }
+            return event
+        }
+    }
+
+    override func close() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
+        super.close()
     }
 }
 
