@@ -61,6 +61,12 @@ enum ClipFilter: String, CaseIterable, Identifiable {
 
 // MARK: - ClipItem ViewModel
 struct ClipItemViewModel: Identifiable, Hashable {
+    private static let shortDateFormatter: DateFormatter = {
+        let fmt = DateFormatter()
+        fmt.dateStyle = .short
+        return fmt
+    }()
+
     let id: String
     let title: String
     let fullText: String
@@ -71,11 +77,14 @@ struct ClipItemViewModel: Identifiable, Hashable {
     let thumbnailKey: String
     let dataHash: String
 
+    var pasteboardType: NSPasteboard.PasteboardType {
+        NSPasteboard.PasteboardType(rawValue: primaryType)
+    }
+
     var displayTitle: String {
-        let type = NSPasteboard.PasteboardType(rawValue: primaryType)
-        if type.isTIFFType() { return "Image" }
-        if type.isPDFType() { return "PDF Document" }
-        if type.isFilenamesType() && title.isEmpty { return "File Reference" }
+        if pasteboardType.isTIFFType() { return "Image" }
+        if pasteboardType.isPDFType() { return "PDF Document" }
+        if pasteboardType.isFilenamesType() && title.isEmpty { return "File Reference" }
         return title.isEmpty ? "Empty" : title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -96,32 +105,26 @@ struct ClipItemViewModel: Identifiable, Hashable {
         if secs < 3600 { return "\(Int(secs / 60))m" }
         if secs < 86400 { return "\(Int(secs / 3600))h" }
         if secs < 604800 { return "\(Int(secs / 86400))d" }
-        let fmt = DateFormatter()
-        fmt.dateStyle = .short
-        return fmt.string(from: updateTime)
+        return Self.shortDateFormatter.string(from: updateTime)
     }
 
-    var isImage: Bool {
-        NSPasteboard.PasteboardType(rawValue: primaryType).isTIFFType()
-    }
+    var isImage: Bool { pasteboardType.isTIFFType() }
 
     var typeIconName: String {
-        let type = NSPasteboard.PasteboardType(rawValue: primaryType)
-        if type.isTIFFType() { return "photo" }
-        if type.isPDFType() { return "doc.richtext" }
-        if type.isFilenamesType() { return "doc.on.doc" }
-        if type.isURLType() || fullText.hasPrefix("http") { return "link" }
+        if pasteboardType.isTIFFType() { return "photo" }
+        if pasteboardType.isPDFType() { return "doc.richtext" }
+        if pasteboardType.isFilenamesType() { return "doc.on.doc" }
+        if pasteboardType.isURLType() || fullText.hasPrefix("http") { return "link" }
         if isColorCode { return "paintpalette.fill" }
         if looksLikeCode { return "chevron.left.forwardslash.chevron.right" }
         return "doc.plaintext"
     }
 
     var typeColor: SwiftUI.Color {
-        let type = NSPasteboard.PasteboardType(rawValue: primaryType)
-        if type.isTIFFType() { return .blue }
-        if type.isPDFType() { return .red }
-        if type.isFilenamesType() { return .green }
-        if type.isURLType() || fullText.hasPrefix("http") { return .purple }
+        if pasteboardType.isTIFFType() { return .blue }
+        if pasteboardType.isPDFType() { return .red }
+        if pasteboardType.isFilenamesType() { return .green }
+        if pasteboardType.isURLType() || fullText.hasPrefix("http") { return .purple }
         if isColorCode { return .orange }
         if looksLikeCode { return .cyan }
         return .gray
@@ -165,7 +168,7 @@ class ClipSearchViewModel: ObservableObject {
     func loadClips() {
         guard let realm = Realm.safeInstance() else { return }
         let results = realm.objects(CPYClip.self)
-            .sorted(byKeyPath: "updateTime", ascending: false)
+            .sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: false)
 
         allClips = results.compactMap { clip in
             var searchableText = clip.title
@@ -593,9 +596,7 @@ struct ClipSearchPanelView: View {
 
     @ViewBuilder
     private func previewContent(for clip: ClipItemViewModel) -> some View {
-        let type = NSPasteboard.PasteboardType(rawValue: clip.primaryType)
-
-        if type.isTIFFType() {
+        if clip.pasteboardType.isTIFFType() {
             // Image preview + OCR
             VStack(spacing: 8) {
                 if let nsImage = Self.loadImage(for: clip) {
@@ -700,9 +701,8 @@ struct ClipSearchPanelView: View {
 
     @ViewBuilder
     private func detectedContentBadges(for clip: ClipItemViewModel) -> some View {
-        let type = NSPasteboard.PasteboardType(rawValue: clip.primaryType)
         let text = clip.fullText.isEmpty ? clip.displayTitle : clip.fullText
-        let detected = type.isTIFFType() ? [] : ContentDetector.detect(in: text)
+        let detected = clip.pasteboardType.isTIFFType() ? [] : ContentDetector.detect(in: text)
         if !detected.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -728,9 +728,8 @@ struct ClipSearchPanelView: View {
     }
 
     private func actionBar(for clip: ClipItemViewModel) -> some View {
-        let type = NSPasteboard.PasteboardType(rawValue: clip.primaryType)
         let text = clip.fullText.isEmpty ? clip.displayTitle : clip.fullText
-        let detected = type.isTIFFType() ? [] : ContentDetector.detect(in: text)
+        let detected = clip.pasteboardType.isTIFFType() ? [] : ContentDetector.detect(in: text)
 
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
@@ -742,7 +741,7 @@ struct ClipSearchPanelView: View {
                 }
 
                 // OCR + Share for images
-                if type.isTIFFType() {
+                if clip.pasteboardType.isTIFFType() {
                     Divider().frame(height: 16).opacity(0.3)
                     ActionButton(label: "OCR", icon: "text.viewfinder") {
                         viewModel.runOCR()
@@ -753,7 +752,7 @@ struct ClipSearchPanelView: View {
                 }
 
                 // Text transforms (non-image)
-                if !type.isTIFFType() {
+                if !clip.pasteboardType.isTIFFType() {
                     Divider().frame(height: 16).opacity(0.3)
 
                     ActionButton(label: "UPPER", icon: "textformat.size.larger") {
@@ -848,18 +847,7 @@ struct ClipSearchPanelView: View {
     }
 
     private func kbHint(_ key: String, _ label: String) -> some View {
-        HStack(spacing: 3) {
-            Text(key)
-                .font(.system(size: 9, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1.5)
-                .background(.white.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
-        }
+        KeyboardHintView(key: key, label: label)
     }
 }
 
@@ -889,6 +877,27 @@ struct FilterChip: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Keyboard Hint (shared across panels)
+struct KeyboardHintView: View {
+    let key: String
+    let label: String
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Text(key)
+                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1.5)
+                .background(.white.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+        }
     }
 }
 

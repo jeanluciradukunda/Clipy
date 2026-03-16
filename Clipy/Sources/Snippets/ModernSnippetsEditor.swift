@@ -248,24 +248,26 @@ class SnippetsEditorViewModel: ObservableObject {
             options.parserSettings.shouldTrimWhitespace = false
             let xmlDocument = try AEXMLDocument(xml: data, options: options)
 
-            xmlDocument[Constants.Xml.rootElement].children.forEach { folderElement in
-                let folder = CPYFolder()
-                folder.title = folderElement[Constants.Xml.titleElement].value ?? "untitled folder"
-                folder.index = folderIndex
-                realm.transaction { realm.add(folder) }
+            realm.transaction {
+                xmlDocument[Constants.Xml.rootElement].children.forEach { folderElement in
+                    let folder = CPYFolder()
+                    folder.title = folderElement[Constants.Xml.titleElement].value ?? "untitled folder"
+                    folder.index = folderIndex
+                    realm.add(folder)
 
-                var snippetIndex = 0
-                folderElement[Constants.Xml.snippetsElement][Constants.Xml.snippetElement]
-                    .all?
-                    .forEach { snippetElement in
-                        let snippet = CPYSnippet()
-                        snippet.title = snippetElement[Constants.Xml.titleElement].value ?? "untitled snippet"
-                        snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
-                        snippet.index = snippetIndex
-                        realm.transaction { folder.snippets.append(snippet) }
-                        snippetIndex += 1
-                    }
-                folderIndex += 1
+                    var snippetIndex = 0
+                    folderElement[Constants.Xml.snippetsElement][Constants.Xml.snippetElement]
+                        .all?
+                        .forEach { snippetElement in
+                            let snippet = CPYSnippet()
+                            snippet.title = snippetElement[Constants.Xml.titleElement].value ?? "untitled snippet"
+                            snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
+                            snippet.index = snippetIndex
+                            folder.snippets.append(snippet)
+                            snippetIndex += 1
+                        }
+                    folderIndex += 1
+                }
             }
             load()
         } catch {
@@ -571,18 +573,7 @@ struct ModernSnippetsEditorView: View {
     }
 
     private func snippetKBHint(_ key: String, _ label: String) -> some View {
-        HStack(spacing: 3) {
-            Text(key)
-                .font(.system(size: 9, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1.5)
-                .background(.white.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
-        }
+        KeyboardHintView(key: key, label: label)
     }
 }
 

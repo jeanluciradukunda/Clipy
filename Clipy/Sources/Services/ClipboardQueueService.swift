@@ -64,6 +64,8 @@ enum MergeSeparator: String, CaseIterable, Identifiable {
 final class ClipboardQueueService: ObservableObject {
     static let shared = ClipboardQueueService()
 
+    static let maxQueueSize = 500
+
     @Published var isCollecting = false
     @Published var queue = [QueuedClip]()
     @Published var separator: MergeSeparator = .newline
@@ -130,6 +132,10 @@ final class ClipboardQueueService: ObservableObject {
         let appName = NSWorkspace.shared.frontmostApplication?.localizedName ?? "Unknown"
         let item = QueuedClip(content: string, timestamp: Date(), sourceApp: appName)
         queue.append(item)
+        // Evict oldest items if queue exceeds max size
+        if queue.count > Self.maxQueueSize {
+            queue.removeFirst(queue.count - Self.maxQueueSize)
+        }
         logger.info("Queued item #\(self.queue.count) from \(appName)")
     }
 

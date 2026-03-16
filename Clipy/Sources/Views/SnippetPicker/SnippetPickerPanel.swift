@@ -26,9 +26,14 @@ struct PickerSnippet: Identifiable, Hashable {
     let title: String
     let content: String
     let folderTitle: String
+    let hasVariables: Bool
 
-    var hasVariables: Bool {
-        content.contains("%") && SnippetVariableProcessor.availableVariables.contains { content.contains($0.name) }
+    init(id: String, title: String, content: String, folderTitle: String) {
+        self.id = id
+        self.title = title
+        self.content = content
+        self.folderTitle = folderTitle
+        self.hasVariables = content.contains("%") && SnippetVariableProcessor.availableVariables.contains { content.contains($0.name) }
     }
 
     var preview: String {
@@ -530,18 +535,7 @@ struct SnippetPickerPanelView: View {
     }
 
     private func kbHint(_ key: String, _ label: String) -> some View {
-        HStack(spacing: 3) {
-            Text(key)
-                .font(.system(size: 9, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1.5)
-                .background(.white.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
-        }
+        KeyboardHintView(key: key, label: label)
     }
 }
 
