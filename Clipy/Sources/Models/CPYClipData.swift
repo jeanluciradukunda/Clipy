@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2015/06/21.
 //
@@ -57,7 +56,7 @@ final class CPYClipData: NSObject {
         return types.first
     }
     var isOnlyStringType: Bool {
-        return types == [.deprecatedString]
+        return types.count == 1 && (types.first?.isStringType() ?? false)
     }
     var thumbnailImage: NSImage? {
         let defaults = UserDefaults.standard
@@ -65,13 +64,10 @@ final class CPYClipData: NSObject {
         let height = defaults.integer(forKey: Constants.UserDefaults.thumbnailHeight)
 
         if let image = image, fileNames.isEmpty {
-            // Image only data
             return image.resizeImage(CGFloat(width), CGFloat(height))
         } else if let fileName = fileNames.first, let path = fileName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed), let url = URL(string: path) {
-             // In the case of the local file correct data is not included in the image variable
-             // Judge the image from the path and create a thumbnail
             switch url.pathExtension.lowercased() {
-            case "jpg", "jpeg", "png", "bmp", "tiff":
+            case "jpg", "jpeg", "png", "bmp", "tiff", "webp", "heic":
                 return NSImage(contentsOfFile: fileName)?.resizeImage(CGFloat(width), CGFloat(height))
             default: break
             }
@@ -84,13 +80,13 @@ final class CPYClipData: NSObject {
     }
 
     static var availableTypes: [NSPasteboard.PasteboardType] {
-        return [.deprecatedString,
-                .deprecatedRTF,
-                .deprecatedRTFD,
-                .deprecatedPDF,
-                .deprecatedFilenames,
-                .deprecatedURL,
-                .deprecatedTIFF]
+        return [.clipyString,
+                .clipyRTF,
+                .clipyRTFD,
+                .clipyPDF,
+                .clipyFilenames,
+                .clipyURL,
+                .clipyTIFF]
     }
     static var availableTypesString: [String] {
         return ["String",
@@ -104,6 +100,9 @@ final class CPYClipData: NSObject {
     static var availableTypesDictinary: [NSPasteboard.PasteboardType: String] {
         var availableTypes = [NSPasteboard.PasteboardType: String]()
         zip(CPYClipData.availableTypes, CPYClipData.availableTypesString).forEach { availableTypes[$0] = $1 }
+        // Also map legacy types for backward compatibility
+        let legacyTypes: [NSPasteboard.PasteboardType] = [.legacyString, .legacyRTF, .legacyRTFD, .legacyPDF, .legacyFilenames, .legacyURL, .legacyTIFF]
+        zip(legacyTypes, CPYClipData.availableTypesString).forEach { availableTypes[$0] = $1 }
         return availableTypes
     }
 
@@ -112,31 +111,34 @@ final class CPYClipData: NSObject {
         super.init()
         self.types = types
         types.forEach { type in
-            switch type {
-            case .deprecatedString:
-                guard let string = pasteboard.string(forType: .deprecatedString) else { return }
+            if type.isStringType() {
+                guard let string = pasteboard.string(forType: type) else { return }
                 stringValue = string
-            case .deprecatedRTFD:
-                RTFData = pasteboard.data(forType: .deprecatedRTFD)
-            case .deprecatedRTF where RTFData == nil:
-                RTFData = pasteboard.data(forType: .deprecatedRTF)
-            case .deprecatedPDF:
-                PDF = pasteboard.data(forType: .deprecatedPDF)
-            case .deprecatedFilenames:
-                guard let filenames = pasteboard.propertyList(forType: .deprecatedFilenames) as? [String] else { return }
-                self.fileNames = filenames
-            case .deprecatedURL:
-                guard let urls = pasteboard.propertyList(forType: .deprecatedURL) as? [String] else { return }
-                URLs = urls
-            case .deprecatedTIFF:
+            } else if type.isRTFDType() {
+                RTFData = pasteboard.data(forType: type)
+            } else if type.isRTFType() && RTFData == nil {
+                RTFData = pasteboard.data(forType: type)
+            } else if type.isPDFType() {
+                PDF = pasteboard.data(forType: type)
+            } else if type.isFilenamesType() {
+                // Support both modern fileURL and legacy filenames
+                if let filenames = pasteboard.propertyList(forType: type) as? [String] {
+                    self.fileNames = filenames
+                } else if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] {
+                    self.fileNames = urls.map { $0.path }
+                }
+            } else if type.isURLType() {
+                if let urls = pasteboard.propertyList(forType: type) as? [String] {
+                    URLs = urls
+                }
+            } else if type.isTIFFType() {
                 image = pasteboard.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage
-            default: break
             }
         }
     }
 
     init(image: NSImage) {
-        self.types = [.deprecatedTIFF]
+        self.types = [.clipyTIFF]
         self.image = image
     }
 

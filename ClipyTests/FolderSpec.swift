@@ -5,7 +5,7 @@ import RealmSwift
 
 // swiftlint:disable function_body_length
 class FolderSpec: QuickSpec {
-    override func spec() {
+    override class func spec() {
 
         beforeEach {
             Realm.Configuration.defaultConfiguration.inMemoryIdentifier = NSUUID().uuidString

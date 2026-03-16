@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2016/11/20.
 //
@@ -11,35 +10,45 @@
 //
 
 import Foundation
-import RxSwift
 import RealmSwift
-import PINCache
+import os.log
+
+private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "DataClean")
 
 final class DataCleanService {
 
     // MARK: - Properties
-    fileprivate var disposeBag = DisposeBag()
-    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .utility)
+    private var cleanTask: Task<Void, Never>?
 
     // MARK: - Monitoring
     func startMonitoring() {
-        disposeBag = DisposeBag()
-        // Clean datas every 30 minutes
-        Observable<Int>.interval(.seconds(60 * 30), scheduler: scheduler)
-            .subscribe(onNext: { [weak self] _ in
-                self?.cleanDatas()
-            })
-            .disposed(by: disposeBag)
+        stopMonitoring()
+        // Clean data every 30 minutes
+        cleanTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60 * 30))
+                guard let self = self else { break }
+                self.cleanDatas()
+            }
+        }
+    }
+
+    func stopMonitoring() {
+        cleanTask?.cancel()
+        cleanTask = nil
     }
 
     // MARK: - Delete Data
     func cleanDatas() {
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else {
+            logger.error("Cannot open Realm for data cleanup")
+            return
+        }
         let flowHistories = overflowingClips(with: realm)
         flowHistories
             .filter { !$0.isInvalidated && !$0.thumbnailPath.isEmpty }
             .map { $0.thumbnailPath }
-            .forEach { PINCache.shared.removeObject(forKey: $0) }
+            .forEach { ClipService.removeCachedThumbnail(forKey: $0) }
         realm.transaction { realm.delete(flowHistories) }
         cleanFiles(with: realm)
     }
@@ -49,13 +58,11 @@ final class DataCleanService {
         let maxHistorySize = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxHistorySize)
 
         if clips.count <= maxHistorySize { return realm.objects(CPYClip.self).filter("FALSEPREDICATE") }
-        // Delete first clip
         let lastClip = clips[maxHistorySize - 1]
         if lastClip.isInvalidated { return realm.objects(CPYClip.self).filter("FALSEPREDICATE") }
 
-        // Deletion target
         let updateTime = lastClip.updateTime
-        let targetClips = realm.objects(CPYClip.self).filter("updateTime < %d", updateTime)
+        let targetClips = realm.objects(CPYClip.self).filter("updateTime < %d AND isPinned == false", updateTime)
 
         return targetClips
     }
@@ -68,7 +75,6 @@ final class DataCleanService {
             .filter { !$0.isInvalidated }
             .compactMap { $0.dataPath.components(separatedBy: "/").last })
 
-        // Delete diff datas
         DispatchQueue.main.async {
             Set(allClipPaths).symmetricDifference(paths)
                 .map { CPYUtilities.applicationSupportFolder() + "/" + "\($0)" }

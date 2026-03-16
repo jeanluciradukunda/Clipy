@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2017/08/10.
 //
@@ -11,6 +10,9 @@
 //
 
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Environment")
 
 struct AppEnvironment {
 
@@ -74,8 +76,8 @@ struct AppEnvironment {
 
     static func fromStorage(defaults: UserDefaults = .standard) -> Environment {
         var excludeApplications = [CPYAppInfo]()
-        if let data = defaults.object(forKey: Constants.UserDefaults.excludeApplications) as? Data, let applications = NSKeyedUnarchiver.unarchiveObject(with: data) as? [CPYAppInfo] {
-            excludeApplications = applications
+        if let data = defaults.object(forKey: Constants.UserDefaults.excludeApplications) as? Data {
+            excludeApplications = (NSKeyedUnarchiver.unarchiveObject(with: data) as? [CPYAppInfo]) ?? []
         }
         let excludeAppService = ExcludeAppService(applications: excludeApplications)
         return Environment(clipService: current.clipService,

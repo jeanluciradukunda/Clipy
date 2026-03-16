@@ -55,9 +55,7 @@ final class CPYPreferencesWindowController: NSWindowController {
         super.windowDidLoad()
         self.window?.collectionBehavior = .canJoinAllSpaces
         self.window?.backgroundColor = NSColor(white: 0.99, alpha: 1)
-        if #available(OSX 10.10, *) {
-            self.window?.titlebarAppearsTransparent = true
-        }
+        self.window?.titlebarAppearsTransparent = true
         toolBarItemTapped(generalButton)
         generalButton.sendAction(on: .leftMouseDown)
         menuButton.sendAction(on: .leftMouseDown)
@@ -87,7 +85,6 @@ extension CPYPreferencesWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         if let viewController = viewController[2] as? CPYTypePreferenceViewController {
             AppEnvironment.current.defaults.set(viewController.storeTypes, forKey: Constants.UserDefaults.storeTypes)
-            AppEnvironment.current.defaults.synchronize()
         }
         if let window = window, !window.makeFirstResponder(window) {
             window.endEditing(for: nil)

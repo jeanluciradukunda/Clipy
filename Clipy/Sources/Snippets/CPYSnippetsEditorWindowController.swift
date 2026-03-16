@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2016/05/18.
 //
@@ -39,7 +38,6 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
     }
     @IBOutlet private weak var outlineView: NSOutlineView! {
         didSet {
-            // Enable Drag and Drop
             outlineView.registerForDraggedTypes([NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType)])
         }
     }
@@ -64,17 +62,12 @@ final class CPYSnippetsEditorWindowController: NSWindowController {
         super.windowDidLoad()
         self.window?.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces
         self.window?.backgroundColor = NSColor(white: 0.99, alpha: 1)
-        if #available(OSX 10.10, *) {
-            self.window?.titlebarAppearsTransparent = true
-        }
-        // HACK: Copy as an object that does not put under Realm management.
-        // https://github.com/realm/realm-cocoa/issues/1734
-        let realm = try! Realm()
+        self.window?.titlebarAppearsTransparent = true
+        guard let realm = Realm.safeInstance() else { return }
         folders = realm.objects(CPYFolder.self)
                     .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
                     .map { $0.deepCopy() }
         outlineView.reloadData()
-        // Select first folder
         if let folder = folders.first {
             outlineView.selectRowIndexes(IndexSet(integer: outlineView.row(forItem: folder)), byExtendingSelection: false)
             changeItemFocus()
@@ -159,7 +152,7 @@ extension CPYSnippetsEditorWindowController {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
-        panel.allowedFileTypes = [Constants.Xml.fileType]
+        panel.allowedContentTypes = [.xml]
         let returnCode = panel.runModal()
 
         if returnCode != NSApplication.ModalResponse.OK { return }
@@ -169,10 +162,9 @@ extension CPYSnippetsEditorWindowController {
         guard let data = try? Data(contentsOf: url) else { return }
 
         do {
-            let realm = try! Realm()
+            guard let realm = Realm.safeInstance() else { return }
             let lastFolder = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true).last
             var folderIndex = (lastFolder?.index ?? -1) + 1
-            // Create Document
             var options = AEXMLOptions()
             options.parserSettings.shouldTrimWhitespace = false
             let xmlDocument = try AEXMLDocument(xml: data, options: options)
@@ -180,13 +172,9 @@ extension CPYSnippetsEditorWindowController {
                 .children
                 .forEach { folderElement in
                     let folder = CPYFolder()
-                    // Title
                     folder.title = folderElement[Constants.Xml.titleElement].value ?? "untitled folder"
-                    // Index
                     folder.index = folderIndex
-                    // Sync DB
                     realm.transaction { realm.add(folder) }
-                    // Snippet
                     var snippetIndex = 0
                     folderElement[Constants.Xml.snippetsElement][Constants.Xml.snippetElement]
                         .all?
@@ -196,12 +184,9 @@ extension CPYSnippetsEditorWindowController {
                             snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
                             snippet.index = snippetIndex
                             realm.transaction { folder.snippets.append(snippet) }
-                            // Increment snippet index
                             snippetIndex += 1
                         }
-                    // Increment folder index
                     folderIndex += 1
-                    // Add folder
                     let copyFolder = folder.deepCopy()
                     folders.append(copyFolder)
                 }
@@ -215,7 +200,7 @@ extension CPYSnippetsEditorWindowController {
         let xmlDocument = AEXMLDocument()
         let rootElement = xmlDocument.addChild(name: Constants.Xml.rootElement)
 
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
         let folders = realm.objects(CPYFolder.self).sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
         folders.forEach { folder in
             let folderElement = rootElement.addChild(name: Constants.Xml.folderElement)
@@ -235,8 +220,7 @@ extension CPYSnippetsEditorWindowController {
         let panel = NSSavePanel()
         panel.accessoryView = nil
         panel.canSelectHiddenExtension = true
-        panel.allowedFileTypes = [Constants.Xml.fileType]
-        panel.allowsOtherFileTypes = false
+        panel.allowedContentTypes = [.xml]
         panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
         panel.nameFieldStringValue = "snippets"
         let returnCode = panel.runModal()
@@ -257,7 +241,6 @@ extension CPYSnippetsEditorWindowController {
 // MARK: - Item Selected
 private extension CPYSnippetsEditorWindowController {
     func changeItemFocus() {
-        // Reset TextView Undo/Redo history
         textView.undoManager?.removeAllActions()
         guard let item = outlineView.item(atRow: outlineView.selectedRow) else {
             folderSettingView.isHidden = true
@@ -334,12 +317,12 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
         let pasteboardItem = NSPasteboardItem()
         if let folder = item as? CPYFolder, let index = folders.firstIndex(of: folder) {
             let draggedData = CPYDraggedData(type: .folder, folderIdentifier: folder.identifier, snippetIdentifier: nil, index: index)
-            let data = NSKeyedArchiver.archivedData(withRootObject: draggedData)
+            let data = draggedData.archive()
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))
         } else if let snippet = item as? CPYSnippet, let folder = outlineView.parent(forItem: snippet) as? CPYFolder {
             guard let index = folder.snippets.index(of: snippet) else { return nil }
             let draggedData = CPYDraggedData(type: .snippet, folderIdentifier: folder.identifier, snippetIdentifier: snippet.identifier, index: Int(index))
-            let data = NSKeyedArchiver.archivedData(withRootObject: draggedData)
+            let data = draggedData.archive()
             pasteboardItem.setData(data, forType: NSPasteboard.PasteboardType(rawValue: Constants.Common.draggedDataType))
         } else {
             return nil
@@ -387,7 +370,6 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
             if fromFolder.identifier == toFolder.identifier {
                 guard index >= 0 else { return false }
                 if index == draggedData.index { return false }
-                // Move to same folder
                 fromFolder.snippets.insert(snippet, at: index)
                 let removedIndex = (index < draggedData.index) ? draggedData.index + 1 : draggedData.index
                 fromFolder.snippets.remove(at: removedIndex)
@@ -397,7 +379,6 @@ extension CPYSnippetsEditorWindowController: NSOutlineViewDataSource {
                 changeItemFocus()
                 return true
             } else {
-                // Move to other folder
                 let index = max(0, index)
                 toFolder.snippets.insert(snippet, at: index)
                 fromFolder.snippets.remove(at: draggedData.index)

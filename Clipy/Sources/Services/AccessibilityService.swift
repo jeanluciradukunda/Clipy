@@ -1,47 +1,57 @@
-// 
+//
 //  AccessibilityService.swift
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
-// 
+//
 //  Created by Econa77 on 2018/10/03.
-// 
+//
 //  Copyright © 2015-2018 Clipy Project.
 //
 
 import Foundation
 import Cocoa
+import os.log
 
-final class AccessibilityService {}
+private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Accessibility")
+
+final class AccessibilityService {
+    private var hasShownAlertThisSession = false
+}
 
 // MARK: - Permission
 extension AccessibilityService {
     @discardableResult
     func isAccessibilityEnabled(isPrompt: Bool) -> Bool {
-        // Accessibility permission is required for paste command from macOS 10.14 Mojave.
-        // For macOS 10.14 and later only, check accessibility permission at startup and paste
-        guard #available(macOS 10.14, *) else { return true }
-
         let checkOptionPromptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         let opts = [checkOptionPromptKey: isPrompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(opts)
     }
 
     func showAccessibilityAuthenticationAlert() {
+        // Only show once per session to avoid alert loops
+        guard !hasShownAlertThisSession else {
+            logger.warning("Accessibility not granted — alert already shown this session")
+            return
+        }
+        hasShownAlertThisSession = true
+
         let alert = NSAlert()
-        alert.messageText = L10n.pleaseAllowAccessibility
-        alert.informativeText = L10n.toDoThisActionPleaseAllowAccessibilityInSecurityPrivacyPreferencesLocatedInSystemPreferences
-        alert.addButton(withTitle: L10n.openSystemPreferences)
+        alert.messageText = "Accessibility Permission Required"
+        alert.informativeText = "Clipy Dev needs Accessibility access to paste clipboard items. Please add Clipy Dev in System Settings → Privacy & Security → Accessibility.\n\nNote: If you previously allowed the original Clipy, you still need to allow this dev build separately."
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Cancel")
+        alert.alertStyle = .warning
         NSApp.activate(ignoringOtherApps: true)
 
         if alert.runModal() == NSApplication.ModalResponse.alertFirstButtonReturn {
-            guard !openAccessibilitySettingWindow() else { return }
-            isAccessibilityEnabled(isPrompt: true)
+            openAccessibilitySettingWindow()
         }
     }
 
+    @discardableResult
     func openAccessibilitySettingWindow() -> Bool {
+        // Modern macOS System Settings URL
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else { return false }
         return NSWorkspace.shared.open(url)
     }

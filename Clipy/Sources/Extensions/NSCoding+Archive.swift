@@ -3,23 +3,33 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
-//
-//  Created by Econa77 on 2016/11/19.
 //
 //  Copyright © 2015-2018 Clipy Project.
 //
 
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Archive")
 
 extension NSCoding {
     func archive() -> Data {
-        return NSKeyedArchiver.archivedData(withRootObject: self)
+        do {
+            return try NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false)
+        } catch {
+            logger.error("Failed to archive object: \(error.localizedDescription)")
+            return Data()
+        }
     }
 }
 
 extension Array where Element: NSCoding {
     func archive() -> Data {
-        return NSKeyedArchiver.archivedData(withRootObject: self)
+        do {
+            return try NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: false)
+        } catch {
+            logger.error("Failed to archive array: \(error.localizedDescription)")
+            return Data()
+        }
     }
 }

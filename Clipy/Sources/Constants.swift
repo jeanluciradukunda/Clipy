@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2016/04/17.
 //
@@ -16,11 +15,12 @@ struct Constants {
 
     struct Application {
         #if DEBUG
-            static let name = "ClipyDEBUG"
+            static let name = "ClipyDevDEBUG"
         #else
-            static let name = "Clipy"
+            static let name = "Clipy Dev"
         #endif
         static let appcastURL = URL(string: "https://clipy-app.com/appcast.xml")!
+        static let supportDirectoryName = "ClipyDev"
     }
 
     struct Menu {
@@ -68,6 +68,7 @@ struct Constants {
         static let excludeApplications = "kCPYExcludeApplications"
         static let collectCrashReport = "kCPYCollectCrashReport"
         static let showColorPreviewInTheMenu = "kCPYPrefShowColorPreviewInTheMenu"
+        static let clearHistoryIncludesPinned = "kCPYPrefClearHistoryIncludesPinned"
     }
 
     struct Beta {
@@ -107,6 +108,17 @@ struct Constants {
         static let migrateNewKeyCombo = "kCPYMigrateNewKeyCombo"
         static let folderKeyCombos = "kCPYFolderKeyCombos"
         static let clearHistoryKeyCombo = "kCPYClearHistoryKeyCombo"
+    }
+
+    struct Snippets {
+        static let useModernPicker = "kCPYPrefUseModernSnippetPicker"
+    }
+
+    struct PanelShortcuts {
+        static let pin = "kCPYPanelShortcutPin"
+        static let delete = "kCPYPanelShortcutDelete"
+        static let pastePlain = "kCPYPanelShortcutPastePlain"
+        static let paste = "kCPYPanelShortcutPaste"
     }
 
 }

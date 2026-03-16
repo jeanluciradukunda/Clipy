@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2015/06/21.
 //
@@ -23,6 +22,7 @@ final class CPYClip: Object {
     @objc dynamic var updateTime = 0
     @objc dynamic var thumbnailPath = ""
     @objc dynamic var isColorCode = false
+    @objc dynamic var isPinned = false
 
     // MARK: Primary Key
     override static func primaryKey() -> String? {

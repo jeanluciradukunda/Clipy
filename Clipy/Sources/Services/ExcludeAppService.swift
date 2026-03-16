@@ -3,23 +3,21 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2017/02/10.
 //
 //  Copyright © 2015-2018 Clipy Project.
 //
 
-import Foundation
-import RxSwift
-import RxCocoa
+import Cocoa
+import Combine
 
 final class ExcludeAppService {
 
     // MARK: - Properties
     fileprivate(set) var applications = [CPYAppInfo]()
-    fileprivate var frontApplication = BehaviorRelay<NSRunningApplication?>(value: nil)
-    fileprivate var disposeBag = DisposeBag()
+    private var frontApplication: NSRunningApplication?
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialize
     init(applications: [CPYAppInfo]) {
@@ -31,12 +29,15 @@ final class ExcludeAppService {
 // MARK: - Monitor Applications
 extension ExcludeAppService {
     func startMonitoring() {
-        disposeBag = DisposeBag()
+        cancellables.removeAll()
         // Monitoring top active application
-        NSWorkspace.shared.notificationCenter.rx.notification(NSWorkspace.didActivateApplicationNotification)
-            .map { $0.userInfo?["NSWorkspaceApplicationKey"] as? NSRunningApplication }
-            .bind(to: frontApplication)
-            .disposed(by: disposeBag)
+        NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .compactMap { $0.userInfo?["NSWorkspaceApplicationKey"] as? NSRunningApplication }
+            .sink { [weak self] app in
+                self?.frontApplication = app
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -44,7 +45,7 @@ extension ExcludeAppService {
 extension ExcludeAppService {
     func frontProcessIsExcludedApplication() -> Bool {
         if applications.isEmpty { return false }
-        guard let frontApplicationIdentifier = frontApplication.value?.bundleIdentifier else { return false }
+        guard let frontApplicationIdentifier = frontApplication?.bundleIdentifier else { return false }
 
         for app in applications where app.identifier == frontApplicationIdentifier {
             return true
@@ -73,35 +74,26 @@ extension ExcludeAppService {
     private func save() {
         let data = applications.archive()
         AppEnvironment.current.defaults.set(data, forKey: Constants.UserDefaults.excludeApplications)
-        AppEnvironment.current.defaults.synchronize()
     }
 }
 
 // MARK: - Special Applications
 extension ExcludeAppService {
-    /**
-     *  Responding to applications that have special handling for protection of passwords etc.
-     *  e.g 1Password on GoogleChrome browser extension
-     *
-     *  ref: http://nspasteboard.org/
-     */
     private enum Application: String {
         case onePassword = "com.agilebits.onepassword"
 
-        // MARK: - Properties
         private var macApplicationIdentifiers: [String] {
             switch self {
             case .onePassword:
-                return ["com.agilebits.onepassword-osx", // for 1Password 6
-                        "com.agilebits.onepassword7"] // for 1Password 7
+                return ["com.agilebits.onepassword-osx",
+                        "com.agilebits.onepassword7",
+                        "com.1password.1password"]
             }
         }
 
-        // MARK: - Excluded
         func isExcluded(applications: [CPYAppInfo]) -> Bool {
             return !applications.filter { macApplicationIdentifiers.contains($0.identifier) }.isEmpty
         }
-
     }
 
     func copiedProcessIsExcludedApplications(pasteboard: NSPasteboard) -> Bool {

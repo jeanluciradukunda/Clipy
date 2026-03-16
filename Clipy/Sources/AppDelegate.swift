@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2015/06/21.
 //
@@ -12,33 +11,31 @@
 
 import Cocoa
 import Sparkle
-import RxCocoa
-import RxSwift
-import LoginServiceKit
-import Magnet
-import Screeen
-import RxScreeen
+import Combine
 import RealmSwift
-import LetsMove
+import Magnet
+import ServiceManagement
+import os.log
+
+private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "App")
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSMenuItemValidation {
 
     // MARK: - Properties
-    let screenshotObserver = ScreenShotObserver()
-    let disposeBag = DisposeBag()
+    private var cancellables = Set<AnyCancellable>()
+    private var screenshotTask: Task<Void, Never>?
 
     // MARK: - Init
     override func awakeFromNib() {
         super.awakeFromNib()
-        // Migrate Realm
         Realm.migration()
     }
 
     // MARK: - NSMenuItem Validation
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(AppDelegate.clearAllHistory) {
-            let realm = try! Realm()
+            guard let realm = Realm.safeInstance() else { return false }
             return !realm.objects(CPYClip.self).isEmpty
         }
         return true
@@ -53,13 +50,36 @@ class AppDelegate: NSObject, NSMenuItemValidation {
 
     // MARK: - Menu Actions
     @objc func showPreferenceWindow() {
-        NSApp.activate(ignoringOtherApps: true)
-        CPYPreferencesWindowController.sharedController.showWindow(self)
+        ModernPreferencesWindowController.shared.showWindow(self)
     }
 
     @objc func showSnippetEditorWindow() {
-        NSApp.activate(ignoringOtherApps: true)
-        CPYSnippetsEditorWindowController.sharedController.showWindow(self)
+        ModernSnippetsWindowController.shared.showWindow(self)
+    }
+
+    @objc func showSearchPanel() {
+        ClipSearchWindowController.shared.show()
+    }
+
+    @objc func pasteAsPlainText() {
+        let pasteboard = NSPasteboard.general
+        guard let string = pasteboard.string(forType: .string) else { return }
+        // Re-set as plain text only, stripping all formatting
+        pasteboard.clearContents()
+        pasteboard.setString(string, forType: .string)
+        AppEnvironment.current.pasteService.paste()
+    }
+
+    @objc func startCollectMode() {
+        ClipboardQueueService.shared.startCollecting()
+    }
+
+    @objc func stopCollectMode() {
+        ClipboardQueueService.shared.stopCollecting()
+    }
+
+    @objc func pasteCollectedItems() {
+        ClipboardQueueService.shared.pasteMerged()
     }
 
     @objc func terminate() {
@@ -84,22 +104,21 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             if alert.suppressionButton?.state == NSControl.StateValue.on {
                 AppEnvironment.current.defaults.set(false, forKey: Constants.UserDefaults.showAlertBeforeClearHistory)
             }
-            AppEnvironment.current.defaults.synchronize()
         }
 
         AppEnvironment.current.clipService.clearAll()
     }
 
     @objc func selectClipMenuItem(_ sender: NSMenuItem) {
-        CPYUtilities.sendCustomLog(with: "selectClipMenuItem")
         guard let primaryKey = sender.representedObject as? String else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch clip primary key")
             NSSound.beep()
             return
         }
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else {
+            NSSound.beep()
+            return
+        }
         guard let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: primaryKey) else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch clip data")
             NSSound.beep()
             return
         }
@@ -108,19 +127,20 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     }
 
     @objc func selectSnippetMenuItem(_ sender: AnyObject) {
-        CPYUtilities.sendCustomLog(with: "selectSnippetMenuItem")
         guard let primaryKey = sender.representedObject as? String else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch snippet primary key")
             NSSound.beep()
             return
         }
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else {
+            NSSound.beep()
+            return
+        }
         guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey) else {
-            CPYUtilities.sendCustomLog(with: "Cannot fetch snippet data")
             NSSound.beep()
             return
         }
-        AppEnvironment.current.pasteService.copyToPasteboard(with: snippet.content)
+        let processed = SnippetVariableProcessor.process(snippet.content)
+        AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
         AppEnvironment.current.pasteService.paste()
     }
 
@@ -138,24 +158,25 @@ class AppDelegate: NSObject, NSMenuItemValidation {
         alert.showsSuppressionButton = true
         NSApp.activate(ignoringOtherApps: true)
 
-        //  Launch on system startup
         if alert.runModal() == NSApplication.ModalResponse.alertFirstButtonReturn {
             AppEnvironment.current.defaults.set(true, forKey: Constants.UserDefaults.loginItem)
-            AppEnvironment.current.defaults.synchronize()
             reflectLoginItemState()
         }
-        // Do not show this message again
         if alert.suppressionButton?.state == NSControl.StateValue.on {
             AppEnvironment.current.defaults.set(true, forKey: Constants.UserDefaults.suppressAlertForLoginItem)
-            AppEnvironment.current.defaults.synchronize()
         }
     }
 
     private func toggleAddingToLoginItems(_ isEnable: Bool) {
-        let appPath = Bundle.main.bundlePath
-        LoginServiceKit.removeLoginItems(at: appPath)
-        guard isEnable else { return }
-        LoginServiceKit.addLoginItems(at: appPath)
+        do {
+            if isEnable {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            logger.error("Failed to update login item: \(error.localizedDescription)")
+        }
     }
 
     private func reflectLoginItemState() {
@@ -172,8 +193,6 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.replaceCurrent(environment: AppEnvironment.fromStorage())
         // UserDefaults
         CPYUtilities.registerUserDefaultKeys()
-        // SDKs
-        CPYUtilities.initSDKs()
         // Check Accessibility Permission
         AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: true)
 
@@ -199,12 +218,11 @@ extension AppDelegate: NSApplicationDelegate {
 
         // Managers
         AppEnvironment.current.menuManager.setup()
-    }
 
-    func applicationWillFinishLaunching(_ notification: Notification) {
-        #if RELEASE
-            PFMoveToApplicationsFolderIfNecessary()
-        #endif
+        // Initialize collect mode indicator (observes queue state)
+        _ = CollectModeIndicatorController.shared
+
+        logger.info("Clipy Dev launched successfully")
     }
 
 }
@@ -213,33 +231,89 @@ extension AppDelegate: NSApplicationDelegate {
 private extension AppDelegate {
     func bind() {
         // Login Item
-        AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.UserDefaults.loginItem, retainSelf: false)
-            .compactMap { $0 }
-            .subscribe(onNext: { [weak self] _ in
+        AppEnvironment.current.defaults
+            .publisher(for: \.clipyLoginItem)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
                 self?.reflectLoginItemState()
-            })
-            .disposed(by: disposeBag)
-        // Observe Screenshot
-        let observerScreenshot = AppEnvironment.current.defaults.rx.observe(Bool.self, Constants.Beta.observerScreenshot, retainSelf: false)
-            .compactMap { $0 }
-            .share(replay: 1)
-        observerScreenshot
-            .subscribe(onNext: { [weak self] enabled in
-                self?.screenshotObserver.isEnabled = enabled
-            })
-            .disposed(by: disposeBag)
-        observerScreenshot
-            .filter { $0 }
-            .take(1)
-            .subscribe(onNext: { [weak self] _ in
-                self?.screenshotObserver.start()
-            })
-            .disposed(by: disposeBag)
-        // Observe Screenshot image
-        screenshotObserver.rx.addedImage
-            .subscribe(onNext: { image in
-                AppEnvironment.current.clipService.create(with: image)
-            })
-            .disposed(by: disposeBag)
+            }
+            .store(in: &cancellables)
+
+        // Screenshot observation (beta feature)
+        let observeScreenshot = AppEnvironment.current.defaults.bool(forKey: Constants.Beta.observerScreenshot)
+        if observeScreenshot {
+            startScreenshotObservation()
+        }
+
+        AppEnvironment.current.defaults
+            .publisher(for: \.clipyObserveScreenshot)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] enabled in
+                if enabled {
+                    self?.startScreenshotObservation()
+                } else {
+                    self?.screenshotTask?.cancel()
+                    self?.screenshotTask = nil
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func startScreenshotObservation() {
+        guard screenshotTask == nil else { return }
+        // Monitor pasteboard for screenshot images (simplifies the old Screeen/RxScreeen dependency)
+        // Screenshots are already captured via the clipboard monitor in ClipService.
+        // This additional observer watches for screenshot files saved to disk.
+        screenshotTask = Task { [weak self] in
+            let screenshotDir = (NSHomeDirectory() as NSString).appendingPathComponent("Desktop")
+            guard let self = self else { return }
+
+            let fileDescriptor = open(screenshotDir, O_EVTONLY)
+            guard fileDescriptor >= 0 else { return }
+
+            let source = DispatchSource.makeFileSystemObjectSource(
+                fileDescriptor: fileDescriptor,
+                eventMask: .write,
+                queue: .global()
+            )
+
+            source.setEventHandler {
+                // When a new file appears on Desktop, check if it's a screenshot
+                if let contents = try? FileManager.default.contentsOfDirectory(atPath: screenshotDir) {
+                    let screenshotFiles = contents.filter { $0.hasPrefix("Screenshot") || $0.hasPrefix("Screen Shot") }
+                    if let latest = screenshotFiles.sorted().last {
+                        let path = (screenshotDir as NSString).appendingPathComponent(latest)
+                        if let image = NSImage(contentsOfFile: path) {
+                            DispatchQueue.main.async {
+                                AppEnvironment.current.clipService.create(with: image)
+                            }
+                        }
+                    }
+                }
+            }
+
+            source.setCancelHandler {
+                close(fileDescriptor)
+            }
+
+            source.resume()
+
+            // Keep alive until cancelled
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+            }
+            source.cancel()
+        }
+    }
+}
+
+// MARK: - UserDefaults KVO Bridge
+private extension UserDefaults {
+    @objc var clipyLoginItem: Bool {
+        return bool(forKey: Constants.UserDefaults.loginItem)
+    }
+    @objc var clipyObserveScreenshot: Bool {
+        return bool(forKey: Constants.Beta.observerScreenshot)
     }
 }

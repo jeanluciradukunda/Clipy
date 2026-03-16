@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2016/11/17.
 //
@@ -13,73 +12,116 @@
 import Foundation
 import Cocoa
 import RealmSwift
-import PINCache
-import RxSwift
-import RxCocoa
+import Combine
+import os.log
+
+private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "ClipService")
 
 final class ClipService {
 
     // MARK: - Properties
-    fileprivate var cachedChangeCount = BehaviorRelay<Int>(value: 0)
-    fileprivate var storeTypes = [String: NSNumber]()
-    fileprivate let scheduler = SerialDispatchQueueScheduler(qos: .userInteractive)
-    fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
-    fileprivate var disposeBag = DisposeBag()
+    private var cachedChangeCount: Int = 0
+    private var storeTypes = [String: NSNumber]()
+    private let lock = NSRecursiveLock(name: "com.clipy-app.Clipy-Dev.ClipUpdatable")
+    private var monitorTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Thumbnail Cache
+    private static let thumbnailCache = NSCache<NSString, NSImage>()
+
+    static func cachedThumbnail(forKey key: String) -> NSImage? {
+        return thumbnailCache.object(forKey: key as NSString)
+    }
+
+    static func cacheThumbnail(_ image: NSImage, forKey key: String) {
+        thumbnailCache.setObject(image, forKey: key as NSString)
+    }
+
+    static func removeCachedThumbnail(forKey key: String) {
+        thumbnailCache.removeObject(forKey: key as NSString)
+    }
 
     // MARK: - Clips
     func startMonitoring() {
-        disposeBag = DisposeBag()
-        // Pasteboard observe timer
-        Observable<Int>.interval(.microseconds(750), scheduler: scheduler)
-            .map { _ in NSPasteboard.general.changeCount }
-            .withLatestFrom(cachedChangeCount.asObservable()) { ($0, $1) }
-            .filter { $0 != $1 }
-            .subscribe(onNext: { [weak self] changeCount, _ in
-                self?.cachedChangeCount.accept(changeCount)
-                self?.create()
-            })
-            .disposed(by: disposeBag)
-        // Store types
-        AppEnvironment.current.defaults.rx
-            .observe([String: NSNumber].self, Constants.UserDefaults.storeTypes)
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-            .drive(onNext: { [weak self] in
-                self?.storeTypes = $0
-            })
-            .disposed(by: disposeBag)
+        stopMonitoring()
+
+        // Observe store types changes
+        AppEnvironment.current.defaults
+            .publisher(for: \.clipyStoreTypes)
+            .sink { [weak self] types in
+                if let types = types as? [String: NSNumber] {
+                    self?.storeTypes = types
+                }
+            }
+            .store(in: &cancellables)
+
+        // Initialize store types
+        if let types = AppEnvironment.current.defaults.object(forKey: Constants.UserDefaults.storeTypes) as? [String: NSNumber] {
+            storeTypes = types
+        }
+
+        // Pasteboard polling using Timer on main run loop
+        cachedChangeCount = NSPasteboard.general.changeCount
+        monitorTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard let self = self else { break }
+                let currentCount = NSPasteboard.general.changeCount
+                if currentCount != self.cachedChangeCount {
+                    self.cachedChangeCount = currentCount
+                    self.create()
+                }
+            }
+        }
+    }
+
+    func stopMonitoring() {
+        monitorTask?.cancel()
+        monitorTask = nil
+        cancellables.removeAll()
     }
 
     func clearAll() {
-        let realm = try! Realm()
-        let clips = realm.objects(CPYClip.self)
+        guard let realm = Realm.safeInstance() else { return }
+        let includePinned = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.clearHistoryIncludesPinned)
+        let clips: Results<CPYClip>
+        if includePinned {
+            clips = realm.objects(CPYClip.self)
+        } else {
+            clips = realm.objects(CPYClip.self).filter("isPinned == false")
+        }
 
-        // Delete saved images
+        // Delete cached thumbnails
         clips
             .filter { !$0.thumbnailPath.isEmpty }
             .map { $0.thumbnailPath }
-            .forEach { PINCache.shared.removeObject(forKey: $0) }
+            .forEach { ClipService.removeCachedThumbnail(forKey: $0) }
         // Delete Realm
         realm.transaction { realm.delete(clips) }
-        // Delete writed datas
+        // Delete stored data files
         AppEnvironment.current.dataCleanService.cleanDatas()
     }
 
     func delete(with clip: CPYClip) {
-        let realm = try! Realm()
-        // Delete saved images
+        guard let realm = Realm.safeInstance() else { return }
         let path = clip.thumbnailPath
         if !path.isEmpty {
-            PINCache.shared.removeObject(forKey: path)
+            ClipService.removeCachedThumbnail(forKey: path)
         }
-        // Delete Realm
         realm.transaction { realm.delete(clip) }
     }
 
-    func incrementChangeCount() {
-        cachedChangeCount.accept(cachedChangeCount.value + 1)
+    func togglePin(for clip: CPYClip) {
+        guard let realm = Realm.safeInstance() else { return }
+        guard let managedClip = realm.object(ofType: CPYClip.self, forPrimaryKey: clip.dataHash) else { return }
+        realm.transaction {
+            managedClip.isPinned = !managedClip.isPinned
+        }
     }
 
+    func incrementChangeCount() {
+        cachedChangeCount += 1
+    }
 }
 
 // MARK: - Create Clip
@@ -107,13 +149,13 @@ extension ClipService {
     func create(with image: NSImage) {
         lock.lock(); defer { lock.unlock() }
 
-        // Create only image data
         let data = CPYClipData(image: image)
         save(with: data)
     }
 
     fileprivate func save(with data: CPYClipData) {
-        let realm = try! Realm()
+        guard let realm = Realm.safeInstance() else { return }
+
         // Copy already copied history
         let isCopySameHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
         if realm.object(ofType: CPYClip.self, forPrimaryKey: "\(data.hash)") != nil, !isCopySameHistory { return }
@@ -141,16 +183,16 @@ extension ClipService {
         DispatchQueue.main.async {
             // Save thumbnail image
             if let thumbnailImage = data.thumbnailImage {
-                PINCache.shared.setObjectAsync(thumbnailImage, forKey: "\(unixTime)", completion: nil)
+                ClipService.cacheThumbnail(thumbnailImage, forKey: "\(unixTime)")
                 clip.thumbnailPath = "\(unixTime)"
             }
             if let colorCodeImage = data.colorCodeImage {
-                PINCache.shared.setObjectAsync(colorCodeImage, forKey: "\(unixTime)", completion: nil)
+                ClipService.cacheThumbnail(colorCodeImage, forKey: "\(unixTime)")
                 clip.thumbnailPath = "\(unixTime)"
                 clip.isColorCode = true
             }
             // Save Realm and .data file
-            let dispatchRealm = try! Realm()
+            guard let dispatchRealm = Realm.safeInstance() else { return }
             if CPYUtilities.prepareSaveToPath(CPYUtilities.applicationSupportFolder()) {
                 if NSKeyedArchiver.archiveRootObject(data, toFile: savedPath) {
                     dispatchRealm.transaction {
@@ -171,5 +213,12 @@ extension ClipService {
         guard let value = dictionary[type] else { return false }
         guard let number = storeTypes[value] else { return false }
         return number.boolValue
+    }
+}
+
+// MARK: - UserDefaults KVO Bridge
+private extension UserDefaults {
+    @objc var clipyStoreTypes: Any? {
+        return object(forKey: Constants.UserDefaults.storeTypes)
     }
 }

@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2016/11/23.
 //
@@ -17,7 +16,7 @@ import Sauce
 final class PasteService {
 
     // MARK: - Properties
-    fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.Pastable")
+    fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy-Dev.Pastable")
     fileprivate var isPastePlainText: Bool {
         guard AppEnvironment.current.defaults.bool(forKey: Constants.Beta.pastePlainText) else { return false }
 
@@ -59,7 +58,6 @@ extension PasteService {
         guard !clip.isInvalidated else { return }
         guard let data = NSKeyedUnarchiver.unarchiveObject(withFile: clip.dataPath) as? CPYClipData else { return }
 
-        // Handling modifier actions
         let isPastePlainText = self.isPastePlainText
         let isPasteAndDeleteHistory = self.isPasteAndDeleteHistory
         let isDeleteHistory = self.isDeleteHistory
@@ -69,11 +67,9 @@ extension PasteService {
             return
         }
 
-        // Increment change count for don't copy paste item
         if isPasteAndDeleteHistory {
             AppEnvironment.current.clipService.incrementChangeCount()
         }
-        // Paste history
         if isPastePlainText {
             copyToPasteboard(with: data.stringValue)
             paste()
@@ -81,7 +77,6 @@ extension PasteService {
             copyToPasteboard(with: clip)
             paste()
         }
-        // Delete clip
         if isDeleteHistory || isPasteAndDeleteHistory {
             AppEnvironment.current.clipService.delete(with: clip)
         }
@@ -91,8 +86,8 @@ extension PasteService {
         lock.lock(); defer { lock.unlock() }
 
         let pasteboard = NSPasteboard.general
-        pasteboard.declareTypes([.deprecatedString], owner: nil)
-        pasteboard.setString(string, forType: .deprecatedString)
+        pasteboard.declareTypes([.clipyString], owner: nil)
+        pasteboard.setString(string, forType: .clipyString)
     }
 
     func copyToPasteboard(with clip: CPYClip) {
@@ -109,29 +104,26 @@ extension PasteService {
         let types = data.types
         pasteboard.declareTypes(types, owner: nil)
         types.forEach { type in
-            switch type {
-            case .deprecatedString:
-                let pbString = data.stringValue
-                pasteboard.setString(pbString, forType: .deprecatedString)
-            case .deprecatedRTFD:
+            if type.isStringType() {
+                pasteboard.setString(data.stringValue, forType: type)
+            } else if type.isRTFDType() {
                 guard let rtfData = data.RTFData else { return }
-                pasteboard.setData(rtfData, forType: .deprecatedRTFD)
-            case .deprecatedRTF:
+                pasteboard.setData(rtfData, forType: type)
+            } else if type.isRTFType() {
                 guard let rtfData = data.RTFData else { return }
-                pasteboard.setData(rtfData, forType: .deprecatedRTF)
-            case .deprecatedPDF:
+                pasteboard.setData(rtfData, forType: type)
+            } else if type.isPDFType() {
                 guard let pdfData = data.PDF, let pdfRep = NSPDFImageRep(data: pdfData) else { return }
-                pasteboard.setData(pdfRep.pdfRepresentation, forType: .deprecatedPDF)
-            case .deprecatedFilenames:
+                pasteboard.setData(pdfRep.pdfRepresentation, forType: type)
+            } else if type.isFilenamesType() {
                 let fileNames = data.fileNames
-                pasteboard.setPropertyList(fileNames, forType: .deprecatedFilenames)
-            case .deprecatedURL:
+                pasteboard.setPropertyList(fileNames, forType: type)
+            } else if type.isURLType() {
                 let url = data.URLs
-                pasteboard.setPropertyList(url, forType: .deprecatedURL)
-            case .deprecatedTIFF:
+                pasteboard.setPropertyList(url, forType: type)
+            } else if type.isTIFFType() {
                 guard let image = data.image, let imageData = image.tiffRepresentation else { return }
-                pasteboard.setData(imageData, forType: .deprecatedTIFF)
-            default: break
+                pasteboard.setData(imageData, forType: type)
             }
         }
     }
@@ -141,24 +133,23 @@ extension PasteService {
 extension PasteService {
     func paste() {
         guard AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.inputPasteCommand) else { return }
-        // Check Accessibility Permission
+
+        // If accessibility isn't granted, the content is already on the clipboard —
+        // the user can ⌘V manually. Don't block with an alert on every paste.
         guard AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: false) else {
-            AppEnvironment.current.accessibilityService.showAccessibilityAuthenticationAlert()
+            // Silently skip the simulated ⌘V — clipboard already has the content.
+            // Only prompt once at launch (handled in AppDelegate.applicationDidFinishLaunching).
             return
         }
 
         let vKeyCode = Sauce.shared.keyCode(by: .v)
         DispatchQueue.main.async {
             let source = CGEventSource(stateID: .combinedSessionState)
-            // Disable local keyboard events while pasting
             source?.setLocalEventsFilterDuringSuppressionState([.permitLocalMouseEvents, .permitSystemDefinedEvents], state: .eventSuppressionStateSuppressionInterval)
-            // Press Command + V
             let keyVDown = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true)
             keyVDown?.flags = .maskCommand
-            // Release Command + V
             let keyVUp = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false)
             keyVUp?.flags = .maskCommand
-            // Post Paste Command
             keyVDown?.post(tap: .cgAnnotatedSessionEventTap)
             keyVUp?.post(tap: .cgAnnotatedSessionEventTap)
         }

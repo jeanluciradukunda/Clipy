@@ -3,7 +3,6 @@
 //
 //  Clipy
 //  GitHub: https://github.com/clipy
-//  HP: https://clipy-app.com
 //
 //  Created by Econa77 on 2015/06/21.
 //
@@ -12,15 +11,16 @@
 
 import Cocoa
 import RealmSwift
+import os.log
+
+private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Utilities")
 
 final class CPYUtilities {
 
     static func initSDKs() {
-        // Fabric
         AppEnvironment.current.defaults.register(defaults: ["NSApplicationCrashOnExceptions": true])
         guard AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.collectCrashReport) else { return }
-        // TODO: - Migrate Firebase Crashlytics
-        CPYUtilities.sendCustomLog(with: "applicationDidFinishLaunching")
+        logger.info("Application launched")
     }
 
     static func registerUserDefaultKeys() {
@@ -56,6 +56,10 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.overwriteSameHistory)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.copySameHistory)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showColorPreviewInTheMenu)
+        defaultValues.updateValue(NSNumber(value: false), forKey: Constants.UserDefaults.clearHistoryIncludesPinned)
+
+        /* Snippets */
+        defaultValues.updateValue(NSNumber(value: true), forKey: Constants.Snippets.useModernPicker)
 
         /* Updates */
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.Update.enableAutomaticCheck)
@@ -71,13 +75,12 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: false), forKey: Constants.Beta.observerScreenshot)
 
         AppEnvironment.current.defaults.register(defaults: defaultValues)
-        AppEnvironment.current.defaults.synchronize()
     }
 
     static func applicationSupportFolder() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true)
         let basePath: String = paths.first ?? NSTemporaryDirectory()
-        return (basePath as NSString).appendingPathComponent(Constants.Application.name)
+        return (basePath as NSString).appendingPathComponent(Constants.Application.supportDirectoryName)
     }
 
     static func prepareSaveToPath(_ path: String) -> Bool {
@@ -88,6 +91,7 @@ final class CPYUtilities {
             do {
                 try fileManager.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
             } catch {
+                logger.error("Failed to create directory at \(path): \(error.localizedDescription)")
                 return false
             }
         }
@@ -105,6 +109,6 @@ final class CPYUtilities {
 
     static func sendCustomLog(with name: String) {
         guard AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.collectCrashReport) else { return }
-        // TODO: - Migrate Firebase Crashlytics
+        logger.debug("\(name)")
     }
 }
