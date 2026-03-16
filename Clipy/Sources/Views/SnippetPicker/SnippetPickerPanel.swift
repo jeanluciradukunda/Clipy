@@ -271,7 +271,6 @@ struct SnippetPickerPanelView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.3), radius: 30, y: 12)
         .onAppear {
             viewModel.reset(filterFolderID: filterFolderID)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -547,7 +546,7 @@ class SnippetPickerWindowController: NSWindowController, NSWindowDelegate {
     private init() {
         let panel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: 440, height: 460),
-            styleMask: [.nonactivatingPanel, .fullSizeContentView],
+            styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -586,6 +585,12 @@ class SnippetPickerWindowController: NSWindowController, NSWindowDelegate {
         ))
         hostView.frame = NSRect(x: 0, y: 0, width: 440, height: 460)
         panel.contentView = hostView
+        // Ensure hosting view layer is transparent after being added to window
+        DispatchQueue.main.async {
+            hostView.wantsLayer = true
+            hostView.layer?.backgroundColor = .clear
+            hostView.layer?.isOpaque = false
+        }
         panel.setContentSize(NSSize(width: 440, height: 460))
 
         if let screen = NSScreen.screens.first(where: { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) }) ?? NSScreen.main {

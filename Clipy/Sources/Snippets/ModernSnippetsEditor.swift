@@ -850,22 +850,33 @@ class ModernSnippetsWindowController: NSWindowController {
     private init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 740, height: 520),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: true
         )
         window.title = "Snippets"
         window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
+        window.backgroundColor = .clear
+        window.isOpaque = false
+        window.hasShadow = true
         window.minSize = NSSize(width: 600, height: 400)
         window.center()
         window.collectionBehavior = .canJoinAllSpaces
 
         super.init(window: window)
 
-        window.contentView = NSHostingView(rootView: ModernSnippetsEditorView(onClose: { [weak self] in
+        let hostView = NSHostingView(rootView: ModernSnippetsEditorView(onClose: { [weak self] in
             self?.close()
         }))
+        window.contentView = hostView
         window.delegate = self
+        DispatchQueue.main.async {
+            hostView.wantsLayer = true
+            hostView.layer?.backgroundColor = .clear
+            hostView.layer?.isOpaque = false
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -873,9 +884,15 @@ class ModernSnippetsWindowController: NSWindowController {
     }
 
     override func showWindow(_ sender: Any?) {
-        window?.contentView = NSHostingView(rootView: ModernSnippetsEditorView(onClose: { [weak self] in
+        let hostView = NSHostingView(rootView: ModernSnippetsEditorView(onClose: { [weak self] in
             self?.close()
         }))
+        window?.contentView = hostView
+        DispatchQueue.main.async {
+            hostView.wantsLayer = true
+            hostView.layer?.backgroundColor = .clear
+            hostView.layer?.isOpaque = false
+        }
         window?.center()
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

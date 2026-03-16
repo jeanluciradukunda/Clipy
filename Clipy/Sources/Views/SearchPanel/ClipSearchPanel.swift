@@ -367,18 +367,17 @@ struct ClipSearchPanelView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.3), radius: 30, y: 12)
         .onAppear {
             viewModel.reset()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 isSearchFocused = true
             }
         }
-        .onKeyPress(.upArrow, phases: .down) { press in
+        .onKeyPress(.upArrow, phases: [.down, .repeat]) { press in
             if press.modifiers.contains(.shift) { viewModel.extendSelection(by: -1); return .handled }
             viewModel.moveSelection(by: -1); return .handled
         }
-        .onKeyPress(.downArrow, phases: .down) { press in
+        .onKeyPress(.downArrow, phases: [.down, .repeat]) { press in
             if press.modifiers.contains(.shift) { viewModel.extendSelection(by: 1); return .handled }
             viewModel.moveSelection(by: 1); return .handled
         }
@@ -673,6 +672,22 @@ struct ClipSearchPanelView: View {
                     .textSelection(.enabled)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
+            } else if clip.pasteboardType.isURLType() || (text.hasPrefix("http") && URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)) != nil) {
+                // Clickable URL preview
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                Text(trimmed)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(.blue)
+                    .underline()
+                    .textSelection(.enabled)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .onTapGesture {
+                        if let url = URL(string: trimmed) {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .help("Open in browser")
             } else {
                 Text(text)
                     .font(.system(size: 13, design: clip.looksLikeCode ? .monospaced : .default))
@@ -719,6 +734,20 @@ struct ClipSearchPanelView: View {
                         .background(item.type.color.opacity(0.1))
                         .foregroundStyle(item.type.color)
                         .clipShape(Capsule())
+                        .contentShape(Capsule())
+                        .onTapGesture {
+                            switch item.type {
+                            case .url:
+                                if let url = URL(string: item.value) { NSWorkspace.shared.open(url) }
+                            case .email:
+                                if let url = URL(string: "mailto:\(item.value)") { NSWorkspace.shared.open(url) }
+                            case .phoneNumber:
+                                if let url = URL(string: "tel:\(item.value)") { NSWorkspace.shared.open(url) }
+                            case .ipAddress:
+                                viewModel.copyString(item.value)
+                            }
+                        }
+                        .help(item.type == .url ? "Open in browser" : item.type == .email ? "Compose email" : item.type == .phoneNumber ? "Call" : "Copy")
                     }
                 }
                 .padding(.horizontal, 14)
@@ -1333,7 +1362,7 @@ class ClipSearchWindowController: NSWindowController, NSWindowDelegate {
     private init() {
         let panel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
-            styleMask: [.nonactivatingPanel, .fullSizeContentView],
+            styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -1373,6 +1402,12 @@ class ClipSearchWindowController: NSWindowController, NSWindowDelegate {
         hostView.frame = NSRect(x: 0, y: 0, width: 720, height: 520)
         panel.contentView = hostView
         panel.setContentSize(NSSize(width: 720, height: 520))
+        // Ensure hosting view layer is transparent after being added to window
+        DispatchQueue.main.async {
+            hostView.wantsLayer = true
+            hostView.layer?.backgroundColor = .clear
+            hostView.layer?.isOpaque = false
+        }
 
         // Center on active screen
         if let screen = NSScreen.screens.first(where: { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) }) ?? NSScreen.main {

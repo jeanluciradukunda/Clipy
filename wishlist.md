@@ -37,5 +37,21 @@ Track upcoming features. Mark `[x]` when complete.
 - [ ] **URL scheme** — `clipy://paste?snippet=My+Snippet` or `clipy://search?q=hello` for Alfred/Raycast/script integration
 - [ ] **Export/sync** — iCloud sync for snippet folders across Macs. Export clipboard history as JSON/CSV
 
+## Code Health
+- [ ] **Shared floating panel controller** — `ClipSearchWindowController` and `SnippetPickerWindowController` are near-identical singletons (KeyablePanel setup, toggle/show/dismiss/dismissAndPaste). Extract a generic base class parameterized by content view and size
+- [ ] **Move `KeyablePanel` to shared location** — currently defined in ClipSearchPanel.swift but used by SnippetPickerPanel.swift, creating a hidden cross-file dependency
+- [ ] **SnippetFolderRow delegate pattern** — replace 12 individual closure parameters with a delegate protocol or action enum to reduce parameter sprawl
+- [ ] **Deduplicate `isVaultUnlocked` state** — `SnippetFolderRow.isVaultUnlocked` shadows `VaultAuthService.shared.isUnlocked()`, creating two sources of truth. Make VaultAuthService observable and query it directly
+- [ ] **Shared `PasteboardMonitor`** — `ClipService` and `ClipboardQueueService` both implement identical pasteboard polling loops. Extract to a shared utility
+- [ ] **Shared snippet import/export utility** — `ModernSnippetsEditor` and `CPYSnippetsEditorWindowController` duplicate the same AEXML XML import/export logic
+- [ ] **Use `PasteService.copyToPasteboard` consistently** — `AppDelegate.pasteAsPlainText()` and `ClipSearchViewModel.pasteAsPlainText()` manually clear/set pasteboard instead of using the existing helper
+- [ ] **Logger subsystem constant** — `"com.clipy-app.Clipy-Dev"` hardcoded in 13 files; extract to `Constants.Application.logSubsystem`
+- [ ] **PanelShortcutService enum IDs** — `save()` dispatches on raw string IDs ("pin", "delete", etc.); replace with a proper enum for compile-time safety
+- [ ] **Async image loading in clip rows** — `ClipRowView.body` synchronously loads images from disk on cache miss; use `.task {}` for async loading during scroll
+- [ ] **Lazy clip text loading** — `loadClips()` unarchives every clip from disk for searchable text (N+1 pattern); defer to background or load lazily
+- [ ] **Cache `SyntaxHighlighter` instance** — new instance allocated on every preview render; use a shared/static instance
+- [ ] **Debounce snippet sidebar filter** — `filteredFolders` fires on every keystroke with no debounce unlike the clip search panel (60ms)
+- [ ] **Cache `visibleIDs` in SnippetPickerViewModel** — computed property traverses all folders on every call; cache and invalidate on change
+
 ## Infrastructure
 - [ ] **Plugin system** — lightweight plugin architecture where Swift packages or scripts can register clip processors (transform, filter, annotate)
