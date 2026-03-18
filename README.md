@@ -47,7 +47,7 @@ A Spotlight-style search panel with split-pane layout: filterable clip list on t
 - **Fuzzy search** across all clipboard history
 - **Content filters**: All, Text, Images, Links, Files, Pinned, Queue
 - **Keyboard-driven**: arrow keys to navigate, `Return` to paste, `Shift+Return` for plain text
-- **Quick select**: type `1`-`9` for single digit, or two digits rapidly (e.g. `1` `5` for item 15)
+- **Quick select**: type a number to paste instantly — single digits or two digits rapidly (e.g. `1` `5` for item 15, up to 30)
 - **Multi-select**: `Shift+Up/Down` to select multiple clips, `Cmd+Backspace` to bulk delete
 - **Pin clips** to keep them at the top (`Cmd+P`)
 
@@ -129,7 +129,7 @@ All hotkeys (search panel, snippets, snippet folders) are configurable in Settin
 | `Shift+Up/Down` | Extend multi-selection |
 | `Return` | Paste selected clip |
 | `Shift+Return` | Paste as plain text |
-| `1`-`9` / two digits | Quick select by number |
+| `1`-`30` (type rapidly) | Quick select by number |
 | `Cmd+P` | Pin/unpin clip |
 | `Cmd+Backspace` | Delete selected clip(s) |
 | `Escape` | Close panel |
@@ -142,7 +142,7 @@ All hotkeys (search panel, snippets, snippet folders) are configurable in Settin
 | `Right` | Expand folder / enter snippets |
 | `Left` | Collapse folder / go to parent |
 | `Return` | Paste selected snippet |
-| `1`-`9` / two digits | Quick select snippet by number |
+| `1`-`30` (type rapidly) | Quick select snippet by number |
 | `Escape` | Close panel |
 
 ### Snippet Editor
