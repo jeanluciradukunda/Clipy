@@ -2,7 +2,7 @@
 //
 //  ModernSnippetsEditor.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Modern SwiftUI snippets editor — liquid glass design matching the search panel.
 //
@@ -12,6 +12,7 @@ import RealmSwift
 import AEXML
 import UniformTypeIdentifiers
 import LocalAuthentication
+import TipKit
 
 // MARK: - Snippets ViewModel
 @MainActor
@@ -24,6 +25,7 @@ class SnippetsEditorViewModel: ObservableObject {
     @Published var sidebarFilter = ""
     @Published var hasUnsavedChanges = false
     @Published var expandedFolderIDs = Set<String>()
+    @Published var needsRefocus = false
 
     struct FolderItem: Identifiable, Hashable {
         let id: String
@@ -235,10 +237,15 @@ class SnippetsEditorViewModel: ObservableObject {
                 // Vault folder — authenticate first
                 VaultAuthService.shared.authenticate(folderID: fid, reason: "Unlock \"\(folder.title)\" vault") { [weak self] success in
                     DispatchQueue.main.async {
-                        guard let self, success else { return }
-                        withAnimation(.easeOut(duration: 0.15)) { _ = self.expandedFolderIDs.insert(fid) }
-                        // Re-show window after auth prompt stole focus
-                        ModernSnippetsWindowController.shared.window?.makeKeyAndOrderFront(nil)
+                        if success {
+                            withAnimation(.easeOut(duration: 0.15)) { _ = self?.expandedFolderIDs.insert(fid) }
+                        }
+                        // Force app activation and window focus after Touch ID
+                        NSApp.activate(ignoringOtherApps: true)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            ModernSnippetsWindowController.shared.window?.makeKeyAndOrderFront(nil)
+                            self?.needsRefocus = true
+                        }
                     }
                 }
                 return
@@ -313,6 +320,8 @@ class SnippetsEditorViewModel: ObservableObject {
             .sorted(byKeyPath: #keyPath(CPYFolder.index), ascending: true)
 
         realmFolders.forEach { folder in
+            // Skip vault folders — protected content should not be exported
+            if folder.isVault { return }
             let folderElement = rootElement.addChild(name: Constants.Xml.folderElement)
             folderElement.addChild(name: Constants.Xml.titleElement, value: folder.title)
             let snippetsElement = folderElement.addChild(name: Constants.Xml.snippetsElement)
@@ -411,6 +420,12 @@ struct ModernSnippetsEditorView: View {
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
         )
         .onAppear { viewModel.load() }
+        .onChange(of: viewModel.needsRefocus) { _, needs in
+            if needs {
+                viewModel.needsRefocus = false
+                sidebarFocused = true
+            }
+        }
     }
 
     // MARK: - Sidebar
@@ -625,6 +640,7 @@ struct ModernSnippetsEditorView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
         }
+        .popoverTip(SnippetVariablesTip(), arrowEdge: .top)
     }
 
     private var editorFooter: some View {
@@ -738,7 +754,10 @@ struct SnippetFolderRow: View {
                                     isVaultUnlocked = true
                                     withAnimation(.easeOut(duration: 0.15)) { isExpanded = true }
                                 }
-                                ModernSnippetsWindowController.shared.window?.makeKeyAndOrderFront(nil)
+                                NSApp.activate(ignoringOtherApps: true)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    ModernSnippetsWindowController.shared.window?.makeKeyAndOrderFront(nil)
+                                }
                             }
                         }
                     } else {

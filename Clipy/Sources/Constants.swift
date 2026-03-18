@@ -17,7 +17,7 @@ struct Constants {
         #if DEBUG
             static let name = "ClipyDevDEBUG"
         #else
-            static let name = "Clipy Dev"
+            static let name = "Clipy"
         #endif
         static let appcastURL = URL(string: "https://clipy-app.com/appcast.xml")!
         static let supportDirectoryName = "ClipyDev"
@@ -119,6 +119,8 @@ struct Constants {
         static let delete = "kCPYPanelShortcutDelete"
         static let pastePlain = "kCPYPanelShortcutPastePlain"
         static let paste = "kCPYPanelShortcutPaste"
+        static let ocr = "kCPYPanelShortcutOCR"
+        static let share = "kCPYPanelShortcutShare"
     }
 
 }

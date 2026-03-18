@@ -2,7 +2,7 @@
 //
 //  ClipSearchPanel.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Spotlight/Raycast-caliber clipboard history panel.
 //  Split-pane: results list + rich preview + text transforms.
@@ -11,6 +11,7 @@
 import SwiftUI
 import RealmSwift
 import Combine
+import TipKit
 
 // MARK: - Content Filter
 enum ClipFilter: String, CaseIterable, Identifiable {
@@ -350,6 +351,17 @@ class ClipSearchViewModel: ObservableObject {
         picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
     }
 
+    func shareSelectedImage() {
+        guard let clip = selectedClip(), clip.pasteboardType.isTIFFType() else { return }
+        guard let realm = Realm.safeInstance() else { return }
+        guard let realmClip = realm.object(ofType: CPYClip.self, forPrimaryKey: clip.dataHash) else { return }
+        guard let data = NSKeyedUnarchiver.unarchiveObject(withFile: realmClip.dataPath) as? CPYClipData,
+              let image = data.image else { return }
+        guard let view = ClipSearchWindowController.shared.window?.contentView else { return }
+        let picker = NSSharingServicePicker(items: [image])
+        picker.show(relativeTo: CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1), of: view, preferredEdge: .minY)
+    }
+
     func copyString(_ string: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(string, forType: .string)
@@ -439,6 +451,14 @@ struct ClipSearchPanelView: View {
                 viewModel.pasteSelected()
                 return .handled
             }
+            if shortcuts.matches(press, shortcut: shortcuts.ocr) {
+                viewModel.runOCR()
+                return .handled
+            }
+            if shortcuts.matches(press, shortcut: shortcuts.share) {
+                viewModel.shareSelectedImage()
+                return .handled
+            }
             return .ignored
         }
         // Number keys for quick paste — type one digit or two digits quickly (e.g. "15" for item 15)
@@ -474,6 +494,7 @@ struct ClipSearchPanelView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
+        .popoverTip(QuickSelectTip(), arrowEdge: .bottom)
     }
 
     // MARK: - Filter Bar
@@ -495,6 +516,7 @@ struct ClipSearchPanelView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 8)
         }
+        .popoverTip(FiltersTip(), arrowEdge: .bottom)
     }
 
     private func countFor(_ filter: ClipFilter) -> Int? {
@@ -803,13 +825,15 @@ struct ClipSearchPanelView: View {
                 ActionButton(label: "Plain Text", icon: "textformat", shortcut: shortcuts.pastePlain.label) {
                     viewModel.pasteAsPlainText()
                 }
+                .popoverTip(PlainTextTip(), arrowEdge: .bottom)
 
                 // OCR + Share for images
                 if clip.pasteboardType.isTIFFType() {
                     Divider().frame(height: 16).opacity(0.3)
-                    ActionButton(label: "OCR", icon: "text.viewfinder") {
+                    ActionButton(label: "OCR", icon: "text.viewfinder", shortcut: shortcuts.ocr.label) {
                         viewModel.runOCR()
                     }
+                    .popoverTip(OCRTip(), arrowEdge: .bottom)
                     ShareActionButton { anchorView in
                         viewModel.shareImage(from: anchorView)
                     }
@@ -894,8 +918,10 @@ struct ClipSearchPanelView: View {
             kbHint(shortcuts.pastePlain.label, "plain")
             kbHint(shortcuts.pin.label, "pin")
             kbHint(shortcuts.delete.label, "delete")
+            kbHint(shortcuts.ocr.label, "ocr")
+            kbHint(shortcuts.share.label, "share")
             kbHint("\u{21E7}\u{2191}\u{2193}", "select")
-            kbHint("1\u{2013}9", "quick")
+            kbHint("1\u{2013}30", "quick")
             Spacer()
             if viewModel.selectedIndices.count > 1 {
                 Text("\(viewModel.selectedIndices.count) selected")

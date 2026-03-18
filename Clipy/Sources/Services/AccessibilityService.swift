@@ -38,7 +38,7 @@ extension AccessibilityService {
 
         let alert = NSAlert()
         alert.messageText = "Accessibility Permission Required"
-        alert.informativeText = "Clipy Dev needs Accessibility access to paste clipboard items. Please add Clipy Dev in System Settings → Privacy & Security → Accessibility.\n\nNote: If you previously allowed the original Clipy, you still need to allow this dev build separately."
+        alert.informativeText = "Clipy needs Accessibility access to paste clipboard items. Please add Clipy in System Settings → Privacy & Security → Accessibility."
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Cancel")
         alert.alertStyle = .warning

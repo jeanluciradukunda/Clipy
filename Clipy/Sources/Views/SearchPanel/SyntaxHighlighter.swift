@@ -2,7 +2,7 @@
 //
 //  SyntaxHighlighter.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Lightweight syntax highlighting and language detection for the preview pane.
 //

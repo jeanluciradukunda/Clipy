@@ -1,7 +1,7 @@
 //
 //  ClipboardQueueService.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Collect Mode: gather multiple clipboard items, then paste them
 //  all at once — merged or sequentially.
@@ -150,6 +150,9 @@ final class ClipboardQueueService: ObservableObject {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(merged, forType: .string)
+
+        // Increment ClipService's change count so it doesn't re-record our paste
+        AppEnvironment.current.clipService.incrementChangeCount()
 
         stopCollecting()
 

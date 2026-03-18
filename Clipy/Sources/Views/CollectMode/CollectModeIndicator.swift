@@ -1,7 +1,7 @@
 //
 //  CollectModeIndicator.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Floating pill indicator for Collect Mode.
 //

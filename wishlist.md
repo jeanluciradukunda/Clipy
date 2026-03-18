@@ -14,6 +14,8 @@ Track upcoming features. Mark `[x]` when complete.
 - [ ] **Cache `timeAgo` computed property** — recalculated for every clip on every render (500+ calls per view update including off-screen clips). Cache with periodic refresh
 - [ ] **Set thumbnail cache size limit** — `ClipService.thumbnailCache` NSCache has no `totalCostLimit`, can grow unbounded with large image histories
 - [ ] **Cancel Combine subscription in CollectModeIndicator** — `$isCollecting` subscription is never explicitly cancelled, leaks subscription object
+- [ ] **Fix KVO on computed UserDefaults properties** — `UserDefaults.publisher(for:)` on computed extension properties won't emit changes. Affects login item, status item, store types observers. Use `UserDefaults.didChangeNotification` instead
+- [ ] **Regenerate menu thumbnails on cache miss** — after relaunch NSCache is empty, menu items show no thumbnails. Load from `.data` file on miss and re-cache
 
 ## Privacy & Security
 - [ ] **Auto-expiring clips** — detect copies from password managers (1Password, Bitwarden) or banking apps and auto-delete after 30s. Use existing exclude app detection to identify source apps and apply per-app TTL rules

@@ -77,6 +77,7 @@
 		CB02B4A9F8E2B5CA00223366 /* ClipIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB02B4A8F8E2B5CA00223366 /* ClipIntelligence.swift */; };
 		CB03C5BAF9F3C6DB00334477 /* PanelShortcutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB03C5B9F9F3C6DB00334477 /* PanelShortcutService.swift */; };
 		CB04D6CBFA04D7EC00445588 /* SnippetPickerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB04D6CAFA04D7EC00445588 /* SnippetPickerPanel.swift */; };
+		CB05E7E1FB15E8FE00556699 /* OnboardingTips.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB05E7E0FB15E8FE00556699 /* OnboardingTips.swift */; };
 		CB05E7DCFB15E8FD00556699 /* VaultAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB05E7DBFB15E8FD00556699 /* VaultAuthService.swift */; };
 		FD44C0065950E4DBB9CF2AE8 /* ModernPreferencesWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A044A1796091D65A380A2CBB /* ModernPreferencesWindow.swift */; };
 		FAA4BCCC2163DC9100FF5D18 /* AccessibilityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA4BCCB2163DC9100FF5D18 /* AccessibilityService.swift */; };
@@ -216,6 +217,7 @@
 		CB02B4A8F8E2B5CA00223366 /* ClipIntelligence.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipIntelligence.swift; sourceTree = "<group>"; };
 		CB03C5B9F9F3C6DB00334477 /* PanelShortcutService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanelShortcutService.swift; sourceTree = "<group>"; };
 		CB04D6CAFA04D7EC00445588 /* SnippetPickerPanel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SnippetPickerPanel.swift; sourceTree = "<group>"; };
+		CB05E7E0FB15E8FE00556699 /* OnboardingTips.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OnboardingTips.swift; sourceTree = "<group>"; };
 		CB05E7DBFB15E8FD00556699 /* VaultAuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VaultAuthService.swift; sourceTree = "<group>"; };
 		A044A1796091D65A380A2CBB /* ModernPreferencesWindow.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModernPreferencesWindow.swift; sourceTree = "<group>"; };
 		FAA4BCCB2163DC9100FF5D18 /* AccessibilityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityService.swift; sourceTree = "<group>"; };
@@ -308,6 +310,14 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		CB05E7E2FB15E8FE00556699 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				CB05E7E0FB15E8FE00556699 /* OnboardingTips.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		FA0D5CE61DDCC5D000AC9052 /* Services */ = {
 			isa = PBXGroup;
 			children = (
@@ -348,6 +358,7 @@
 			children = (
 				FA3778911F3B690D003B5BAB /* Environments */,
 				FA0D5CE61DDCC5D000AC9052 /* Services */,
+				CB05E7E2FB15E8FE00556699 /* Onboarding */,
 				FA1DB4EC1DDCB4C0007F95C8 /* Preferences */,
 				FA1DB50C1DDCB4C0007F95C8 /* Snippets */,
 				FA1DB4A41DDCB443007F95C8 /* Enums */,
@@ -916,6 +927,7 @@
 				FA1DB4D21DDCB479007F95C8 /* CPYAppInfo.swift in Sources */,
 				FAE911B91DE045E2008A4BEC /* HotKeyService.swift in Sources */,
 				CB01A3F2E7D1A4B900112233 /* ClipboardQueueService.swift in Sources */,
+				CB05E7E1FB15E8FE00556699 /* OnboardingTips.swift in Sources */,
 				CB05E7DCFB15E8FD00556699 /* VaultAuthService.swift in Sources */,
 				CB01A3F4E7D1A4B900112244 /* CollectModeIndicator.swift in Sources */,
 				FA1DB4D71DDCB479007F95C8 /* CPYSnippet.swift in Sources */,

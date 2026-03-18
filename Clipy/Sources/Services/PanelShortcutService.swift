@@ -1,7 +1,7 @@
 //
 //  PanelShortcutService.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Manages customizable keyboard shortcuts for the search panel.
 //
@@ -50,17 +50,23 @@ class PanelShortcutService: ObservableObject {
     @Published var delete: PanelShortcutDef
     @Published var pastePlain: PanelShortcutDef
     @Published var paste: PanelShortcutDef
+    @Published var ocr: PanelShortcutDef
+    @Published var share: PanelShortcutDef
 
     static let defaultPin = PanelShortcutDef(id: "pin", key: "d", modifiers: NSEvent.ModifierFlags.command.rawValue)
     static let defaultDelete = PanelShortcutDef(id: "delete", key: "backspace", modifiers: NSEvent.ModifierFlags.command.rawValue)
     static let defaultPastePlain = PanelShortcutDef(id: "pastePlain", key: "return", modifiers: NSEvent.ModifierFlags.shift.rawValue)
     static let defaultPaste = PanelShortcutDef(id: "paste", key: "return", modifiers: 0)
+    static let defaultOCR = PanelShortcutDef(id: "ocr", key: "o", modifiers: NSEvent.ModifierFlags.command.rawValue)
+    static let defaultShare = PanelShortcutDef(id: "share", key: "s", modifiers: NSEvent.ModifierFlags.command.rawValue)
 
     private init() {
         pin = Self.load(key: Constants.PanelShortcuts.pin, fallback: Self.defaultPin)
         delete = Self.load(key: Constants.PanelShortcuts.delete, fallback: Self.defaultDelete)
         pastePlain = Self.load(key: Constants.PanelShortcuts.pastePlain, fallback: Self.defaultPastePlain)
         paste = Self.load(key: Constants.PanelShortcuts.paste, fallback: Self.defaultPaste)
+        ocr = Self.load(key: Constants.PanelShortcuts.ocr, fallback: Self.defaultOCR)
+        share = Self.load(key: Constants.PanelShortcuts.share, fallback: Self.defaultShare)
     }
 
     func save(_ shortcut: PanelShortcutDef) {
@@ -70,6 +76,8 @@ class PanelShortcutService: ObservableObject {
         case "delete": delete = shortcut; key = Constants.PanelShortcuts.delete
         case "pastePlain": pastePlain = shortcut; key = Constants.PanelShortcuts.pastePlain
         case "paste": paste = shortcut; key = Constants.PanelShortcuts.paste
+        case "ocr": ocr = shortcut; key = Constants.PanelShortcuts.ocr
+        case "share": share = shortcut; key = Constants.PanelShortcuts.share
         default: return
         }
         if let data = try? JSONEncoder().encode(shortcut) {
@@ -82,6 +90,8 @@ class PanelShortcutService: ObservableObject {
         save(Self.defaultDelete)
         save(Self.defaultPastePlain)
         save(Self.defaultPaste)
+        save(Self.defaultOCR)
+        save(Self.defaultShare)
     }
 
     private static func load(key: String, fallback: PanelShortcutDef) -> PanelShortcutDef {

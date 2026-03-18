@@ -1,13 +1,14 @@
 //
 //  ModernPreferencesWindow.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  macOS System Settings-style preferences window.
 //
 
 import SwiftUI
 import Cocoa
+import TipKit
 
 // MARK: - Preferences Tab
 enum PreferenceTab: String, CaseIterable, Identifiable {
@@ -134,6 +135,7 @@ struct GeneralPreferencesView: View {
                         .frame(width: 60)
                         .textFieldStyle(.roundedBorder)
                         .multilineTextAlignment(.trailing)
+                        .popoverTip(HistorySizeTip(), arrowEdge: .leading)
                     Text("items")
                         .foregroundStyle(.secondary)
                 }
@@ -416,6 +418,7 @@ struct ShortcutsPreferencesView: View {
                     PanelShortcutsList()
                         .padding(.horizontal, 56)
                 }
+                .popoverTip(CustomizeShortcutsTip(), arrowEdge: .leading)
             }
             .padding(.vertical, 12)
         }
@@ -539,7 +542,7 @@ class ModernPreferencesWindowController: NSWindowController {
             backing: .buffered,
             defer: true
         )
-        window.title = "Clipy Dev Settings"
+        window.title = "Clipy Settings"
         window.titlebarAppearsTransparent = false
         window.isMovableByWindowBackground = false
         window.center()

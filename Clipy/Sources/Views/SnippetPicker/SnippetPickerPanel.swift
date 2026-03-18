@@ -2,7 +2,7 @@
 //
 //  SnippetPickerPanel.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Modern snippet picker panel — Spotlight-style UI for browsing and pasting snippets.
 //  Folders are collapsed by default; navigate with arrow keys, expand to see snippets.
@@ -11,6 +11,7 @@
 import SwiftUI
 import RealmSwift
 import LocalAuthentication
+import TipKit
 
 // MARK: - Data Models
 
@@ -181,14 +182,18 @@ class SnippetPickerViewModel: ObservableObject {
     private func expandVaultFolder(_ folder: PickerFolder, thenSelectFirst: Bool = false) {
         VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { [weak self] success in
             DispatchQueue.main.async {
-                guard let self = self, success else { return }
-                self.expandedFolderIDs.insert(folder.id)
-                if thenSelectFirst, let first = folder.snippets.first {
-                    self.selectedID = first.id
+                if success, let self {
+                    self.expandedFolderIDs.insert(folder.id)
+                    if thenSelectFirst, let first = folder.snippets.first {
+                        self.selectedID = first.id
+                    }
                 }
-                // Re-show panel after auth prompt stole focus
-                SnippetPickerWindowController.shared.window?.orderFrontRegardless()
-                SnippetPickerWindowController.shared.window?.makeKey()
+                // Force app activation then panel focus after Touch ID
+                NSApp.activate(ignoringOtherApps: true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    SnippetPickerWindowController.shared.window?.orderFrontRegardless()
+                    SnippetPickerWindowController.shared.window?.makeKey()
+                }
             }
         }
     }
@@ -351,6 +356,7 @@ struct SnippetPickerPanelView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
+        .popoverTip(SnippetNavigationTip(), arrowEdge: .bottom)
     }
 
     // MARK: - List
@@ -458,8 +464,11 @@ struct SnippetPickerPanelView: View {
                         if success {
                             viewModel.expandedFolderIDs.insert(folder.id)
                         }
-                        SnippetPickerWindowController.shared.window?.orderFrontRegardless()
-                        SnippetPickerWindowController.shared.window?.makeKey()
+                        NSApp.activate(ignoringOtherApps: true)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            SnippetPickerWindowController.shared.window?.orderFrontRegardless()
+                            SnippetPickerWindowController.shared.window?.makeKey()
+                        }
                     }
                 }
             } else {

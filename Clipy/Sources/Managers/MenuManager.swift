@@ -396,7 +396,10 @@ private extension MenuManager {
 
         let ascending = !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
         // Show pinned items first, then sort by time
-        let clipResults = realm.objects(CPYClip.self).sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
+        let clipResults = realm.objects(CPYClip.self).sorted(by: [
+            SortDescriptor(keyPath: #keyPath(CPYClip.isPinned), ascending: false),
+            SortDescriptor(keyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
+        ])
         let currentSize = Int(clipResults.count)
         var i = 0
         for clip in clipResults {

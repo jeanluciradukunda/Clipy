@@ -62,13 +62,26 @@ Extract text from image clips using the macOS Vision framework. Click **OCR** wh
 
 ### Smart Actions
 
-Contextual buttons based on clip content:
+The action bar adapts to the selected clip's content type:
 
-- **Text transforms**: UPPER, lower, Title case
-- **JSON**: Format (pretty-print) and Minify
-- **URL cleaning**: strips tracking parameters (UTM, fbclid, gclid, and 50+ others)
-- **Content detection**: clickable badges for URLs, emails, phone numbers, IP addresses
-- **Image sharing**: native macOS share sheet (AirDrop, Messages, Mail)
+**Text clips:**
+- **UPPER / lower / Title** — case transforms, copied to clipboard
+- **Detected content** — clickable badges for URLs (open browser), emails (compose), phone numbers (call), IP addresses (copy)
+
+**JSON clips:**
+- **Format** — pretty-print with indentation for readability
+- **Minify** — compress to single line for storage/transport
+
+**URL clips:**
+- **Clean URL** — strips tracking parameters (UTM, fbclid, gclid, msclkid, and 50+ others)
+- **Clickable preview** — blue underlined URL opens in default browser
+
+**Image clips:**
+- **OCR** — extract text from the image using macOS Vision framework
+- **Share** — native macOS share sheet (AirDrop, Messages, Mail, other apps)
+
+**Color codes:**
+- **Visual swatch** — hex color codes show a color preview in the clip list
 
 ### Snippet Picker
 
@@ -132,6 +145,8 @@ All hotkeys (search panel, snippets, snippet folders) are configurable in Settin
 | `1`-`30` (type rapidly) | Quick select by number |
 | `Cmd+P` | Pin/unpin clip |
 | `Cmd+Backspace` | Delete selected clip(s) |
+| `Cmd+O` | OCR — extract text from image |
+| `Cmd+S` | Share image via system share sheet |
 | `Escape` | Close panel |
 
 ### Snippet Picker

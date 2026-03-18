@@ -13,6 +13,7 @@ import Cocoa
 import Sparkle
 import Combine
 import RealmSwift
+import TipKit
 import Magnet
 import ServiceManagement
 import os.log
@@ -222,7 +223,10 @@ extension AppDelegate: NSApplicationDelegate {
         // Initialize collect mode indicator (observes queue state)
         _ = CollectModeIndicatorController.shared
 
-        logger.info("Clipy Dev launched successfully")
+        // TipKit onboarding
+        try? Tips.configure([.displayFrequency(.daily)])
+
+        logger.info("Clipy launched successfully")
     }
 
 }

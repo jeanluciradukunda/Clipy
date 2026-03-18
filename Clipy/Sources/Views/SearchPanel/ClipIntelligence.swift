@@ -1,7 +1,7 @@
 //
 //  ClipIntelligence.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Smart clip analysis: OCR, link sanitization, content detection, snippet variables.
 //
@@ -36,7 +36,11 @@ struct OCRService {
 
         DispatchQueue.global(qos: .userInitiated).async {
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            try? handler.perform([request])
+            do {
+                try handler.perform([request])
+            } catch {
+                DispatchQueue.main.async { completion(nil) }
+            }
         }
     }
 }
