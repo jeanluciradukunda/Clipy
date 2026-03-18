@@ -92,6 +92,9 @@ Dynamic variables that expand at paste time:
 | `%TIME%` | Current time (HH:mm:ss) |
 | `%DATETIME%` | Date + time |
 | `%DAY%` | Day of the week |
+| `%MONTH%` | Current month name |
+| `%YEAR%` | Current year |
+| `%TIMESTAMP%` | Unix timestamp |
 | `%CLIPBOARD%` | Current clipboard text |
 | `%UUID%` | Random UUID |
 | `%RANDOM%` | Random 4-digit number |
@@ -116,16 +119,41 @@ Collect multiple clips and paste them all at once — merged with a configurable
 
 ## Keyboard Shortcuts
 
+All hotkeys (search panel, snippets, snippet folders) are configurable in Settings → Shortcuts.
+
+### Search Panel
+
 | Shortcut | Action |
 |---|---|
-| `Cmd+Shift+V` | Open search panel (configurable) |
-| `Up/Down` | Navigate clips/snippets |
-| `Return` | Paste selected |
+| `Up/Down` | Navigate clips (hold to repeat) |
+| `Shift+Up/Down` | Extend multi-selection |
+| `Return` | Paste selected clip |
 | `Shift+Return` | Paste as plain text |
 | `1`-`9` / two digits | Quick select by number |
 | `Cmd+P` | Pin/unpin clip |
-| `Cmd+Backspace` | Delete selected |
+| `Cmd+Backspace` | Delete selected clip(s) |
 | `Escape` | Close panel |
+
+### Snippet Picker
+
+| Shortcut | Action |
+|---|---|
+| `Up/Down` | Navigate folders and snippets |
+| `Right` | Expand folder / enter snippets |
+| `Left` | Collapse folder / go to parent |
+| `Return` | Paste selected snippet |
+| `1`-`9` / two digits | Quick select snippet by number |
+| `Escape` | Close panel |
+
+### Snippet Editor
+
+| Shortcut | Action |
+|---|---|
+| `Up/Down` | Navigate sidebar (hold to repeat) |
+| `Right` | Expand folder / enter snippets |
+| `Left` | Collapse folder / go to parent |
+| `Cmd+S` | Save current snippet |
+| `Escape` | Close editor |
 
 ---
 

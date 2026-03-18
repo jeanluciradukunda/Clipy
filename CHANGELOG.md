@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Content detection** — auto-detects URLs, emails, phone numbers, IP addresses with clickable badges
 - **Snippet picker panel** — Spotlight-style snippet browser with folder navigation and search
 - **Modern snippets editor** — SwiftUI editor with arrow key navigation, inline rename, import/export
-- **Snippet variables** — `%DATE%`, `%TIME%`, `%CLIPBOARD%`, `%UUID%`, and more — expand at paste time
+- **Snippet variables** — 10 dynamic variables (`%DATE%`, `%TIME%`, `%MONTH%`, `%YEAR%`, `%TIMESTAMP%`, `%CLIPBOARD%`, `%UUID%`, `%RANDOM%`, and more) that expand at paste time
 - **Vault folders** — Touch ID / password-protected snippet folders using LocalAuthentication
 - **Clipboard queue (Collect Mode)** — collect multiple clips, paste merged or sequentially
 - **Modern preferences window** — SwiftUI settings with General, Shortcuts, Exclude Apps, Updates tabs
