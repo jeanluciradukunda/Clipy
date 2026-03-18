@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  # Triggered automatically when you create a tag via GitHub UI (Releases → Draft new release)
+  push:
+    tags:
+      - 'v*'
+
+  # Or trigger manually from Actions tab → Release → Run workflow
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 2.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "TAG=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create tag (if manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-pods-
+
+      - name: Cache Ruby gems
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: ${{ runner.os }}-gems-
+
+      - name: Install dependencies
+        run: |
+          gem install bundler
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+          bundle exec pod install
+
+      - name: Archive
+        run: |
+          xcodebuild \
+            -workspace Clipy.xcworkspace \
+            -scheme Clipy \
+            -configuration Release \
+            -archivePath ${{ runner.temp }}/Clipy.xcarchive \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            archive
+
+      - name: Export app
+        run: |
+          mkdir -p ${{ runner.temp }}/export
+          cp -R "${{ runner.temp }}/Clipy.xcarchive/Products/Applications/Clipy.app" \
+            "${{ runner.temp }}/export/Clipy.app"
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg || true
+          create-dmg \
+            --volname "Clipy ${{ steps.version.outputs.VERSION }}" \
+            --volicon "${{ runner.temp }}/export/Clipy.app/Contents/Resources/AppIcon.icns" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Clipy.app" 150 190 \
+            --app-drop-link 450 190 \
+            --hide-extension "Clipy.app" \
+            "${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg" \
+            "${{ runner.temp }}/export/" || true
+
+          # Fallback to hdiutil if create-dmg fails
+          if [ ! -f "${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg" ]; then
+            hdiutil create \
+              -volname "Clipy ${{ steps.version.outputs.VERSION }}" \
+              -srcfolder "${{ runner.temp }}/export/" \
+              -ov -format UDZO \
+              "${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: Clipy v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Clipy v${{ steps.version.outputs.VERSION }}
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+
+            ### Install
+            1. Download `Clipy-${{ steps.version.outputs.VERSION }}.dmg` below
+            2. Open the DMG and drag Clipy to Applications
+            3. Launch Clipy — it appears in your menu bar
+
+            **Requires macOS 14.0 Sonoma or later.**
+          files: |
+            ${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg
+          draft: false
+          prerelease: false

@@ -169,6 +169,9 @@ extension ClipService {
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
         let savedHash = (isOverwriteHistory) ? data.hash : Int(arc4random() % 1000000)
 
+        // Preserve pinned state from existing clip being overwritten
+        let existingIsPinned = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")?.isPinned ?? false
+
         // Saved time and path
         let unixTime = Int(Date().timeIntervalSince1970)
         let savedPath = CPYUtilities.applicationSupportFolder() + "/\(NSUUID().uuidString).data"
@@ -179,6 +182,7 @@ extension ClipService {
         clip.dataHash = "\(savedHash)"
         clip.updateTime = unixTime
         clip.primaryType = data.primaryType?.rawValue ?? ""
+        clip.isPinned = existingIsPinned
 
         DispatchQueue.main.async {
             // Save thumbnail image

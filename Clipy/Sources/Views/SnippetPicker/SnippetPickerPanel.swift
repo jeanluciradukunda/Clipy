@@ -57,6 +57,33 @@ class SnippetPickerViewModel: ObservableObject {
 
     private var allFolders = [PickerFolder]()
 
+    // Two-digit quick select: type "1" then "4" quickly to select snippet 14
+    var digitBuffer = ""
+    var digitTimer: DispatchWorkItem?
+
+    func handleDigitPress(_ digit: Character) {
+        digitTimer?.cancel()
+        digitBuffer.append(digit)
+
+        if digitBuffer.count >= 2 {
+            if let num = Int(digitBuffer) {
+                pasteQuickIndex(num - 1)
+            }
+            digitBuffer = ""
+            return
+        }
+
+        let timer = DispatchWorkItem { [weak self] in
+            guard let self, !self.digitBuffer.isEmpty else { return }
+            if let num = Int(self.digitBuffer) {
+                self.pasteQuickIndex(num - 1)
+            }
+            self.digitBuffer = ""
+        }
+        digitTimer = timer
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: timer)
+    }
+
     // Flat list of visible row IDs for keyboard navigation
     var visibleIDs: [String] {
         var ids = [String]()
@@ -153,10 +180,15 @@ class SnippetPickerViewModel: ObservableObject {
 
     private func expandVaultFolder(_ folder: PickerFolder, thenSelectFirst: Bool = false) {
         VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { [weak self] success in
-            guard let self = self, success else { return }
-            self.expandedFolderIDs.insert(folder.id)
-            if thenSelectFirst, let first = folder.snippets.first {
-                self.selectedID = first.id
+            DispatchQueue.main.async {
+                guard let self = self, success else { return }
+                self.expandedFolderIDs.insert(folder.id)
+                if thenSelectFirst, let first = folder.snippets.first {
+                    self.selectedID = first.id
+                }
+                // Re-show panel after auth prompt stole focus
+                SnippetPickerWindowController.shared.window?.orderFrontRegardless()
+                SnippetPickerWindowController.shared.window?.makeKey()
             }
         }
     }
@@ -283,10 +315,9 @@ struct SnippetPickerPanelView: View {
         .onKeyPress(.leftArrow, phases: .down) { _ in viewModel.handleLeftArrow(); return .handled }
         .onKeyPress(.escape) { onDismiss(); return .handled }
         .onKeyPress(.return) { viewModel.handleReturn(); return .handled }
-        .onKeyPress(characters: .init(charactersIn: "123456789"), phases: .down) { press in
-            if press.modifiers.isEmpty {
-                let num = Int(String(press.characters.first!))! - 1
-                viewModel.pasteQuickIndex(num)
+        .onKeyPress(characters: .init(charactersIn: "1234567890"), phases: .down) { press in
+            if press.modifiers.isEmpty, let digit = press.characters.first {
+                viewModel.handleDigitPress(digit)
                 return .handled
             }
             return .ignored
@@ -423,8 +454,12 @@ struct SnippetPickerPanelView: View {
             viewModel.selectedID = folder.id
             if folder.isVault && !viewModel.expandedFolderIDs.contains(folder.id) {
                 VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { success in
-                    if success {
-                        viewModel.expandedFolderIDs.insert(folder.id)
+                    DispatchQueue.main.async {
+                        if success {
+                            viewModel.expandedFolderIDs.insert(folder.id)
+                        }
+                        SnippetPickerWindowController.shared.window?.orderFrontRegardless()
+                        SnippetPickerWindowController.shared.window?.makeKey()
                     }
                 }
             } else {

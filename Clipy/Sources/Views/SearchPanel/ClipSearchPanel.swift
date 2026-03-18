@@ -156,6 +156,45 @@ class ClipSearchViewModel: ObservableObject {
     private var allClips = [ClipItemViewModel]()
     private var cancellables = Set<AnyCancellable>()
 
+    // Two-digit quick select: type "1" then "5" quickly to select item 15
+    var digitBuffer = ""
+    var digitTimer: DispatchWorkItem?
+
+    func handleDigitPress(_ digit: Character) {
+        digitTimer?.cancel()
+        digitBuffer.append(digit)
+
+        if digitBuffer.count >= 2 {
+            // Two digits entered — select immediately
+            if let num = Int(digitBuffer) {
+                let index = num - 1
+                if index >= 0 && index < clips.count {
+                    selectedIndex = index
+                    selectedIndices = [index]
+                    pasteSelected()
+                }
+            }
+            digitBuffer = ""
+            return
+        }
+
+        // Wait briefly for a second digit
+        let timer = DispatchWorkItem { [weak self] in
+            guard let self, !self.digitBuffer.isEmpty else { return }
+            if let num = Int(self.digitBuffer) {
+                let index = num - 1
+                if index >= 0 && index < self.clips.count {
+                    self.selectedIndex = index
+                    self.selectedIndices = [index]
+                    self.pasteSelected()
+                }
+            }
+            self.digitBuffer = ""
+        }
+        digitTimer = timer
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: timer)
+    }
+
     init() {
         // React to search text or filter changes
         Publishers.CombineLatest($searchText.debounce(for: .milliseconds(60), scheduler: DispatchQueue.main), $activeFilter)
@@ -402,15 +441,11 @@ struct ClipSearchPanelView: View {
             }
             return .ignored
         }
-        // Number keys 1-9 for quick paste
-        .onKeyPress(characters: .init(charactersIn: "123456789"), phases: .down) { press in
-            if press.modifiers.isEmpty {
-                let num = Int(String(press.characters.first!))! - 1
-                if num < viewModel.clips.count {
-                    viewModel.selectedIndex = num
-                    viewModel.pasteSelected()
-                    return .handled
-                }
+        // Number keys for quick paste — type one digit or two digits quickly (e.g. "15" for item 15)
+        .onKeyPress(characters: .init(charactersIn: "1234567890"), phases: .down) { press in
+            if press.modifiers.isEmpty, let digit = press.characters.first {
+                viewModel.handleDigitPress(digit)
+                return .handled
             }
             return .ignored
         }

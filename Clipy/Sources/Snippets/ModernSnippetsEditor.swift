@@ -23,6 +23,7 @@ class SnippetsEditorViewModel: ObservableObject {
     @Published var editingContent = ""
     @Published var sidebarFilter = ""
     @Published var hasUnsavedChanges = false
+    @Published var expandedFolderIDs = Set<String>()
 
     struct FolderItem: Identifiable, Hashable {
         let id: String
@@ -51,6 +52,11 @@ class SnippetsEditorViewModel: ObservableObject {
                     SnippetItem(id: snippet.identifier, title: snippet.title, content: snippet.content, enabled: snippet.enable)
                 }
             return FolderItem(id: folder.identifier, title: folder.title, enabled: folder.enable, isVault: folder.isVault, snippets: Array(snippets))
+        }
+
+        // Initialize expanded state for new folders (non-vault start expanded)
+        for folder in folders where !expandedFolderIDs.contains(folder.id) && !folder.isVault {
+            expandedFolderIDs.insert(folder.id)
         }
 
         if selectedFolderID == nil {
@@ -176,8 +182,7 @@ class SnippetsEditorViewModel: ObservableObject {
         var items = [(kind: String, id: String, folderID: String?)]()
         for folder in filteredFolders {
             items.append(("folder", folder.id, nil))
-            // Only include snippets if this folder is expanded (selected)
-            if selectedFolderID == folder.id {
+            if expandedFolderIDs.contains(folder.id) {
                 for snippet in folder.snippets {
                     items.append(("snippet", snippet.id, folder.id))
                 }
@@ -221,6 +226,45 @@ class SnippetsEditorViewModel: ObservableObject {
         let targetIndex = (currentIndex ?? -1) + 1
         guard targetIndex < items.count else { return }
         selectItem(items[targetIndex])
+    }
+
+    func expandSelected() {
+        guard let fid = selectedFolderID, selectedSnippetID == nil else { return }
+        if !expandedFolderIDs.contains(fid) {
+            if let folder = folders.first(where: { $0.id == fid }), folder.isVault, !VaultAuthService.shared.isUnlocked(fid) {
+                // Vault folder — authenticate first
+                VaultAuthService.shared.authenticate(folderID: fid, reason: "Unlock \"\(folder.title)\" vault") { [weak self] success in
+                    DispatchQueue.main.async {
+                        guard let self, success else { return }
+                        withAnimation(.easeOut(duration: 0.15)) { _ = self.expandedFolderIDs.insert(fid) }
+                        // Re-show window after auth prompt stole focus
+                        ModernSnippetsWindowController.shared.window?.makeKeyAndOrderFront(nil)
+                    }
+                }
+                return
+            }
+            withAnimation(.easeOut(duration: 0.15)) { expandedFolderIDs.insert(fid) }
+        } else {
+            // Already expanded — move into first snippet
+            if let folder = filteredFolders.first(where: { $0.id == fid }), let first = folder.snippets.first {
+                selectSnippet(first)
+            }
+        }
+    }
+
+    func collapseSelected() {
+        if let sid = selectedSnippetID {
+            // On a snippet — jump back to its folder
+            if let folder = folders.first(where: { $0.snippets.contains(where: { $0.id == sid }) }) {
+                selectedFolderID = folder.id
+                selectedSnippetID = nil
+                editingTitle = ""
+                editingContent = ""
+                hasUnsavedChanges = false
+            }
+        } else if let fid = selectedFolderID, expandedFolderIDs.contains(fid) {
+            withAnimation(.easeOut(duration: 0.15)) { expandedFolderIDs.remove(fid) }
+        }
     }
 
     private func selectItem(_ item: (kind: String, id: String, folderID: String?)) {
@@ -410,7 +454,14 @@ struct ModernSnippetsEditorView: View {
                             onToggleFolder: { viewModel.toggleFolder(folder.id) },
                             onToggleSnippet: { viewModel.toggleSnippet($0.id) },
                             onRenameFolder: { viewModel.renameFolder(folder.id, to: $0) },
-                            onToggleVault: { viewModel.toggleVault(folder.id) }
+                            onToggleVault: { viewModel.toggleVault(folder.id) },
+                            isExpanded: Binding(
+                                get: { viewModel.expandedFolderIDs.contains(folder.id) },
+                                set: { newValue in
+                                    if newValue { viewModel.expandedFolderIDs.insert(folder.id) }
+                                    else { viewModel.expandedFolderIDs.remove(folder.id) }
+                                }
+                            )
                         )
                     }
                 }
@@ -424,11 +475,13 @@ struct ModernSnippetsEditorView: View {
         }
         .background(.black.opacity(0.03))
         .focusable()
+        .focusEffectDisabled()
         .focused($sidebarFocused)
         .onAppear { sidebarFocused = true }
         .onKeyPress(.upArrow, phases: [.down, .repeat]) { _ in viewModel.moveSelectionUp(); return .handled }
         .onKeyPress(.downArrow, phases: [.down, .repeat]) { _ in viewModel.moveSelectionDown(); return .handled }
-        .onKeyPress(.escape) { onClose(); return .handled }
+        .onKeyPress(.rightArrow, phases: .down) { _ in viewModel.expandSelected(); return .handled }
+        .onKeyPress(.leftArrow, phases: .down) { _ in viewModel.collapseSelected(); return .handled }
     }
 
     private var sidebarFooter: some View {
@@ -667,33 +720,11 @@ struct SnippetFolderRow: View {
     let onRenameFolder: (String) -> Void
     let onToggleVault: () -> Void
 
-    @State private var isExpanded: Bool
+    @Binding var isExpanded: Bool
     @State private var isEditing = false
     @State private var editedTitle = ""
     @State private var isHovered = false
     @State private var isVaultUnlocked = false
-
-    init(folder: SnippetsEditorViewModel.FolderItem, isSelected: Bool, selectedSnippetID: String?,
-         onSelectFolder: @escaping () -> Void, onSelectSnippet: @escaping (SnippetsEditorViewModel.SnippetItem) -> Void,
-         onAddSnippet: @escaping () -> Void, onDeleteFolder: @escaping () -> Void,
-         onDeleteSnippet: @escaping (SnippetsEditorViewModel.SnippetItem) -> Void,
-         onToggleFolder: @escaping () -> Void, onToggleSnippet: @escaping (SnippetsEditorViewModel.SnippetItem) -> Void,
-         onRenameFolder: @escaping (String) -> Void, onToggleVault: @escaping () -> Void) {
-        self.folder = folder
-        self.isSelected = isSelected
-        self.selectedSnippetID = selectedSnippetID
-        self.onSelectFolder = onSelectFolder
-        self.onSelectSnippet = onSelectSnippet
-        self.onAddSnippet = onAddSnippet
-        self.onDeleteFolder = onDeleteFolder
-        self.onDeleteSnippet = onDeleteSnippet
-        self.onToggleFolder = onToggleFolder
-        self.onToggleSnippet = onToggleSnippet
-        self.onRenameFolder = onRenameFolder
-        self.onToggleVault = onToggleVault
-        // Vault folders start collapsed
-        _isExpanded = State(initialValue: !folder.isVault)
-    }
 
     var body: some View {
         VStack(spacing: 1) {
@@ -702,9 +733,12 @@ struct SnippetFolderRow: View {
                 Button {
                     if folder.isVault && !isVaultUnlocked && !isExpanded {
                         VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { success in
-                            if success {
-                                isVaultUnlocked = true
-                                withAnimation(.easeOut(duration: 0.15)) { isExpanded = true }
+                            DispatchQueue.main.async {
+                                if success {
+                                    isVaultUnlocked = true
+                                    withAnimation(.easeOut(duration: 0.15)) { isExpanded = true }
+                                }
+                                ModernSnippetsWindowController.shared.window?.makeKeyAndOrderFront(nil)
                             }
                         }
                     } else {
