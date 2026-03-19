@@ -254,6 +254,12 @@ class ClipSearchViewModel: ObservableObject {
             return lhs.updateTime > rhs.updateTime
         }
 
+        // Respect max history size from settings
+        let maxSize = max(1, AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxHistorySize))
+        if allClips.count > maxSize {
+            allClips = Array(allClips.prefix(maxSize))
+        }
+
         applyFilter(query: searchText, filter: activeFilter)
     }
 
@@ -968,7 +974,7 @@ struct ClipSearchPanelView: View {
             kbHint(shortcuts.ocr.label, "ocr")
             kbHint(shortcuts.share.label, "share")
             kbHint("\u{21E7}\u{2191}\u{2193}", "select")
-            kbHint("1\u{2013}30", "quick")
+            kbHint("1\u{2013}\(viewModel.clips.count)", "quick")
             Spacer()
             if viewModel.selectedIndices.count > 1 {
                 Text("\(viewModel.selectedIndices.count) selected")
