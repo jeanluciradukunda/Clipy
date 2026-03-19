@@ -223,8 +223,8 @@ extension AppDelegate: NSApplicationDelegate {
         // Initialize collect mode indicator (observes queue state)
         _ = CollectModeIndicatorController.shared
 
-        // TipKit onboarding
-        try? Tips.configure([.displayFrequency(.daily)])
+        // TipKit onboarding — show max one tip per week to avoid overwhelming new users
+        try? Tips.configure([.displayFrequency(.weekly)])
 
         #if DEBUG
         logger.info("Clipy Dev (debug build) launched")
