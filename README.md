@@ -144,7 +144,7 @@ Collect multiple clips and paste them all at once — merged with a configurable
 - **Exclude apps** from clipboard monitoring
 - **Hotkey support** for history, snippets, and snippet folders
 - **Auto-launch** on system startup
-- **Developer Mode** — toggle in Settings → General unlocking TipKit management, database info, hotkey disable toggle, and a vibing Clippy Easter egg
+- **Developer Mode** — toggle in Settings → General unlocking Stats for Nerds (radar chart, hourly/daily activity, feature counters with JSON export), TipKit management, database info, hotkey disable for side-by-side testing, and a vibing Clippy Easter egg
 - **TipKit onboarding** — contextual tips in Preferences for feature discovery
 
 ---
