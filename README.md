@@ -139,11 +139,13 @@ Collect multiple clips and paste them all at once — merged with a configurable
 
 ### Other Features
 
+- **Auto-update** — checks GitHub Releases, downloads `.dmg`, installs, and relaunches automatically
 - **Color code detection** with visual swatch preview
 - **Exclude apps** from clipboard monitoring
 - **Hotkey support** for history, snippets, and snippet folders
 - **Auto-launch** on system startup
-- **Auto-update** via Sparkle
+- **Developer Mode** — toggle in Settings → General unlocking TipKit management, database info, hotkey disable toggle, and a vibing Clippy Easter egg
+- **TipKit onboarding** — contextual tips in Preferences for feature discovery
 
 ---
 

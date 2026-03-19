@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Color code detection** — visual swatch preview for hex colors
 - **Clickable URL previews** — blue underlined links open in default browser
 - **Window-level shadows** — clean rounded window appearance without border artifacts
+- **Auto-update** — downloads `.dmg` from GitHub Releases, installs, and relaunches
+- **Developer Mode** — TipKit management, database info, hotkey disable, Clippy Easter egg
+- **Dev build cosmetics** — orange DEV badge on menu bar and all panels, separate app name "Clipy Dev"
+- **Side-by-side builds** — release and debug can run simultaneously with separate data
 
 ### Changed
 - Minimum macOS version raised to 14.0 (Sonoma)
