@@ -78,26 +78,72 @@ struct ClipItemViewModel: Identifiable, Hashable {
     let thumbnailKey: String
     let dataHash: String
 
-    var pasteboardType: NSPasteboard.PasteboardType {
-        NSPasteboard.PasteboardType(rawValue: primaryType)
-    }
+    // Cached computed properties — calculated once at init
+    let pasteboardType: NSPasteboard.PasteboardType
+    let displayTitle: String
+    let previewLine: String
+    let isImage: Bool
+    let looksLikeCode: Bool
+    let typeIconName: String
+    let typeColor: SwiftUI.Color
+    let searchableText: String  // Pre-lowercased for fast search
 
-    var displayTitle: String {
-        if pasteboardType.isTIFFType() { return "Image" }
-        if pasteboardType.isPDFType() { return "PDF Document" }
-        if pasteboardType.isFilenamesType() && title.isEmpty { return "File Reference" }
-        return title.isEmpty ? "Empty" : title.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+    init(id: String, title: String, fullText: String, primaryType: String,
+         updateTime: Date, isPinned: Bool, isColorCode: Bool,
+         thumbnailKey: String, dataHash: String) {
+        self.id = id
+        self.title = title
+        self.fullText = fullText
+        self.primaryType = primaryType
+        self.updateTime = updateTime
+        self.isPinned = isPinned
+        self.isColorCode = isColorCode
+        self.thumbnailKey = thumbnailKey
+        self.dataHash = dataHash
 
-    var previewLine: String {
+        // Cache pasteboard type
+        let pbType = NSPasteboard.PasteboardType(rawValue: primaryType)
+        self.pasteboardType = pbType
+
+        // Cache display title
+        if pbType.isTIFFType() { displayTitle = "Image" }
+        else if pbType.isPDFType() { displayTitle = "PDF Document" }
+        else if pbType.isFilenamesType() && title.isEmpty { displayTitle = "File Reference" }
+        else { displayTitle = title.isEmpty ? "Empty" : title.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        // Cache preview line
         let clean = fullText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if clean.isEmpty { return "" }
-        let collapsed = clean.components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-            .prefix(3)
-            .joined(separator: " \u{2022} ")
-        return String(collapsed.prefix(200))
+        if clean.isEmpty {
+            previewLine = ""
+        } else {
+            let collapsed = clean.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+                .prefix(3)
+                .joined(separator: " \u{2022} ")
+            previewLine = String(collapsed.prefix(200))
+        }
+
+        // Cache type flags
+        self.isImage = pbType.isTIFFType()
+
+        let codeIndicators = ["func ", "class ", "import ", "var ", "let ", "def ", "return ",
+                              "const ", "function ", "if (", "for (", "while (", "=> {",
+                              "#!/", "<div", "<html", "SELECT ", "INSERT ", "CREATE "]
+        let textPrefix = fullText.prefix(500)
+        self.looksLikeCode = codeIndicators.contains { textPrefix.contains($0) }
+
+        // Cache icon and color
+        if pbType.isTIFFType() { typeIconName = "photo"; typeColor = .blue }
+        else if pbType.isPDFType() { typeIconName = "doc.richtext"; typeColor = .red }
+        else if pbType.isFilenamesType() { typeIconName = "doc.on.doc"; typeColor = .green }
+        else if pbType.isURLType() || fullText.hasPrefix("http") { typeIconName = "link"; typeColor = .purple }
+        else if isColorCode { typeIconName = "paintpalette.fill"; typeColor = .orange }
+        else if self.looksLikeCode { typeIconName = "chevron.left.forwardslash.chevron.right"; typeColor = .cyan }
+        else { typeIconName = "doc.plaintext"; typeColor = .gray }
+
+        // Pre-compute lowercased searchable text
+        self.searchableText = (fullText + " " + self.displayTitle).lowercased()
     }
 
     var timeAgo: String {
@@ -107,36 +153,6 @@ struct ClipItemViewModel: Identifiable, Hashable {
         if secs < 86400 { return "\(Int(secs / 3600))h" }
         if secs < 604800 { return "\(Int(secs / 86400))d" }
         return Self.shortDateFormatter.string(from: updateTime)
-    }
-
-    var isImage: Bool { pasteboardType.isTIFFType() }
-
-    var typeIconName: String {
-        if pasteboardType.isTIFFType() { return "photo" }
-        if pasteboardType.isPDFType() { return "doc.richtext" }
-        if pasteboardType.isFilenamesType() { return "doc.on.doc" }
-        if pasteboardType.isURLType() || fullText.hasPrefix("http") { return "link" }
-        if isColorCode { return "paintpalette.fill" }
-        if looksLikeCode { return "chevron.left.forwardslash.chevron.right" }
-        return "doc.plaintext"
-    }
-
-    var typeColor: SwiftUI.Color {
-        if pasteboardType.isTIFFType() { return .blue }
-        if pasteboardType.isPDFType() { return .red }
-        if pasteboardType.isFilenamesType() { return .green }
-        if pasteboardType.isURLType() || fullText.hasPrefix("http") { return .purple }
-        if isColorCode { return .orange }
-        if looksLikeCode { return .cyan }
-        return .gray
-    }
-
-    var looksLikeCode: Bool {
-        let indicators = ["func ", "class ", "import ", "var ", "let ", "def ", "return ",
-                          "const ", "function ", "if (", "for (", "while (", "=> {",
-                          "#!/", "<div", "<html", "SELECT ", "INSERT ", "CREATE "]
-        let text = fullText.prefix(500)
-        return indicators.contains { text.contains($0) }
     }
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
@@ -251,8 +267,7 @@ class ClipSearchViewModel: ObservableObject {
         if !query.isEmpty {
             let terms = query.lowercased().split(separator: " ").map(String.init)
             filtered = filtered.filter { clip in
-                let haystack = (clip.fullText + " " + clip.displayTitle).lowercased()
-                return terms.allSatisfy { haystack.contains($0) }
+                terms.allSatisfy { clip.searchableText.contains($0) }
             }
         }
         clips = filtered
@@ -668,7 +683,7 @@ struct ClipSearchPanelView: View {
         if clip.pasteboardType.isTIFFType() {
             // Image preview + OCR
             VStack(spacing: 8) {
-                if let nsImage = Self.loadImage(for: clip) {
+                if let nsImage = Self.loadFullImage(for: clip) {
                     Image(nsImage: nsImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -769,18 +784,26 @@ struct ClipSearchPanelView: View {
         }
     }
 
-    /// Load full-resolution image for a clip, falling back to disk if cache is empty
-    static func loadImage(for clip: ClipItemViewModel) -> NSImage? {
+    /// Load thumbnail image for clip list rows (downsampled to save memory)
+    static func loadThumbnail(for clip: ClipItemViewModel) -> NSImage? {
         if !clip.thumbnailKey.isEmpty, let cached = ClipService.cachedThumbnail(forKey: clip.thumbnailKey) {
             return cached
         }
+        guard let image = loadFullImage(for: clip) else { return nil }
+        // Downsample to 64px for list rows
+        let thumb = image.resizeImage(64, 64) ?? image
+        if !clip.thumbnailKey.isEmpty {
+            ClipService.cacheThumbnail(thumb, forKey: clip.thumbnailKey)
+        }
+        return thumb
+    }
+
+    /// Load full-resolution image for preview pane and sharing
+    static func loadFullImage(for clip: ClipItemViewModel) -> NSImage? {
         guard let realm = Realm.safeInstance() else { return nil }
         guard let realmClip = realm.object(ofType: CPYClip.self, forPrimaryKey: clip.dataHash) else { return nil }
         guard let data = NSKeyedUnarchiver.unarchiveObject(withFile: realmClip.dataPath) as? CPYClipData,
               let image = data.image else { return nil }
-        if !clip.thumbnailKey.isEmpty {
-            ClipService.cacheThumbnail(image, forKey: clip.thumbnailKey)
-        }
         return image
     }
 
@@ -1345,7 +1368,7 @@ struct ClipRowView: View {
                 .frame(width: 20)
 
             // Type icon or image thumbnail
-            if clip.isImage, let nsImage = ClipSearchPanelView.loadImage(for: clip) {
+            if clip.isImage, let nsImage = ClipSearchPanelView.loadThumbnail(for: clip) {
                 Image(nsImage: nsImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)

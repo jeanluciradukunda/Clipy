@@ -13,7 +13,7 @@ import Foundation
 import Cocoa
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Accessibility")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "Accessibility")
 
 final class AccessibilityService {
     private var hasShownAlertThisSession = false

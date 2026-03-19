@@ -13,7 +13,7 @@ import Foundation
 import RealmSwift
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "DataClean")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "DataClean")
 
 final class DataCleanService {
 

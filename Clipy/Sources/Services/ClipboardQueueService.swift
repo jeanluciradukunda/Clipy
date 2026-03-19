@@ -12,7 +12,7 @@ import Cocoa
 import Combine
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Queue")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "Queue")
 
 // MARK: - Queued Item
 struct QueuedClip: Identifiable, Equatable {

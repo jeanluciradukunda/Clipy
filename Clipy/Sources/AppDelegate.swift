@@ -18,7 +18,7 @@ import Magnet
 import ServiceManagement
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "App")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "App")
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSMenuItemValidation {

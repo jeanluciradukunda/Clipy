@@ -17,6 +17,11 @@ Track upcoming features. Mark `[x]` when complete.
 - [ ] **Fix KVO on computed UserDefaults properties** — `UserDefaults.publisher(for:)` on computed extension properties won't emit changes. Affects login item, status item, store types observers. Use `UserDefaults.didChangeNotification` instead
 - [ ] **Regenerate menu thumbnails on cache miss** — after relaunch NSCache is empty, menu items show no thumbnails. Load from `.data` file on miss and re-cache
 
+## Security Hardening
+- [ ] **Encrypt .data files on disk** — NSKeyedArchiver clip data files in `~/Library/Application Support/Clipy/` are unencrypted. Encrypt with CryptoKit AES-GCM using the same Keychain key as Realm
+- [ ] **Auto-clear pasteboard after paste** — content stays on system clipboard indefinitely after pasting. Add configurable auto-clear timer (e.g. 30s after paste)
+- [ ] **Clear clip data from memory on panel dismiss** — sensitive clip content in ViewModels persists in memory until garbage collection
+
 ## Privacy & Security
 - [ ] **Auto-expiring clips** — detect copies from password managers (1Password, Bitwarden) or banking apps and auto-delete after 30s. Use existing exclude app detection to identify source apps and apply per-app TTL rules
 - [ ] **Incognito mode** — hotkey-activated toggle that pauses clipboard recording. Status bar icon changes to indicate paused state. Useful during screen sharing or handling sensitive data

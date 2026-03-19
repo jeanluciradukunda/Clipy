@@ -15,14 +15,14 @@ import RealmSwift
 import Combine
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "ClipService")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "ClipService")
 
 final class ClipService {
 
     // MARK: - Properties
     private var cachedChangeCount: Int = 0
     private var storeTypes = [String: NSNumber]()
-    private let lock = NSRecursiveLock(name: "com.clipy-app.Clipy-Dev.ClipUpdatable")
+    private let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
     private var monitorTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 

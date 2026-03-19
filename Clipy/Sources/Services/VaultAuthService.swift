@@ -1,7 +1,7 @@
 //
 //  VaultAuthService.swift
 //
-//  Clipy Dev
+//  Clipy
 //
 //  Provides Touch ID / password authentication for vault snippet folders.
 //
@@ -10,7 +10,7 @@ import Foundation
 import LocalAuthentication
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "VaultAuth")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "VaultAuth")
 
 @MainActor
 final class VaultAuthService {

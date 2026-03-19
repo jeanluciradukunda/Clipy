@@ -11,7 +11,7 @@ import Foundation
 import Cocoa
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Defaults")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "Defaults")
 
 extension UserDefaults {
     func setArchiveData<T: NSCoding>(_ object: T, forKey key: String) {

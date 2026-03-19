@@ -11,7 +11,7 @@ import Foundation
 import RealmSwift
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Realm")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "Realm")
 
 extension Realm {
     func transaction(_ block: (() throws -> Void)) {

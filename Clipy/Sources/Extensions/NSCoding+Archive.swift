@@ -10,7 +10,7 @@
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Archive")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "Archive")
 
 extension NSCoding {
     func archive() -> Data {

@@ -15,7 +15,7 @@ import Magnet
 import RealmSwift
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "HotKey")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "HotKey")
 
 final class HotKeyService: NSObject {
 

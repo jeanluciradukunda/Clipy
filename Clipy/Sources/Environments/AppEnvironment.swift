@@ -12,7 +12,7 @@
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Environment")
+private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "Environment")
 
 struct AppEnvironment {
 
