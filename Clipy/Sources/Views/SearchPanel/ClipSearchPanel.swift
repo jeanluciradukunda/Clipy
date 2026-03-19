@@ -331,13 +331,26 @@ class ClipSearchViewModel: ObservableObject {
         guard let clip = selectedClip() else { return }
         guard let realm = Realm.safeInstance() else { return }
         guard let realmClip = realm.object(ofType: CPYClip.self, forPrimaryKey: clip.dataHash) else { return }
+
+        // Return cached OCR text if available
+        if let cached = realmClip.ocrText {
+            ocrText = cached
+            return
+        }
+
         guard let data = NSKeyedUnarchiver.unarchiveObject(withFile: realmClip.dataPath) as? CPYClipData,
               let image = data.image else { return }
         isRunningOCR = true
         ocrText = nil
+        let clipHash = clip.dataHash
         OCRService.recognizeText(in: image) { [weak self] text in
             self?.ocrText = text
             self?.isRunningOCR = false
+            // Cache OCR result in Realm
+            if let text, let realm = Realm.safeInstance(),
+               let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: clipHash) {
+                realm.transaction { clip.ocrText = text }
+            }
         }
     }
 

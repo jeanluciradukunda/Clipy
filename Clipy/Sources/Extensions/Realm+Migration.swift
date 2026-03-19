@@ -15,7 +15,7 @@ private let logger = Logger(subsystem: "com.clipy-app.Clipy-Dev", category: "Mig
 
 extension Realm {
     static func migration() {
-        let config = Realm.Configuration(schemaVersion: 9, migrationBlock: { migration, oldSchemaVersion in
+        let config = Realm.Configuration(schemaVersion: 10, migrationBlock: { migration, oldSchemaVersion in
             if oldSchemaVersion <= 2 {
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
                     newObject?["identifier"] = NSUUID().uuidString
@@ -63,6 +63,12 @@ extension Realm {
                 // Schema 9: Added isVault field to CPYFolder
                 migration.enumerateObjects(ofType: CPYFolder.className()) { _, newObject in
                     newObject?["isVault"] = false
+                }
+            }
+            if oldSchemaVersion <= 9 {
+                // Schema 10: Added ocrText field to CPYClip
+                migration.enumerateObjects(ofType: CPYClip.className()) { _, newObject in
+                    newObject?["ocrText"] = nil
                 }
             }
         })

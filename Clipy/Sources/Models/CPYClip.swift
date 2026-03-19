@@ -23,6 +23,7 @@ final class CPYClip: Object {
     @objc dynamic var thumbnailPath = ""
     @objc dynamic var isColorCode = false
     @objc dynamic var isPinned = false
+    @objc dynamic var ocrText: String?
 
     // MARK: Primary Key
     override static func primaryKey() -> String? {
