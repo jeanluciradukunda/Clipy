@@ -44,7 +44,7 @@ Open an issue with:
 - macOS version
 - Steps to reproduce
 - Expected vs actual behavior
-- Console logs if relevant (`log stream --process Clipy --predicate 'subsystem == "com.clipy-app.Clipy-Dev"' --level debug`)
+- Console logs if relevant (`log stream --process Clipy --predicate 'subsystem == "com.clipy-app.Clipy"' --level debug`)
 
 ### Suggesting Features
 
@@ -66,7 +66,7 @@ Check the [wishlist](wishlist.md) first — your idea might already be tracked. 
 
 - SwiftUI for all new UI (no new AppKit views unless necessary for system integration)
 - `@MainActor` for all view models and services that touch UI
-- Use `os.log` / `Logger` for debug logging (subsystem: `com.clipy-app.Clipy-Dev`)
+- Use `os.log` / `Logger` for debug logging (subsystem: `com.clipy-app.Clipy`)
 - Keep files under 500 lines where practical (SwiftLint warns at 500)
 
 ### Project Structure

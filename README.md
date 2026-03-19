@@ -185,7 +185,7 @@ open Clipy.xcworkspace
 ### Debugging
 
 ```bash
-log stream --process Clipy --predicate 'subsystem == "com.clipy-app.Clipy-Dev"' --level debug
+log stream --process Clipy --predicate 'subsystem == "com.clipy-app.Clipy"' --level debug
 ```
 
 ### Project Structure

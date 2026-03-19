@@ -72,7 +72,6 @@ final class ClipboardQueueService: ObservableObject {
 
     /// Sequential paste index — tracks which item to paste next
     private var sequentialIndex = 0
-    private var changeCountAtStart: Int = 0
     private var monitorTask: Task<Void, Never>?
 
     private init() {}
@@ -91,7 +90,6 @@ final class ClipboardQueueService: ObservableObject {
         guard !isCollecting else { return }
         queue.removeAll()
         sequentialIndex = 0
-        changeCountAtStart = NSPasteboard.general.changeCount
         isCollecting = true
         startMonitoring()
         logger.info("Collect mode started")

@@ -36,4 +36,4 @@ jobs:
             -destination 'platform=macOS' \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
-            build | xcpretty
+            build

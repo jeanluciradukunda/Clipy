@@ -39,9 +39,9 @@ jobs:
 
       - name: Create tag (if manual dispatch)
         if: github.event_name == 'workflow_dispatch'
-        run: |
-          git tag "v${{ inputs.version }}"
-          git push origin "v${{ inputs.version }}"
+        run: git tag "v${{ inputs.version }}"
+        # Tag is created locally for the release action — NOT pushed
+        # to avoid triggering a duplicate run via the push:tags trigger
 
       - name: Cache CocoaPods
         uses: actions/cache@v4

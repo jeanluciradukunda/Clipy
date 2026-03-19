@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Windows use borderless/titled style with transparent hosting views for clean rounded corners
 - Arrow key navigation supports hold-to-repeat in all panels
 - Pinned clips preserved when re-copying the same content
-- Realm schema migrated to v9 (added `isVault` to CPYFolder, `isPinned` to CPYClip)
+- Realm schema migrated to v10 (added `isPinned` and `ocrText` to CPYClip, `isVault` to CPYFolder)
 
 ### Attribution
 This project is a fork of [Clipy/Clipy](https://github.com/Clipy/Clipy) (v1.2.1), originally created by the Clipy Project. See [LICENSE](LICENSE) for details.
