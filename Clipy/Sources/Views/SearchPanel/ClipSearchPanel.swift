@@ -309,7 +309,12 @@ class ClipSearchViewModel: ObservableObject {
         guard let realm = Realm.safeInstance() else { return }
         guard let realmClip = realm.object(ofType: CPYClip.self, forPrimaryKey: clip.dataHash) else { return }
         UsageMetricsService.shared.track(.pasteFromPanel)
-        AppEnvironment.current.pasteService.copyToPasteboard(with: realmClip)
+        // Try full data file first, fall back to title text if .data is missing
+        if FileManager.default.fileExists(atPath: realmClip.dataPath) {
+            AppEnvironment.current.pasteService.copyToPasteboard(with: realmClip)
+        } else if !realmClip.title.isEmpty {
+            AppEnvironment.current.pasteService.copyToPasteboard(with: realmClip.title)
+        }
         ClipSearchWindowController.shared.dismissAndPaste()
     }
 
