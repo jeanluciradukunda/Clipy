@@ -202,6 +202,8 @@ extension ClipService {
                     dispatchRealm.transaction {
                         dispatchRealm.add(clip, update: .all)
                     }
+                    // Immediately evict oldest non-pinned clips over the limit
+                    AppEnvironment.current.dataCleanService.cleanDatas()
                 }
             }
         }
