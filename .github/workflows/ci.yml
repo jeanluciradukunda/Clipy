@@ -32,7 +32,6 @@ jobs:
           xcodebuild \
             -workspace Clipy.xcworkspace \
             -scheme Clipy \
-            -target Clipy \
             -configuration Debug \
             -destination 'platform=macOS' \
             ONLY_ACTIVE_ARCH=YES \
