@@ -272,6 +272,7 @@ struct DevClippyView: View {
 
 // MARK: - Developer Preferences
 struct DeveloperPreferencesView: View {
+    @AppStorage(Constants.Developer.hotkeysDisabled) private var hotkeysDisabled = false
     @State private var realmPath = ""
     @State private var realmSize = ""
     @State private var clipCount = 0
@@ -418,9 +419,9 @@ struct DeveloperPreferencesView: View {
                                 label: "Enabled",
                                 icon: "keyboard",
                                 color: .green,
-                                isSelected: !UserDefaults.standard.bool(forKey: Constants.Developer.hotkeysDisabled)
+                                isSelected: !hotkeysDisabled
                             ) {
-                                UserDefaults.standard.set(false, forKey: Constants.Developer.hotkeysDisabled)
+                                hotkeysDisabled = false
                                 AppEnvironment.current.hotKeyService.enableAllHotKeys()
                             }
 
@@ -428,9 +429,9 @@ struct DeveloperPreferencesView: View {
                                 label: "Disabled",
                                 icon: "keyboard.badge.ellipsis",
                                 color: .orange,
-                                isSelected: UserDefaults.standard.bool(forKey: Constants.Developer.hotkeysDisabled)
+                                isSelected: hotkeysDisabled
                             ) {
-                                UserDefaults.standard.set(true, forKey: Constants.Developer.hotkeysDisabled)
+                                hotkeysDisabled = true
                                 AppEnvironment.current.hotKeyService.disableAllHotKeys()
                             }
                         }
