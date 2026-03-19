@@ -226,7 +226,11 @@ extension AppDelegate: NSApplicationDelegate {
         // TipKit onboarding
         try? Tips.configure([.displayFrequency(.daily)])
 
+        #if DEBUG
+        logger.info("Clipy Dev (debug build) launched")
+        #else
         logger.info("Clipy launched successfully")
+        #endif
     }
 
 }

@@ -571,6 +571,30 @@ private extension MenuManager {
         removeStatusItem()
         if type == .none { return }
 
+        #if DEBUG
+        statusItem = NSStatusBar.system.statusItem(withLength: 44)
+        if let button = statusItem?.button {
+            let image: NSImage?
+            switch type {
+            case .black:
+                image = Asset.statusbarMenuBlack.image
+            case .white:
+                image = Asset.statusbarMenuWhite.image
+            case .none: return
+            }
+            image?.isTemplate = true
+            button.image = image
+            button.imagePosition = .imageLeading
+            // Add orange "DEV" badge
+            let devLabel = NSTextField(labelWithString: "DEV")
+            devLabel.font = NSFont.systemFont(ofSize: 7, weight: .bold)
+            devLabel.textColor = .orange
+            devLabel.sizeToFit()
+            devLabel.frame.origin = CGPoint(x: 20, y: 2)
+            button.addSubview(devLabel)
+            button.toolTip = "Clipy Dev \(Bundle.main.appVersion ?? "") (Debug Build)"
+        }
+        #else
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem?.button {
             let image: NSImage?
@@ -585,6 +609,7 @@ private extension MenuManager {
             button.image = image
             button.toolTip = "\(Constants.Application.name) \(Bundle.main.appVersion ?? "")"
         }
+        #endif
         statusItem?.menu = clipMenu
     }
 

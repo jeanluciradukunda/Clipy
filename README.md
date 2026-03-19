@@ -199,6 +199,18 @@ bundle exec pod install
 open Clipy.xcworkspace
 ```
 
+### Dev Build vs Release
+
+Both can coexist on the same Mac with separate data — just don't run both at the same time (hotkey conflicts).
+
+| | **Clipy** (Release) | **Clipy Dev** (Debug) |
+|---|---|---|
+| Bundle ID | `com.clipy-app.Clipy` | `com.clipy-app.Clipy-Dev.debug` |
+| Data directory | `~/Library/Application Support/com.clipy-app.Clipy/` | `~/Library/Application Support/com.clipy-app.Clipy-Dev.debug/` |
+| Menu bar | Standard icon | Icon with orange **DEV** badge |
+| Settings title | "Clipy Settings" | "Clipy Dev Settings" |
+| Install | DMG from Releases | `Cmd+R` in Xcode |
+
 ### Debugging
 
 ```bash

@@ -1083,7 +1083,11 @@ class ModernPreferencesWindowController: NSWindowController {
             backing: .buffered,
             defer: true
         )
+        #if DEBUG
+        window.title = "Clipy Dev Settings"
+        #else
         window.title = "Clipy Settings"
+        #endif
         window.titlebarAppearsTransparent = false
         window.isMovableByWindowBackground = false
         window.center()
