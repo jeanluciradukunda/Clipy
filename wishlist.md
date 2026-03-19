@@ -19,7 +19,7 @@ Track upcoming features. Mark `[x]` when complete.
 
 ## Security Hardening
 - [ ] **Encrypt .data files on disk** — NSKeyedArchiver clip data files in `~/Library/Application Support/Clipy/` are unencrypted. Encrypt with CryptoKit AES-GCM using the same Keychain key as Realm
-- [ ] **Auto-clear pasteboard after paste** — content stays on system clipboard indefinitely after pasting. Add configurable auto-clear timer (e.g. 30s after paste)
+- [ ] **Auto-clear pasteboard after vault paste** — when pasting from a vault-protected folder, auto-clear the system clipboard after 30s so sensitive content doesn't linger
 - [ ] **Clear clip data from memory on panel dismiss** — sensitive clip content in ViewModels persists in memory until garbage collection
 
 ## Privacy & Security
