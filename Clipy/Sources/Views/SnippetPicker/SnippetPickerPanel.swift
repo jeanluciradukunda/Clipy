@@ -308,6 +308,7 @@ struct SnippetPickerPanelView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
         )
+        .overlay(DevBadgeOverlay())
         .onAppear {
             viewModel.reset(filterFolderID: filterFolderID)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {

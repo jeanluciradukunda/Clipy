@@ -419,6 +419,7 @@ struct ModernSnippetsEditorView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
         )
+        .overlay(DevBadgeOverlay())
         .onAppear { viewModel.load() }
         .onChange(of: viewModel.needsRefocus) { _, needs in
             if needs {

@@ -462,6 +462,7 @@ struct ClipSearchPanelView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5)
         )
+        .overlay(DevBadgeOverlay())
         .onAppear {
             viewModel.reset()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -1020,6 +1021,28 @@ struct FilterChip: View {
 }
 
 // MARK: - Keyboard Hint (shared across panels)
+// MARK: - Dev Build Badge
+struct DevBadgeOverlay: View {
+    var body: some View {
+        #if DEBUG
+        VStack {
+            HStack {
+                Spacer()
+                Text("DEV")
+                    .font(.system(size: 8, weight: .black, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.orange)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .padding(8)
+            }
+            Spacer()
+        }
+        #endif
+    }
+}
+
 struct KeyboardHintView: View {
     let key: String
     let label: String
