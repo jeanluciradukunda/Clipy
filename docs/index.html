@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clipy — Clipboard Manager for macOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0c;
+  --surface:#111114;
+  --surface-2:#18181c;
+  --border:rgba(255,255,255,.06);
+  --border-hover:rgba(255,255,255,.12);
+  --text:#e8e8ec;
+  --text-dim:#8888a0;
+  --text-muted:#55556a;
+  --accent:#f97316;
+  --accent-glow:rgba(249,115,22,.15);
+  --blue:#3b82f6;
+  --purple:#a855f7;
+  --green:#22c55e;
+  --cyan:#06b6d4;
+  --radius:16px;
+  --font:'DM Sans',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{font-family:var(--font);color:var(--text);background:var(--bg);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* Noise overlay */
+body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
+
+/* Ambient glow */
+.glow-orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.glow-orb.orange{width:600px;height:600px;background:rgba(249,115,22,.04);top:-200px;right:-200px}
+.glow-orb.blue{width:500px;height:500px;background:rgba(59,130,246,.03);bottom:-100px;left:-150px}
+
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+/* ═══════════════ NAV ═══════════════ */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(10,10,12,.7);border-bottom:1px solid var(--border);transition:background .3s}
+nav .container{display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.02em}
+.nav-brand img{width:28px;height:28px;border-radius:6px}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-size:13px;color:var(--text-dim);transition:color .2s;font-weight:400}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;font-weight:500;color:var(--text);transition:all .2s;cursor:pointer}
+.nav-cta:hover{border-color:var(--border-hover);background:rgba(255,255,255,.06)}
+.nav-cta svg{width:14px;height:14px}
+
+/* ═══════════════ HERO ═══════════════ */
+.hero{padding:160px 0 100px;text-align:center;position:relative}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:11px;font-weight:500;color:var(--text-dim);margin-bottom:32px;letter-spacing:.02em}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(48px,8vw,80px);font-weight:700;letter-spacing:-.04em;line-height:.95;margin-bottom:20px}
+.hero h1 .gradient{background:linear-gradient(135deg,var(--accent),#fb923c,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:18px;color:var(--text-dim);max-width:520px;margin:0 auto 40px;line-height:1.6;font-weight:300}
+.hero-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ea580c);color:#fff;font-size:15px;font-weight:600;border:none;cursor:pointer;transition:all .25s;box-shadow:0 0 30px rgba(249,115,22,.2)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(249,115,22,.3)}
+.btn-primary svg{width:18px;height:18px}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:15px;font-weight:500;cursor:pointer;transition:all .25s}
+.btn-secondary:hover{border-color:var(--border-hover);background:var(--surface-2);transform:translateY(-2px)}
+.btn-secondary svg{width:16px;height:16px}
+.hero-meta{margin-top:48px;display:flex;gap:32px;justify-content:center;font-size:12px;color:var(--text-muted)}
+.hero-meta span{display:flex;align-items:center;gap:6px}
+
+/* ═══════════════ FEATURES ═══════════════ */
+.section{padding:100px 0}
+.section-label{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+.section-title{font-size:clamp(32px,5vw,44px);font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-bottom:16px}
+.section-desc{font-size:16px;color:var(--text-dim);max-width:560px;line-height:1.6;font-weight:300}
+
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:48px}
+.feature-card{padding:28px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);transition:all .3s;position:relative;overflow:hidden}
+.feature-card:hover{border-color:var(--border-hover);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+.feature-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px}
+.feature-card h3{font-size:15px;font-weight:600;margin-bottom:8px;letter-spacing:-.01em}
+.feature-card p{font-size:13px;color:var(--text-dim);line-height:1.55;font-weight:300}
+.fi-search{background:rgba(59,130,246,.1)}
+.fi-syntax{background:rgba(168,85,247,.1)}
+.fi-ocr{background:rgba(34,197,94,.1)}
+.fi-smart{background:rgba(249,115,22,.1)}
+.fi-snippet{background:rgba(6,182,212,.1)}
+.fi-vault{background:rgba(239,68,68,.1)}
+.fi-queue{background:rgba(234,179,8,.1)}
+.fi-keyboard{background:rgba(255,255,255,.05)}
+.kbd{display:inline-block;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-family:var(--mono);font-size:11px;color:var(--text-dim);line-height:1.4}
+
+/* ═══════════════ DEMO ═══════════════ */
+.demo-section{padding:80px 0;text-align:center}
+.demo-placeholder{margin:48px auto 0;max-width:800px;aspect-ratio:16/9;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;position:relative;overflow:hidden}
+.demo-placeholder::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(249,115,22,.03),transparent 70%)}
+
+/* ═══════════════ SCREENSHOTS ═══════════════ */
+.screenshots-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:48px}
+.screenshot-card{border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);overflow:hidden;transition:all .3s}
+.screenshot-card:hover{border-color:var(--border-hover);transform:translateY(-4px)}
+.screenshot-placeholder{aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(135deg,var(--surface),var(--surface-2))}
+.screenshot-label{padding:16px;text-align:center}
+.screenshot-label h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.screenshot-label p{font-size:12px;color:var(--text-muted)}
+
+/* ═══════════════ WHAT'S NEW ═══════════════ */
+.changelog{margin-top:48px;max-width:640px}
+.changelog-item{padding:20px 0;border-bottom:1px solid var(--border)}
+.changelog-item:last-child{border-bottom:none}
+.changelog-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+.tag-added{background:rgba(34,197,94,.1);color:#4ade80}
+.tag-improved{background:rgba(59,130,246,.1);color:#60a5fa}
+.tag-security{background:rgba(239,68,68,.1);color:#f87171}
+.changelog-item h4{font-size:14px;font-weight:500;margin-bottom:4px}
+.changelog-item p{font-size:12px;color:var(--text-muted);line-height:1.5}
+
+/* ═══════════════ CTA ═══════════════ */
+.cta-section{padding:80px 0;text-align:center}
+.cta-box{padding:60px 40px;border-radius:20px;background:linear-gradient(135deg,rgba(249,115,22,.05),rgba(59,130,246,.03));border:1px solid var(--border);position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.4}
+
+/* ═══════════════ FOOTER ═══════════════ */
+footer{padding:40px 0;border-top:1px solid var(--border);text-align:center}
+footer p{font-size:12px;color:var(--text-muted);line-height:1.8}
+footer a{color:var(--text-dim);text-decoration:underline;text-decoration-color:rgba(255,255,255,.1);text-underline-offset:2px;transition:color .2s}
+footer a:hover{color:var(--accent)}
+.footer-clippy{margin:20px auto 24px;opacity:.5;transition:opacity .3s}
+.footer-clippy:hover{opacity:.9}
+
+/* ═══════════════ SVG CHARACTERS ═══════════════ */
+.clippy-svg{filter:drop-shadow(0 2px 8px rgba(249,115,22,.1))}
+
+/* ═══════════════ SCROLL ANIMATIONS ═══════════════ */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+.reveal-delay-4{transition-delay:.4s}
+
+/* ═══════════════ MOBILE ═══════════════ */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .hero{padding:120px 0 60px}
+  .hero-meta{flex-wrap:wrap;gap:16px}
+  .features-grid{grid-template-columns:1fr}
+  .screenshots-grid{grid-template-columns:1fr}
+  .hero-buttons{flex-direction:column;align-items:center}
+  .cta-box{padding:40px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- Ambient -->
+<div class="glow-orb orange"></div>
+<div class="glow-orb blue"></div>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <a href="#" class="nav-brand">
+      <img src="../Resources/clipy_logo.png" alt="Clipy" onerror="this.style.display='none'">
+      Clipy
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#demo">Demo</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#changelog">What's New</a>
+      <a href="https://github.com/jeanluciradukunda/Clipy" class="nav-cta">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Star on GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge reveal">
+      <span class="dot"></span>
+      v2.0.0 — Complete SwiftUI Rewrite
+    </div>
+    <h1 class="reveal reveal-delay-1">Your clipboard,<br><span class="gradient">supercharged.</span></h1>
+    <p class="reveal reveal-delay-2">A modern clipboard manager for macOS — rebuilt with a Spotlight-style search panel, syntax highlighting, OCR, smart actions, vault protection, and way too many keyboard shortcuts.</p>
+    <div class="hero-buttons reveal reveal-delay-3">
+      <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 8v8m-4-4l4 4 4-4"/></svg>
+        Download for macOS
+      </a>
+      <a href="https://github.com/jeanluciradukunda/Clipy" class="btn-secondary">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+    <div class="hero-meta reveal reveal-delay-4">
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 3v3m8-3v3"/></svg>
+        macOS 14.0+
+      </span>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        MIT Licensed
+      </span>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        Built with SwiftUI
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-label reveal">Features</div>
+    <h2 class="section-title reveal reveal-delay-1">Everything you didn't know<br>your clipboard needed.</h2>
+    <p class="section-desc reveal reveal-delay-2">Clipy v2 is a complete rewrite. Every panel, every shortcut, every pixel — rebuilt from scratch in SwiftUI.</p>
+
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-search">&#x1F50D;</div>
+        <h3>Spotlight-style Search</h3>
+        <p>Fuzzy search across your entire clipboard history. Filter by text, images, links, files, or pinned items. Split-pane preview with rich content rendering.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon fi-syntax">&#x1F308;</div>
+        <h3>Syntax Highlighting</h3>
+        <p>Auto-detects 16+ languages — JSON, Python, Swift, JavaScript, SQL, and more. Code looks like code, not a wall of text.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon fi-ocr">&#x1F441;</div>
+        <h3>Image OCR</h3>
+        <p>Extract text from any image clip using macOS Vision. Results are cached — run it once, see it forever. No internet required.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon fi-smart">&#x26A1;</div>
+        <h3>Smart Actions</h3>
+        <p>JSON pretty-print & minify. URL tracking parameter cleanup (50+ trackers). Text transforms. Clickable URL, email, and phone badges.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon fi-snippet">&#x1F4CB;</div>
+        <h3>Snippet Picker</h3>
+        <p>Browse and paste snippets from a Spotlight-style panel. Dynamic variables — <span class="kbd">%DATE%</span> <span class="kbd">%CLIPBOARD%</span> <span class="kbd">%UUID%</span> — expand at paste time.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon fi-vault">&#x1F512;</div>
+        <h3>Vault Folders</h3>
+        <p>Protect sensitive snippets with Touch ID or password. Vault content is excluded from search, export, and the picker until you authenticate.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon fi-queue">&#x1F4E5;</div>
+        <h3>Clipboard Queue</h3>
+        <p>Collect multiple clips in sequence, then paste them all at once — merged with any separator, or one-by-one. Like a clipboard playlist.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-4">
+        <div class="feature-icon fi-keyboard">&#x2328;</div>
+        <h3>Keyboard-first</h3>
+        <p>Two-digit quick select (type <span class="kbd">1</span><span class="kbd">5</span> for item 15). Arrow navigation. <span class="kbd">&#x2318;P</span> to pin. Every shortcut is configurable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Demo -->
+<section class="demo-section" id="demo">
+  <div class="container">
+    <div class="section-label reveal">Demo</div>
+    <h2 class="section-title reveal reveal-delay-1">See it in action.</h2>
+    <p class="section-desc reveal reveal-delay-2" style="margin:0 auto">A quick walkthrough of Clipy's search panel, snippet picker, and smart actions.</p>
+
+    <div class="demo-placeholder reveal reveal-delay-3">
+      <!-- Clippy eating popcorn watching a screen -->
+      <svg class="clippy-svg" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Screen -->
+        <rect x="15" y="20" width="50" height="35" rx="3" stroke="#555" stroke-width="1.5" fill="none"/>
+        <line x1="40" y1="55" x2="40" y2="62" stroke="#555" stroke-width="1.5"/>
+        <line x1="30" y1="62" x2="50" y2="62" stroke="#555" stroke-width="1.5"/>
+        <!-- Screen content lines -->
+        <line x1="22" y1="30" x2="42" y2="30" stroke="#f97316" stroke-width="1" opacity=".5"/>
+        <line x1="22" y1="35" x2="55" y2="35" stroke="#3b82f6" stroke-width="1" opacity=".4"/>
+        <line x1="22" y1="40" x2="48" y2="40" stroke="#a855f7" stroke-width="1" opacity=".3"/>
+        <line x1="22" y1="45" x2="38" y2="45" stroke="#22c55e" stroke-width="1" opacity=".4"/>
+        <!-- Paperclip body -->
+        <path d="M85 35 C85 25, 95 20, 100 28 C105 36, 95 42, 90 42 C85 42, 78 38, 78 45 C78 52, 88 55, 92 48" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Eyes -->
+        <circle cx="90" cy="32" r="1.5" fill="var(--accent)"/>
+        <circle cx="96" cy="30" r="1.5" fill="var(--accent)"/>
+        <!-- Smile -->
+        <path d="M89 36 Q93 40 97 35" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" fill="none"/>
+        <!-- Popcorn bucket -->
+        <path d="M80 50 L76 68 L96 68 L92 50 Z" stroke="#eab308" stroke-width="1.5" fill="rgba(234,179,8,.1)"/>
+        <line x1="80" y1="56" x2="92" y2="56" stroke="#eab308" stroke-width=".5" opacity=".5"/>
+        <!-- Popcorn pieces -->
+        <circle cx="82" cy="48" r="2.5" fill="#fbbf24" opacity=".7"/>
+        <circle cx="87" cy="46" r="3" fill="#fde68a" opacity=".6"/>
+        <circle cx="91" cy="47" r="2" fill="#fbbf24" opacity=".8"/>
+        <circle cx="85" cy="44" r="2" fill="#fef3c7" opacity=".5"/>
+        <!-- Arm holding popcorn -->
+        <path d="M88 42 Q84 46 82 50" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      </svg>
+      <div>
+        <p style="font-size:14px;font-weight:500;color:var(--text-dim)">Demo video coming soon</p>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Record with Screen Studio and drop it here</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshots -->
+<section class="section" id="screenshots">
+  <div class="container">
+    <div class="section-label reveal">Screenshots</div>
+    <h2 class="section-title reveal reveal-delay-1">A closer look.</h2>
+
+    <div class="screenshots-grid">
+      <!-- Search Panel — Clippy taking a selfie -->
+      <div class="screenshot-card reveal">
+        <div class="screenshot-placeholder">
+          <svg class="clippy-svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
+            <!-- Phone/camera -->
+            <rect x="55" y="18" width="22" height="38" rx="4" stroke="#555" stroke-width="1.5" fill="none"/>
+            <circle cx="66" cy="24" r="2" stroke="#555" stroke-width="1"/>
+            <rect x="59" y="30" width="14" height="10" rx="1" stroke="#3b82f6" stroke-width="1" fill="rgba(59,130,246,.08)"/>
+            <!-- Paperclip posing -->
+            <path d="M38 30 C38 18, 50 14, 55 24 C60 34, 48 40, 42 40 C36 40, 28 35, 28 44 C28 53, 40 56, 44 48" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <!-- Eyes (looking at camera) -->
+            <circle cx="44" cy="27" r="1.5" fill="var(--accent)"/>
+            <circle cx="50" cy="24" r="1.5" fill="var(--accent)"/>
+            <!-- Big smile -->
+            <path d="M43 31 Q48 37 52 30" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+            <!-- Peace sign arm -->
+            <path d="M34 38 L28 52" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M28 52 L24 46" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M28 52 L26 44" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Selfie arm -->
+            <path d="M50 34 Q58 28 58 22" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <text x="30" y="78" font-family="var(--mono)" font-size="8" fill="#555">say cheese!</text>
+          </svg>
+        </div>
+        <div class="screenshot-label">
+          <h3>Search Panel</h3>
+          <p>Replace this with a screenshot of the search panel</p>
+        </div>
+      </div>
+
+      <!-- Snippet Editor — Clippy coding -->
+      <div class="screenshot-card reveal reveal-delay-1">
+        <div class="screenshot-placeholder">
+          <svg class="clippy-svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
+            <!-- Laptop -->
+            <rect x="20" y="35" width="40" height="28" rx="2" stroke="#555" stroke-width="1.5" fill="none"/>
+            <path d="M15 63 L65 63" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Code on screen -->
+            <text x="25" y="44" font-family="monospace" font-size="5" fill="#a855f7">func</text>
+            <text x="38" y="44" font-family="monospace" font-size="5" fill="#22c55e">paste()</text>
+            <text x="27" y="50" font-family="monospace" font-size="5" fill="#3b82f6">  let clip =</text>
+            <text x="27" y="56" font-family="monospace" font-size="5" fill="#f97316">  return ✨</text>
+            <!-- Paperclip with glasses -->
+            <path d="M72 25 C72 15, 82 10, 87 18 C92 26, 82 32, 78 32 C74 32, 68 28, 68 35 C68 42, 78 45, 82 38" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <!-- Nerd glasses -->
+            <circle cx="78" cy="21" r="3.5" stroke="var(--accent)" stroke-width="1" fill="none"/>
+            <circle cx="85" cy="19" r="3.5" stroke="var(--accent)" stroke-width="1" fill="none"/>
+            <line x1="81" y1="20" x2="82" y2="19" stroke="var(--accent)" stroke-width="1"/>
+            <!-- Eyes behind glasses -->
+            <circle cx="78" cy="21" r="1" fill="var(--accent)"/>
+            <circle cx="85" cy="19" r="1" fill="var(--accent)"/>
+            <!-- Concentration mouth -->
+            <path d="M78 26 L83 25" stroke="var(--accent)" stroke-width="1" stroke-linecap="round"/>
+            <!-- Coffee -->
+            <path d="M70 42 L68 55 L76 55 L74 42 Z" stroke="#8B4513" stroke-width="1" fill="rgba(139,69,19,.1)"/>
+            <path d="M69 48 Q72 44 75 48" stroke="rgba(200,200,200,.3)" stroke-width=".7" fill="none"/>
+            <text x="66" y="72" font-family="var(--mono)" font-size="8" fill="#555">in the zone</text>
+          </svg>
+        </div>
+        <div class="screenshot-label">
+          <h3>Snippet Editor</h3>
+          <p>Replace this with a screenshot of the snippet editor</p>
+        </div>
+      </div>
+
+      <!-- Preferences — Clippy adjusting settings -->
+      <div class="screenshot-card reveal reveal-delay-2">
+        <div class="screenshot-placeholder">
+          <svg class="clippy-svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
+            <!-- Settings gear (big) -->
+            <circle cx="35" cy="40" r="12" stroke="#555" stroke-width="1.5" fill="none"/>
+            <circle cx="35" cy="40" r="5" stroke="#555" stroke-width="1" fill="none"/>
+            <!-- Gear teeth -->
+            <line x1="35" y1="26" x2="35" y2="30" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <line x1="35" y1="50" x2="35" y2="54" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <line x1="21" y1="40" x2="25" y2="40" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <line x1="45" y1="40" x2="49" y2="40" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <line x1="26" y1="31" x2="29" y2="34" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <line x1="41" y1="46" x2="44" y2="49" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <line x1="26" y1="49" x2="29" y2="46" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <line x1="41" y1="34" x2="44" y2="31" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+            <!-- Paperclip with wrench -->
+            <path d="M68 28 C68 18, 78 14, 83 22 C88 30, 78 36, 74 36 C70 36, 64 32, 64 39 C64 46, 74 49, 78 42" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <!-- Eyes -->
+            <circle cx="74" cy="24" r="1.5" fill="var(--accent)"/>
+            <circle cx="80" cy="22" r="1.5" fill="var(--accent)"/>
+            <!-- Focused expression -->
+            <path d="M73 28 Q77 30 80 27" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" fill="none"/>
+            <!-- Wrench in hand -->
+            <path d="M65 36 L55 48" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="54" cy="49" r="3" stroke="#888" stroke-width="1.5" fill="none"/>
+            <!-- Toggle switches -->
+            <rect x="56" y="60" width="20" height="6" rx="3" stroke="#22c55e" stroke-width="1" fill="rgba(34,197,94,.15)"/>
+            <circle cx="72" cy="63" r="2.5" fill="#22c55e"/>
+            <rect x="56" y="70" width="20" height="6" rx="3" stroke="#555" stroke-width="1" fill="rgba(255,255,255,.03)"/>
+            <circle cx="60" cy="73" r="2.5" fill="#555"/>
+            <text x="56" y="90" font-family="var(--mono)" font-size="8" fill="#555">tweaking...</text>
+          </svg>
+        </div>
+        <div class="screenshot-label">
+          <h3>Preferences</h3>
+          <p>Replace this with a screenshot of the settings panel</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- What's New -->
+<section class="section" id="changelog">
+  <div class="container">
+    <div class="section-label reveal">What's New</div>
+    <h2 class="section-title reveal reveal-delay-1">v2.0.0 — The Big One</h2>
+    <p class="section-desc reveal reveal-delay-2">A complete rewrite of Clipy. Everything is new.</p>
+
+    <div class="changelog">
+      <div class="changelog-item reveal">
+        <span class="changelog-tag tag-added">Added</span>
+        <h4>SwiftUI Search Panel</h4>
+        <p>Spotlight-style split-pane UI with fuzzy search, content filters, syntax highlighting, and rich preview.</p>
+      </div>
+      <div class="changelog-item reveal reveal-delay-1">
+        <span class="changelog-tag tag-added">Added</span>
+        <h4>OCR with Caching</h4>
+        <p>Extract text from images using Vision framework. Results cached in Realm — instant on subsequent views.</p>
+      </div>
+      <div class="changelog-item reveal reveal-delay-2">
+        <span class="changelog-tag tag-added">Added</span>
+        <h4>Vault Folders</h4>
+        <p>Touch ID / password protection for sensitive snippet folders. Hidden from search and export when locked.</p>
+      </div>
+      <div class="changelog-item reveal reveal-delay-1">
+        <span class="changelog-tag tag-improved">Improved</span>
+        <h4>Snippet Editor</h4>
+        <p>Full keyboard navigation, inline rename, variable insertion bar, XML import/export. Arrow keys to browse, expand, collapse.</p>
+      </div>
+      <div class="changelog-item reveal reveal-delay-2">
+        <span class="changelog-tag tag-improved">Improved</span>
+        <h4>All Preferences in SwiftUI</h4>
+        <p>Modern settings window — clipboard types, excluded apps, shortcuts, developer mode. No more legacy XIBs (except global hotkeys).</p>
+      </div>
+      <div class="changelog-item reveal reveal-delay-3">
+        <span class="changelog-tag tag-security">Security</span>
+        <h4>Pin Preservation & LIFO Enforcement</h4>
+        <p>Pinned clips stay pinned when re-copied. History strictly respects size limit with immediate eviction.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2 style="font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-.03em;margin-bottom:12px">Ready to upgrade your clipboard?</h2>
+      <p style="font-size:16px;color:var(--text-dim);margin-bottom:32px;font-weight:300">Free, open source, and built for people who copy things a lot.</p>
+      <div class="hero-buttons">
+        <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 8v8m-4-4l4 4 4-4"/></svg>
+          Download v2.0.0
+        </a>
+        <a href="https://github.com/jeanluciradukunda/Clipy" class="btn-secondary">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          Contribute on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <!-- Sleeping Clippy -->
+    <div class="footer-clippy">
+      <svg class="clippy-svg" width="80" height="60" viewBox="0 0 80 60" fill="none">
+        <!-- Paperclip body (lying down) -->
+        <path d="M15 35 C10 35, 8 28, 14 25 C20 22, 28 28, 28 32 C28 36, 22 40, 35 40 C48 40, 52 35, 52 30 C52 25, 45 22, 42 28" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" fill="none" opacity=".5"/>
+        <!-- Closed eyes -->
+        <path d="M20 28 Q22 26 24 28" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+        <path d="M28 26 Q30 24 32 26" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+        <!-- Sleeping mouth -->
+        <path d="M23 32 Q26 33 29 31" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" opacity=".4"/>
+        <!-- Zzz -->
+        <text font-family="var(--mono)" font-weight="700" fill="var(--accent)" opacity=".3">
+          <tspan x="45" y="22" font-size="10">z</tspan>
+          <tspan x="52" y="16" font-size="12">z</tspan>
+          <tspan x="60" y="10" font-size="14">z</tspan>
+        </text>
+        <!-- Pillow -->
+        <ellipse cx="18" cy="38" rx="10" ry="4" stroke="var(--accent)" stroke-width="1" fill="rgba(249,115,22,.03)" opacity=".3"/>
+      </svg>
+    </div>
+
+    <p>
+      Built with love, SwiftUI, and an mass quantities of caffeine.<br>
+      <a href="https://github.com/jeanluciradukunda/Clipy">GitHub</a> &middot;
+      <a href="https://github.com/jeanluciradukunda/Clipy/releases">Releases</a> &middot;
+      <a href="https://github.com/jeanluciradukunda/Clipy/issues">Issues</a>
+    </p>
+    <p style="margin-top:12px;font-size:11px">
+      MIT License &middot; Forked from <a href="https://github.com/Clipy/Clipy">Clipy Project</a> &middot; Originally inspired by <a href="https://github.com/naotaka/ClipMenu">ClipMenu</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }});
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Smooth nav background on scroll
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  nav.style.background = window.scrollY > 50 ? 'rgba(10,10,12,.85)' : 'rgba(10,10,12,.7)';
+});
+</script>
+</body>
+</html>
