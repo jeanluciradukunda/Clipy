@@ -56,6 +56,11 @@ jobs:
           gem install cocoapods
           pod install
 
+      - name: Set version in Info.plist
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.VERSION }}" "Clipy/Supporting Files/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.VERSION }}" "Clipy/Supporting Files/Info.plist"
+
       - name: Archive
         run: |
           xcodebuild \
