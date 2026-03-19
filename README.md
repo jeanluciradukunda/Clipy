@@ -207,7 +207,7 @@ Clipy/Sources/
 
 ## Roadmap
 
-See [wishlist.md](wishlist.md) for the full feature roadmap and progress.
+See [Issues](https://github.com/jeanluciradukunda/Clipy/issues) for the full feature roadmap. Look for `good first issue` labels if you'd like to contribute.
 
 ---
 
