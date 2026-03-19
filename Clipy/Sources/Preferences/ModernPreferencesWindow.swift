@@ -9,15 +9,17 @@
 import SwiftUI
 import Cocoa
 import TipKit
+import RealmSwift
 
 // MARK: - Preferences Tab
-enum PreferenceTab: String, CaseIterable, Identifiable {
+enum PreferenceTab: String, Identifiable {
     case general = "General"
     case menu = "Menu"
     case types = "Types"
     case shortcuts = "Shortcuts"
     case excludedApps = "Excluded Apps"
     case updates = "Updates"
+    case developer = "Developer"
 
     var id: String { rawValue }
 
@@ -29,26 +31,37 @@ enum PreferenceTab: String, CaseIterable, Identifiable {
         case .shortcuts: return "keyboard"
         case .excludedApps: return "xmark.app"
         case .updates: return "arrow.triangle.2.circlepath"
+        case .developer: return "hammer"
         }
+    }
+
+    /// Tabs visible by default (developer tab requires dev mode)
+    static var visibleTabs: [PreferenceTab] {
+        var tabs: [PreferenceTab] = [.general, .menu, .types, .shortcuts, .excludedApps, .updates]
+        if UserDefaults.standard.bool(forKey: Constants.Developer.devModeEnabled) {
+            tabs.append(.developer)
+        }
+        return tabs
     }
 }
 
 // MARK: - Main Preferences View
 struct ModernPreferencesView: View {
     @State private var selectedTab: PreferenceTab = .general
+    @AppStorage(Constants.Developer.devModeEnabled) private var devMode = false
 
     var body: some View {
         HStack(spacing: 0) {
             // Sidebar
             VStack(spacing: 2) {
-                ForEach(PreferenceTab.allCases) { tab in
+                ForEach(PreferenceTab.visibleTabs) { tab in
                     Button {
                         selectedTab = tab
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: tab.icon)
                                 .font(.system(size: 13))
-                                .foregroundStyle(selectedTab == tab ? .white : .secondary)
+                                .foregroundStyle(selectedTab == tab ? .white : tab == .developer ? .orange : .secondary)
                                 .frame(width: 22)
                             Text(tab.rawValue)
                                 .font(.system(size: 12, weight: selectedTab == tab ? .medium : .regular))
@@ -63,6 +76,11 @@ struct ModernPreferencesView: View {
                     .buttonStyle(.plain)
                 }
                 Spacer()
+
+                if devMode {
+                    DevClippyView()
+                        .padding(.bottom, 4)
+                }
             }
             .padding(12)
             .frame(width: 160)
@@ -78,18 +96,25 @@ struct ModernPreferencesView: View {
                 case .menu:
                     MenuPreferencesView()
                 case .types:
-                    LegacyPanelView(nibName: "CPYTypePreferenceViewController")
+                    ClipboardTypesPreferencesView()
                 case .shortcuts:
                     ShortcutsPreferencesView()
                 case .excludedApps:
-                    LegacyPanelView(nibName: "CPYExcludeAppPreferenceViewController")
+                    ExcludedAppsPreferencesView()
                 case .updates:
                     UpdatesPreferencesView()
+                case .developer:
+                    DeveloperPreferencesView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 600, height: 440)
+        .onChange(of: devMode) { _, enabled in
+            if !enabled && selectedTab == .developer {
+                selectedTab = .general
+            }
+        }
     }
 }
 
@@ -115,6 +140,11 @@ struct GeneralPreferencesView: View {
 
     @AppStorage(Constants.Snippets.useModernPicker)
     private var useModernSnippetPicker = true
+
+    @AppStorage(Constants.Developer.devModeEnabled)
+    private var devMode = false
+
+    @State private var showDevWarning = false
 
     var body: some View {
         Form {
@@ -157,9 +187,300 @@ struct GeneralPreferencesView: View {
             } header: {
                 Label("Appearance", systemImage: "paintbrush")
             }
+
+            Section {
+                HStack(spacing: 10) {
+                    Image(systemName: "hammer.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Toggle("Developer Mode", isOn: Binding(
+                            get: { devMode },
+                            set: { newValue in
+                                if newValue { showDevWarning = true }
+                                else { devMode = false }
+                            }
+                        ))
+                        .font(.system(size: 12, weight: .medium))
+                        Text("Unlocks the Developer tab with debug tools, tip management, and database info.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .alert("Enable Developer Mode?", isPresented: $showDevWarning) {
+                    Button("Cancel", role: .cancel) {}
+                    Button("Enable") { devMode = true }
+                } message: {
+                    Text("With great power comes great responsibility... and occasionally a corrupted database. You've been warned.")
+                }
+            } header: {
+                Label("Advanced", systemImage: "wrench.and.screwdriver")
+            }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+    }
+}
+
+// MARK: - Dev Clippy Easter Egg
+struct DevClippyView: View {
+    @State private var bounce = false
+    @State private var noteIndex = 0
+
+    private let notes = ["music.note", "music.quarternote.3", "music.note.list", "music.mic"]
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                // Clippy body — a paperclip vibing
+                Image(systemName: "paperclip")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundStyle(.orange.opacity(0.6))
+                    .rotationEffect(.degrees(bounce ? -8 : 8))
+
+                // Headphones
+                Image(systemName: "headphones")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.orange.opacity(0.8))
+                    .offset(x: 0, y: -14)
+
+                // Floating music note
+                Image(systemName: notes[noteIndex])
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.purple.opacity(0.6))
+                    .offset(x: bounce ? 14 : 10, y: bounce ? -22 : -18)
+                    .scaleEffect(bounce ? 1.2 : 0.8)
+            }
+            .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: bounce)
+
+            Text("vibing...")
+                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .foregroundStyle(.quaternary)
+        }
+        .onAppear {
+            bounce = true
+            // Cycle through music notes
+            Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { _ in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    noteIndex = (noteIndex + 1) % notes.count
+                }
+            }
+        }
+        .frame(height: 50)
+    }
+}
+
+// MARK: - Developer Preferences
+struct DeveloperPreferencesView: View {
+    @State private var realmPath = ""
+    @State private var realmSize = ""
+    @State private var clipCount = 0
+    @State private var folderCount = 0
+    @State private var snippetCount = 0
+    @State private var showResetTipsConfirm = false
+    @State private var showClearHistoryConfirm = false
+    @State private var tipStatus = "Normal"
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Header
+                HStack(spacing: 12) {
+                    Image(systemName: "hammer.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Developer Tools")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Here be dragons. Handle with care.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+
+                // TipKit Management
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Onboarding Tips", systemImage: "lightbulb")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        HStack(spacing: 8) {
+                            Text("Status:")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                            Text(tipStatus)
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.green)
+                        }
+
+                        HStack(spacing: 8) {
+                            Button("Reset All Tips") {
+                                showResetTipsConfirm = true
+                            }
+                            .alert("Reset all tips?", isPresented: $showResetTipsConfirm) {
+                                Button("Cancel", role: .cancel) {}
+                                Button("Reset") { resetTips() }
+                            } message: {
+                                Text("All onboarding tips will appear again as if the app was freshly installed.")
+                            }
+
+                            Button("Show All Tips Now") {
+                                showAllTips()
+                            }
+
+                            Button("Hide All Tips") {
+                                hideAllTips()
+                            }
+                        }
+
+                        Text("Reset tips to test onboarding flow. \"Show All\" forces all tips to display immediately.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(8)
+                }
+                .padding(.horizontal, 24)
+
+                // Database Info
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Realm Database", systemImage: "cylinder.split.1x2")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 4) {
+                            GridRow {
+                                Text("Path:").font(.system(size: 11)).foregroundStyle(.secondary)
+                                Text(realmPath)
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                    .textSelection(.enabled)
+                            }
+                            GridRow {
+                                Text("Size:").font(.system(size: 11)).foregroundStyle(.secondary)
+                                Text(realmSize).font(.system(size: 11, design: .monospaced))
+                            }
+                            GridRow {
+                                Text("Clips:").font(.system(size: 11)).foregroundStyle(.secondary)
+                                Text("\(clipCount)").font(.system(size: 11, design: .monospaced))
+                            }
+                            GridRow {
+                                Text("Folders:").font(.system(size: 11)).foregroundStyle(.secondary)
+                                Text("\(folderCount)").font(.system(size: 11, design: .monospaced))
+                            }
+                            GridRow {
+                                Text("Snippets:").font(.system(size: 11)).foregroundStyle(.secondary)
+                                Text("\(snippetCount)").font(.system(size: 11, design: .monospaced))
+                            }
+                        }
+
+                        HStack(spacing: 8) {
+                            Button("Reveal in Finder") {
+                                let url = URL(fileURLWithPath: realmPath)
+                                NSWorkspace.shared.selectFile(realmPath, inFileViewerRootedAtPath: url.deletingLastPathComponent().path)
+                            }
+
+                            Button("Refresh") { loadDatabaseInfo() }
+                        }
+                    }
+                    .padding(8)
+                }
+                .padding(.horizontal, 24)
+
+                // Shortcuts
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Panel Shortcuts", systemImage: "keyboard")
+                            .font(.system(size: 13, weight: .semibold))
+
+                        Button("Reset All Shortcuts to Defaults") {
+                            PanelShortcutService.shared.resetAll()
+                        }
+
+                        Text("Restores Paste (\u{21A9}), Plain Text (\u{21E7}\u{21A9}), Pin (\u{2318}D), Delete (\u{2318}\u{232B}), OCR (\u{2318}O), Share (\u{2318}S)")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(8)
+                }
+                .padding(.horizontal, 24)
+
+                // Danger Zone
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Danger Zone", systemImage: "exclamationmark.triangle.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.red)
+
+                        Button("Clear All Clipboard History", role: .destructive) {
+                            showClearHistoryConfirm = true
+                        }
+                        .alert("Clear all history?", isPresented: $showClearHistoryConfirm) {
+                            Button("Cancel", role: .cancel) {}
+                            Button("Clear Everything", role: .destructive) { clearAllHistory() }
+                        } message: {
+                            Text("This will permanently delete all clipboard history. Snippets will not be affected.")
+                        }
+
+                        Text("Permanently removes all clips. Snippets and folders are preserved.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(8)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 12)
+            }
+        }
+        .onAppear { loadDatabaseInfo() }
+    }
+
+    // MARK: - Actions
+
+    private func resetTips() {
+        try? Tips.resetDatastore()
+        try? Tips.configure([.displayFrequency(.immediate)])
+        tipStatus = "Reset — all tips will show again"
+    }
+
+    private func showAllTips() {
+        try? Tips.resetDatastore()
+        try? Tips.configure([.displayFrequency(.immediate)])
+        Tips.showAllTipsForTesting()
+        tipStatus = "Showing all tips"
+    }
+
+    private func hideAllTips() {
+        Tips.hideAllTipsForTesting()
+        tipStatus = "All tips hidden"
+    }
+
+    private func loadDatabaseInfo() {
+        if let url = Realm.Configuration.defaultConfiguration.fileURL {
+            realmPath = url.path
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+               let size = attrs[.size] as? Int {
+                realmSize = ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+            }
+        }
+        if let realm = Realm.safeInstance() {
+            clipCount = realm.objects(CPYClip.self).count
+            folderCount = realm.objects(CPYFolder.self).count
+            snippetCount = realm.objects(CPYSnippet.self).count
+        }
+    }
+
+    private func clearAllHistory() {
+        guard let realm = Realm.safeInstance() else { return }
+        let clips = realm.objects(CPYClip.self)
+        // Delete data files
+        clips.forEach { clip in
+            try? FileManager.default.removeItem(atPath: clip.dataPath)
+        }
+        realm.transaction { realm.delete(clips) }
+        loadDatabaseInfo()
     }
 }
 
@@ -326,62 +647,280 @@ struct MenuPreferencesView: View {
     }
 }
 
-// MARK: - Updates Preferences
-struct UpdatesPreferencesView: View {
-    @AppStorage(Constants.Update.enableAutomaticCheck)
-    private var autoCheck = true
+// MARK: - Clipboard Types Preferences
+struct ClipboardTypeItem: Identifiable {
+    let id: String
+    let label: String
+    let icon: String
+    let desc: String
+}
 
-    @AppStorage(Constants.Update.checkInterval)
-    private var checkInterval = 86400
+private let clipboardTypes: [ClipboardTypeItem] = [
+    ClipboardTypeItem(id: "String", label: "Plain Text", icon: "doc.plaintext", desc: "Basic text content from any app"),
+    ClipboardTypeItem(id: "RTF", label: "Rich Text (RTF)", icon: "doc.richtext", desc: "Formatted text with fonts, colors, and styles"),
+    ClipboardTypeItem(id: "RTFD", label: "Rich Text Directory (RTFD)", icon: "doc.richtext.fill", desc: "Rich text with embedded images and attachments"),
+    ClipboardTypeItem(id: "PDF", label: "PDF", icon: "doc.fill", desc: "PDF documents and page content"),
+    ClipboardTypeItem(id: "Filenames", label: "File References", icon: "doc.on.doc", desc: "Copied file and folder paths from Finder"),
+    ClipboardTypeItem(id: "URL", label: "URLs", icon: "link", desc: "Web addresses and links"),
+    ClipboardTypeItem(id: "TIFF", label: "Images", icon: "photo", desc: "Screenshots, copied images, and graphics"),
+]
+
+struct ClipboardTypesPreferencesView: View {
+    @State private var storeTypes: [String: Bool] = [:]
 
     var body: some View {
         Form {
             Section {
-                Toggle("Check for updates automatically", isOn: $autoCheck)
+                ForEach(clipboardTypes) { type in
+                    HStack(spacing: 10) {
+                        Image(systemName: type.icon)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                        Toggle(isOn: binding(for: type.id)) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(type.label)
+                                    .font(.system(size: 12, weight: .medium))
+                                Text(type.desc)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Label("Clipboard types to monitor", systemImage: "doc.on.clipboard")
+            } footer: {
+                Text("Unchecked types will be ignored when copying. At least one type must be enabled.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .onAppear { loadTypes() }
+    }
 
-                if autoCheck {
-                    Picker("Check interval", selection: $checkInterval) {
-                        Text("Every hour").tag(3600)
-                        Text("Every 6 hours").tag(21600)
-                        Text("Daily").tag(86400)
-                        Text("Weekly").tag(604800)
+    private func binding(for key: String) -> Binding<Bool> {
+        Binding(
+            get: { storeTypes[key] ?? true },
+            set: { newValue in
+                storeTypes[key] = newValue
+                // Prevent disabling all types
+                if !storeTypes.values.contains(true) {
+                    storeTypes[key] = true
+                    return
+                }
+                saveTypes()
+            }
+        )
+    }
+
+    private func loadTypes() {
+        if let dict = UserDefaults.standard.object(forKey: Constants.UserDefaults.storeTypes) as? [String: NSNumber] {
+            storeTypes = dict.mapValues { $0.boolValue }
+        } else {
+            // Default: all enabled
+            clipboardTypes.forEach { storeTypes[$0.id] = true }
+        }
+    }
+
+    private func saveTypes() {
+        let nsDict = storeTypes.mapValues { NSNumber(value: $0) }
+        UserDefaults.standard.set(nsDict, forKey: Constants.UserDefaults.storeTypes)
+    }
+}
+
+// MARK: - Excluded Apps Preferences
+struct ExcludedAppsPreferencesView: View {
+    @State private var apps: [CPYAppInfo] = []
+    @State private var selectedApp: CPYAppInfo?
+
+    var body: some View {
+        Form {
+            Section {
+                if apps.isEmpty {
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 6) {
+                            Image(systemName: "app.dashed")
+                                .font(.system(size: 24))
+                                .foregroundStyle(.quaternary)
+                            Text("No excluded apps")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.tertiary)
+                            Text("Clips copied from excluded apps will be ignored.")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.quaternary)
+                        }
+                        .padding(.vertical, 20)
+                        Spacer()
+                    }
+                } else {
+                    ForEach(apps, id: \.identifier) { app in
+                        HStack(spacing: 10) {
+                            if let icon = NSWorkspace.shared.icon(forFile: "/Applications/\(app.name).app") as NSImage? {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                            } else {
+                                Image(systemName: "app.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                            }
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(app.name)
+                                    .font(.system(size: 12, weight: .medium))
+                                Text(app.identifier)
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundStyle(.tertiary)
+                            }
+                            Spacer()
+                            Button {
+                                AppEnvironment.current.excludeAppService.delete(with: app)
+                                loadApps()
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(.red.opacity(0.7))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            } header: {
+                HStack {
+                    Label("Excluded Applications", systemImage: "xmark.app")
+                    Spacer()
+                    Button {
+                        addApp()
+                    } label: {
+                        Label("Add App", systemImage: "plus")
+                            .font(.system(size: 11))
+                    }
+                    .controlSize(.small)
+                }
+            } footer: {
+                Text("Clipboard content copied from these apps will not be recorded in history.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .onAppear { loadApps() }
+    }
+
+    private func loadApps() {
+        apps = AppEnvironment.current.excludeAppService.applications
+    }
+
+    private func addApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = true
+        panel.resolvesAliases = true
+        panel.prompt = "Add"
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+
+        guard panel.runModal() == .OK else { return }
+        panel.urls.forEach { url in
+            guard let bundle = Bundle(url: url), let info = bundle.infoDictionary else { return }
+            guard let appInfo = CPYAppInfo(info: info as [String: AnyObject]) else { return }
+            AppEnvironment.current.excludeAppService.add(with: appInfo)
+        }
+        loadApps()
+    }
+}
+
+// MARK: - Updates Preferences
+struct UpdatesPreferencesView: View {
+    @State private var latestVersion: String?
+    @State private var isChecking = false
+
+    var body: some View {
+        Form {
+            Section {
+                HStack {
+                    Text("Current version")
+                    Spacer()
+                    Text(Bundle.main.appVersion ?? "Unknown")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                if let latest = latestVersion {
+                    HStack {
+                        Text("Latest release")
+                        Spacer()
+                        if latest == (Bundle.main.appVersion ?? "") {
+                            Label("Up to date", systemImage: "checkmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.green)
+                        } else {
+                            Text(latest)
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+
+                HStack {
+                    Button {
+                        checkForUpdates()
+                    } label: {
+                        if isChecking {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Check for Updates")
+                        }
+                    }
+                    .disabled(isChecking)
+
+                    Spacer()
+
+                    Button("View Releases") {
+                        NSWorkspace.shared.open(URL(string: "https://github.com/jeanluciradukunda/Clipy/releases")!)
                     }
                 }
             } header: {
                 Label("Software Updates", systemImage: "arrow.triangle.2.circlepath")
-            }
-
-            Section {
-                HStack {
-                    Text("Version")
-                    Spacer()
-                    Text(Bundle.main.appVersion ?? "Unknown")
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Label("About", systemImage: "info.circle")
+            } footer: {
+                Text("Updates are published as GitHub Releases. Download the latest .dmg to update.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
             }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
     }
+
+    private func checkForUpdates() {
+        isChecking = true
+        Task {
+            do {
+                let url = URL(string: "https://api.github.com/repos/jeanluciradukunda/Clipy/releases/latest")!
+                let (data, _) = try await URLSession.shared.data(from: url)
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let tagName = json["tag_name"] as? String {
+                    await MainActor.run {
+                        latestVersion = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
+                        isChecking = false
+                    }
+                }
+            } catch {
+                await MainActor.run { isChecking = false }
+            }
+        }
+    }
 }
 
-// MARK: - Legacy Panel Wrapper
+// MARK: - Legacy Panel Wrapper (only used for Global Hotkeys — KeyHolder RecordView requires AppKit)
 struct LegacyPanelView: NSViewControllerRepresentable {
     let nibName: String
 
     func makeNSViewController(context: Context) -> NSViewController {
-        switch nibName {
-        case "CPYTypePreferenceViewController":
-            return CPYTypePreferenceViewController(nibName: nibName, bundle: nil)
-        case "CPYShortcutsPreferenceViewController":
-            return CPYShortcutsPreferenceViewController(nibName: nibName, bundle: nil)
-        case "CPYExcludeAppPreferenceViewController":
-            return CPYExcludeAppPreferenceViewController(nibName: nibName, bundle: nil)
-        default:
-            return NSViewController(nibName: nibName, bundle: nil)
-        }
+        return CPYShortcutsPreferenceViewController(nibName: nibName, bundle: nil)
     }
 
     func updateNSViewController(_ nsViewController: NSViewController, context: Context) {}
@@ -393,12 +932,12 @@ struct ShortcutsPreferencesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Global Hotkeys — legacy XIB (has its own internal 44px left margin)
+                // Global Hotkeys — legacy XIB
                 VStack(alignment: .leading, spacing: 6) {
                     Label("Global Hotkeys", systemImage: "globe")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .padding(.leading, 56)
+                        .padding(.leading, 16)
 
                     LegacyPanelView(nibName: "CPYShortcutsPreferenceViewController")
                         .frame(maxWidth: .infinity)
@@ -406,17 +945,17 @@ struct ShortcutsPreferencesView: View {
                 }
 
                 Divider()
-                    .padding(.horizontal, 56)
+                    .padding(.horizontal, 16)
 
                 // Panel Shortcuts — native SwiftUI
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Search Panel Shortcuts", systemImage: "keyboard")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .padding(.leading, 56)
+                        .padding(.leading, 16)
 
                     PanelShortcutsList()
-                        .padding(.horizontal, 56)
+                        .padding(.horizontal, 16)
                 }
                 .popoverTip(CustomizeShortcutsTip(), arrowEdge: .leading)
             }
@@ -433,6 +972,8 @@ struct PanelShortcutsList: View {
         ShortcutRow(name: "Paste as plain text", shortcut: service.pastePlain, onRecord: { service.save($0) })
         ShortcutRow(name: "Toggle pin", shortcut: service.pin, onRecord: { service.save($0) })
         ShortcutRow(name: "Delete clip", shortcut: service.delete, onRecord: { service.save($0) })
+        ShortcutRow(name: "OCR (image clips)", shortcut: service.ocr, onRecord: { service.save($0) })
+        ShortcutRow(name: "Share (image clips)", shortcut: service.share, onRecord: { service.save($0) })
 
         HStack {
             Spacer()

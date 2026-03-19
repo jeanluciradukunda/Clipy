@@ -279,7 +279,7 @@ class ClipSearchViewModel: ObservableObject {
         guard !clips.isEmpty else { return }
         selectedIndex = max(0, min(clips.count - 1, selectedIndex + offset))
         selectedIndices = [selectedIndex]
-        ocrText = nil
+        loadCachedOCR()
     }
 
     func extendSelection(by offset: Int) {
@@ -401,6 +401,16 @@ class ClipSearchViewModel: ObservableObject {
         selectedIndices = [0]
         activeFilter = .all
         loadClips()
+        loadCachedOCR()
+    }
+
+    /// Auto-load cached OCR text for the selected clip (if it's an image with stored OCR)
+    func loadCachedOCR() {
+        ocrText = nil
+        guard let clip = selectedClip(), clip.isImage else { return }
+        guard let realm = Realm.safeInstance(),
+              let realmClip = realm.object(ofType: CPYClip.self, forPrimaryKey: clip.dataHash) else { return }
+        ocrText = realmClip.ocrText
     }
 }
 
@@ -581,6 +591,7 @@ struct ClipSearchPanelView: View {
                                     .onTapGesture {
                                         viewModel.selectedIndex = index
                                         viewModel.selectedIndices = [index]
+                                        viewModel.loadCachedOCR()
                                     }
                                     .onTapGesture(count: 2) {
                                         viewModel.selectedIndex = index
@@ -870,7 +881,7 @@ struct ClipSearchPanelView: View {
                         viewModel.runOCR()
                     }
                     .popoverTip(OCRTip(), arrowEdge: .bottom)
-                    ShareActionButton { anchorView in
+                    ShareActionButton(shortcut: shortcuts.share.label) { anchorView in
                         viewModel.shareImage(from: anchorView)
                     }
                 }
@@ -1062,10 +1073,11 @@ struct ActionButton: View {
 
 // MARK: - Share Action Button (bridges NSSharingServicePicker into SwiftUI)
 struct ShareActionButton: View {
+    var shortcut: String?
     let action: (NSView) -> Void
 
     var body: some View {
-        ActionButton(label: "Share", icon: "square.and.arrow.up") {
+        ActionButton(label: "Share", icon: "square.and.arrow.up", shortcut: shortcut) {
             // handled by overlay
         }
         .overlay(ShareAnchorView(action: action))

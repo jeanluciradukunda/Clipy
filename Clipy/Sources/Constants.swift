@@ -114,6 +114,10 @@ struct Constants {
         static let useModernPicker = "kCPYPrefUseModernSnippetPicker"
     }
 
+    struct Developer {
+        static let devModeEnabled = "kCPYDevModeEnabled"
+    }
+
     struct PanelShortcuts {
         static let pin = "kCPYPanelShortcutPin"
         static let delete = "kCPYPanelShortcutDelete"
