@@ -898,82 +898,266 @@ struct ExcludedAppsPreferencesView: View {
 }
 
 // MARK: - Updates Preferences
+// MARK: - Update State
+enum UpdateState: Equatable {
+    case idle
+    case checking
+    case upToDate
+    case available(version: String, downloadURL: String)
+    case downloading(progress: Double)
+    case installing
+    case failed(message: String)
+}
+
 struct UpdatesPreferencesView: View {
+    @State private var state: UpdateState = .idle
     @State private var latestVersion: String?
-    @State private var isChecking = false
+
+    private let currentVersion = Bundle.main.appVersion ?? "Unknown"
+    private let repoAPI = "https://api.github.com/repos/jeanluciradukunda/Clipy/releases/latest"
 
     var body: some View {
         Form {
             Section {
+                // Current version
                 HStack {
                     Text("Current version")
                     Spacer()
-                    Text(Bundle.main.appVersion ?? "Unknown")
+                    Text(currentVersion)
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(.secondary)
                 }
 
-                if let latest = latestVersion {
-                    HStack {
-                        Text("Latest release")
-                        Spacer()
-                        if latest == (Bundle.main.appVersion ?? "") {
-                            Label("Up to date", systemImage: "checkmark.circle.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.green)
-                        } else {
-                            Text(latest)
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(.orange)
-                        }
-                    }
-                }
+                // Status row
+                statusView
 
-                HStack {
-                    Button {
-                        checkForUpdates()
-                    } label: {
-                        if isChecking {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Text("Check for Updates")
-                        }
-                    }
-                    .disabled(isChecking)
-
-                    Spacer()
-
-                    Button("View Releases") {
-                        NSWorkspace.shared.open(URL(string: "https://github.com/jeanluciradukunda/Clipy/releases")!)
-                    }
-                }
+                // Action buttons
+                actionButtons
             } header: {
                 Label("Software Updates", systemImage: "arrow.triangle.2.circlepath")
             } footer: {
-                Text("Updates are published as GitHub Releases. Download the latest .dmg to update.")
+                Text("Updates are downloaded from GitHub Releases and installed automatically.")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
             }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+        .onAppear { checkForUpdates() }
     }
 
+    // MARK: - Status View
+
+    @ViewBuilder
+    private var statusView: some View {
+        switch state {
+        case .idle:
+            EmptyView()
+        case .checking:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Checking for updates...")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+        case .upToDate:
+            HStack {
+                Label("You're up to date", systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.green)
+                Spacer()
+                Text(currentVersion)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        case .available(let version, _):
+            HStack {
+                Label("Update available", systemImage: "arrow.down.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.orange)
+                Spacer()
+                Text("\(currentVersion) → \(version)")
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(.orange)
+            }
+        case .downloading(let progress):
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Downloading update...")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: progress)
+                    .progressViewStyle(.linear)
+            }
+        case .installing:
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text("Installing update...")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+        case .failed(let message):
+            HStack {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+
+    // MARK: - Action Buttons
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        HStack {
+            switch state {
+            case .idle, .upToDate, .failed:
+                Button("Check for Updates") { checkForUpdates() }
+            case .checking:
+                Button("Check for Updates") {}.disabled(true)
+            case .available(_, let url):
+                Button("Update Now") { downloadAndInstall(from: url) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+            case .downloading:
+                Button("Downloading...") {}.disabled(true)
+            case .installing:
+                Button("Installing...") {}.disabled(true)
+            }
+
+            Spacer()
+
+            Button("View Releases") {
+                NSWorkspace.shared.open(URL(string: "https://github.com/jeanluciradukunda/Clipy/releases")!)
+            }
+        }
+    }
+
+    // MARK: - Check
+
     private func checkForUpdates() {
-        isChecking = true
+        state = .checking
         Task {
             do {
-                let url = URL(string: "https://api.github.com/repos/jeanluciradukunda/Clipy/releases/latest")!
+                let url = URL(string: repoAPI)!
                 let (data, _) = try await URLSession.shared.data(from: url)
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let tagName = json["tag_name"] as? String {
-                    await MainActor.run {
-                        latestVersion = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
-                        isChecking = false
+                guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let tagName = json["tag_name"] as? String else {
+                    await MainActor.run { state = .failed(message: "Could not parse release info") }
+                    return
+                }
+
+                let version = tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
+
+                // Find .dmg asset URL
+                var dmgURL: String?
+                if let assets = json["assets"] as? [[String: Any]] {
+                    dmgURL = assets.first(where: { ($0["name"] as? String)?.hasSuffix(".dmg") == true })?["browser_download_url"] as? String
+                }
+
+                await MainActor.run {
+                    latestVersion = version
+                    if version == currentVersion {
+                        state = .upToDate
+                    } else if let dmgURL {
+                        state = .available(version: version, downloadURL: dmgURL)
+                    } else {
+                        state = .failed(message: "No .dmg found in release")
                     }
                 }
             } catch {
-                await MainActor.run { isChecking = false }
+                await MainActor.run { state = .failed(message: "Network error: \(error.localizedDescription)") }
+            }
+        }
+    }
+
+    // MARK: - Download & Install
+
+    private func downloadAndInstall(from urlString: String) {
+        guard let url = URL(string: urlString) else { return }
+        state = .downloading(progress: 0)
+
+        Task {
+            do {
+                // Download with progress
+                let (tempURL, _) = try await URLSession.shared.download(from: url, delegate: nil)
+                let dmgPath = FileManager.default.temporaryDirectory.appendingPathComponent("Clipy-update.dmg")
+                try? FileManager.default.removeItem(at: dmgPath)
+                try FileManager.default.moveItem(at: tempURL, to: dmgPath)
+
+                await MainActor.run { state = .installing }
+
+                // Mount DMG
+                let mountProcess = Process()
+                mountProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+                mountProcess.arguments = ["attach", dmgPath.path, "-nobrowse", "-quiet"]
+                let mountPipe = Pipe()
+                mountProcess.standardOutput = mountPipe
+                try mountProcess.run()
+                mountProcess.waitUntilExit()
+
+                // Find mounted volume
+                let volumePath = try FileManager.default.contentsOfDirectory(atPath: "/Volumes")
+                    .first(where: { $0.hasPrefix("Clipy") })
+                    .map { "/Volumes/\($0)" }
+
+                guard let volume = volumePath else {
+                    await MainActor.run { state = .failed(message: "Could not mount DMG") }
+                    return
+                }
+
+                // Find .app in the volume
+                let appName = try FileManager.default.contentsOfDirectory(atPath: volume)
+                    .first(where: { $0.hasSuffix(".app") })
+
+                guard let appName else {
+                    await MainActor.run { state = .failed(message: "No .app found in DMG") }
+                    return
+                }
+
+                let sourceApp = "\(volume)/\(appName)"
+                let destApp = "/Applications/Clipy.app"
+
+                // Remove old app and copy new one
+                try? FileManager.default.removeItem(atPath: destApp)
+                try FileManager.default.copyItem(atPath: sourceApp, toPath: destApp)
+
+                // Remove quarantine attribute
+                let xattrProcess = Process()
+                xattrProcess.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+                xattrProcess.arguments = ["-cr", destApp]
+                try xattrProcess.run()
+                xattrProcess.waitUntilExit()
+
+                // Unmount DMG
+                let detachProcess = Process()
+                detachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+                detachProcess.arguments = ["detach", volume, "-quiet"]
+                try? detachProcess.run()
+                detachProcess.waitUntilExit()
+
+                // Clean up
+                try? FileManager.default.removeItem(at: dmgPath)
+
+                // Relaunch
+                await MainActor.run {
+                    let task = Process()
+                    task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+                    task.arguments = [destApp]
+                    try? task.run()
+
+                    // Quit current instance after short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        NSApplication.shared.terminate(nil)
+                    }
+                }
+            } catch {
+                await MainActor.run { state = .failed(message: "Install failed: \(error.localizedDescription)") }
             }
         }
     }
