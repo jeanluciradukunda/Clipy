@@ -1474,13 +1474,20 @@ struct ShortcutsPreferencesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Global Hotkeys — legacy XIB
-                LegacyPanelView(nibName: "CPYShortcutsPreferenceViewController")
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 275)
+                // Global Hotkeys — legacy XIB (has its own internal margins)
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Global Hotkeys", systemImage: "globe")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 44)
+
+                    LegacyPanelView(nibName: "CPYShortcutsPreferenceViewController")
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 275)
+                }
 
                 Divider()
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 44)
 
                 // Panel Shortcuts — native SwiftUI
                 VStack(alignment: .leading, spacing: 10) {
@@ -1490,7 +1497,7 @@ struct ShortcutsPreferencesView: View {
 
                     PanelShortcutsList()
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 44)
                 .popoverTip(CustomizeShortcutsTip(), arrowEdge: .leading)
             }
             .padding(.vertical, 12)
