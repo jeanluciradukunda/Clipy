@@ -18,7 +18,8 @@ Track upcoming features. Mark `[x]` when complete.
 - [ ] **Regenerate menu thumbnails on cache miss** — after relaunch NSCache is empty, menu items show no thumbnails. Load from `.data` file on miss and re-cache
 
 ## Security Hardening
-- [ ] **Encrypt .data files on disk** — NSKeyedArchiver clip data files in `~/Library/Application Support/Clipy/` are unencrypted. Encrypt with CryptoKit AES-GCM using the same Keychain key as Realm
+- [ ] **Realm database encryption** — encrypt the Realm database with a Keychain-stored 64-byte key. Requires careful migration from unencrypted → encrypted that handles both debug and release bundle IDs. `RealmEncryptionService.swift` is scaffolded but disabled
+- [ ] **Encrypt .data files on disk** — NSKeyedArchiver clip data files in `~/Library/Application Support/Clipy/` are unencrypted. Encrypt with CryptoKit AES-GCM using the same Keychain key
 - [ ] **Auto-clear pasteboard after vault paste** — when pasting from a vault-protected folder, auto-clear the system clipboard after 30s so sensitive content doesn't linger
 - [ ] **Clear clip data from memory on panel dismiss** — sensitive clip content in ViewModels persists in memory until garbage collection
 
