@@ -1472,24 +1472,29 @@ struct LegacyPanelView: NSViewControllerRepresentable {
 
 struct ShortcutsPreferencesView: View {
     var body: some View {
-        Form {
-            Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Global Hotkeys — legacy XIB
                 LegacyPanelView(nibName: "CPYShortcutsPreferenceViewController")
                     .frame(maxWidth: .infinity)
                     .frame(height: 275)
-            } header: {
-                Label("Global Hotkeys", systemImage: "globe")
-            }
 
-            Section {
-                PanelShortcutsList()
-            } header: {
-                Label("Search Panel Shortcuts", systemImage: "keyboard")
+                Divider()
+                    .padding(.horizontal, 12)
+
+                // Panel Shortcuts — native SwiftUI
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Search Panel Shortcuts", systemImage: "keyboard")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+
+                    PanelShortcutsList()
+                }
+                .padding(.horizontal, 12)
+                .popoverTip(CustomizeShortcutsTip(), arrowEdge: .leading)
             }
-            .popoverTip(CustomizeShortcutsTip(), arrowEdge: .leading)
+            .padding(.vertical, 12)
         }
-        .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
     }
 }
 
