@@ -30,11 +30,12 @@ jobs:
       - name: Build
         run: |
           xcodebuild \
-            -project Clipy.xcodeproj \
-            -target Clipy \
-            -configuration Release \
+            -workspace Clipy.xcworkspace \
+            -scheme Clipy \
+            -configuration Debug \
             -destination 'platform=macOS' \
             ONLY_ACTIVE_ARCH=YES \
+            PRODUCT_NAME=Clipy \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             build
