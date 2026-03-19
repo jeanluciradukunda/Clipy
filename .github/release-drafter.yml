@@ -1,0 +1,42 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: 'New Features'
+    labels:
+      - 'enhancement'
+      - 'ui/ux'
+  - title: 'Bug Fixes'
+    labels:
+      - 'bug'
+      - 'memory-leak'
+  - title: 'Security'
+    labels:
+      - 'security'
+      - 'privacy'
+  - title: 'Performance'
+    labels:
+      - 'performance'
+  - title: 'Code Health'
+    labels:
+      - 'code-health'
+change-template: '- $TITLE (#$NUMBER)'
+change-title-escapes: '\<*_&'
+version-resolver:
+  major:
+    labels:
+      - 'breaking'
+  minor:
+    labels:
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bug'
+      - 'performance'
+      - 'code-health'
+  default: patch
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
