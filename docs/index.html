@@ -96,8 +96,7 @@ nav .container{display:flex;align-items:center;justify-content:space-between}
 
 /* ═══════════════ DEMO ═══════════════ */
 .demo-section{padding:80px 0;text-align:center}
-.demo-placeholder{margin:48px auto 0;max-width:800px;aspect-ratio:16/9;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;position:relative;overflow:hidden}
-.demo-placeholder::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(249,115,22,.03),transparent 70%)}
+.demo-placeholder{margin:48px auto 0;max-width:800px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;position:relative;overflow:hidden}
 
 /* ═══════════════ SCREENSHOTS ═══════════════ */
 .screenshots-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:48px}
@@ -287,40 +286,10 @@ footer a:hover{color:var(--accent)}
     <h2 class="section-title reveal reveal-delay-1">See it in action.</h2>
     <p class="section-desc reveal reveal-delay-2" style="margin:0 auto">A quick walkthrough of Clipy's search panel, snippet picker, and smart actions.</p>
 
-    <div class="demo-placeholder reveal reveal-delay-3">
-      <!-- Clippy eating popcorn watching a screen -->
-      <svg class="clippy-svg" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Screen -->
-        <rect x="15" y="20" width="50" height="35" rx="3" stroke="#555" stroke-width="1.5" fill="none"/>
-        <line x1="40" y1="55" x2="40" y2="62" stroke="#555" stroke-width="1.5"/>
-        <line x1="30" y1="62" x2="50" y2="62" stroke="#555" stroke-width="1.5"/>
-        <!-- Screen content lines -->
-        <line x1="22" y1="30" x2="42" y2="30" stroke="#f97316" stroke-width="1" opacity=".5"/>
-        <line x1="22" y1="35" x2="55" y2="35" stroke="#3b82f6" stroke-width="1" opacity=".4"/>
-        <line x1="22" y1="40" x2="48" y2="40" stroke="#a855f7" stroke-width="1" opacity=".3"/>
-        <line x1="22" y1="45" x2="38" y2="45" stroke="#22c55e" stroke-width="1" opacity=".4"/>
-        <!-- Paperclip body -->
-        <path d="M85 35 C85 25, 95 20, 100 28 C105 36, 95 42, 90 42 C85 42, 78 38, 78 45 C78 52, 88 55, 92 48" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-        <!-- Eyes -->
-        <circle cx="90" cy="32" r="1.5" fill="var(--accent)"/>
-        <circle cx="96" cy="30" r="1.5" fill="var(--accent)"/>
-        <!-- Smile -->
-        <path d="M89 36 Q93 40 97 35" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" fill="none"/>
-        <!-- Popcorn bucket -->
-        <path d="M80 50 L76 68 L96 68 L92 50 Z" stroke="#eab308" stroke-width="1.5" fill="rgba(234,179,8,.1)"/>
-        <line x1="80" y1="56" x2="92" y2="56" stroke="#eab308" stroke-width=".5" opacity=".5"/>
-        <!-- Popcorn pieces -->
-        <circle cx="82" cy="48" r="2.5" fill="#fbbf24" opacity=".7"/>
-        <circle cx="87" cy="46" r="3" fill="#fde68a" opacity=".6"/>
-        <circle cx="91" cy="47" r="2" fill="#fbbf24" opacity=".8"/>
-        <circle cx="85" cy="44" r="2" fill="#fef3c7" opacity=".5"/>
-        <!-- Arm holding popcorn -->
-        <path d="M88 42 Q84 46 82 50" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-      </svg>
-      <div>
-        <p style="font-size:14px;font-weight:500;color:var(--text-dim)">Demo video coming soon</p>
-        <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Record with Screen Studio and drop it here</p>
-      </div>
+    <div class="demo-placeholder reveal reveal-delay-3" style="padding:0;background:transparent;border:none">
+      <video autoplay muted loop playsinline style="width:100%;max-width:800px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 40px rgba(249,115,22,.1)">
+        <source src="clipy-demo.mp4" type="video/mp4">
+      </video>
     </div>
   </div>
 </section>

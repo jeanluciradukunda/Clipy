@@ -153,3 +153,6 @@ build-iPhoneSimulator/
 # Used by RuboCop. Remote config files pulled in from inherit_from directive.
 # .rubocop-https?--*
 *.DS_Store
+
+# Remotion demo video source (marketing tooling, not app code)
+demo-video/
