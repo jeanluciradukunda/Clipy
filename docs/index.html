@@ -543,6 +543,21 @@ footer a:hover{color:var(--accent)}
       </div>
 
       <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon" style="background:rgba(59,130,246,.1)">&#x1F504;</div>
+        <h3>Updating to a new version</h3>
+        <p>Until we get an Apple Developer certificate, updating requires re-granting Accessibility permission:</p>
+        <div style="line-height:1.8;font-size:12px;margin-top:6px">
+          <p>1. Quit Clipy</p>
+          <p>2. Install the new DMG (drag to Applications, replace)</p>
+          <p>3. Run <code style="padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);font-family:var(--mono);font-size:11px;color:var(--accent)">xattr -cr /Applications/Clipy.app</code></p>
+          <p>4. Open System Settings → Privacy → Accessibility</p>
+          <p>5. Remove Clipy from the list, then re-add it</p>
+          <p>6. Launch Clipy</p>
+        </div>
+        <p style="margin-top:8px;font-size:10px;color:var(--text-muted)">This is because macOS invalidates Accessibility trust when the app binary changes. A signed Developer ID certificate (coming soon) will fix this permanently.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-delay-2">
         <div class="feature-icon" style="background:rgba(239,68,68,.1)">&#x1F5D1;</div>
         <h3>Uninstall</h3>
         <p>1. Quit Clipy from the menu bar<br>

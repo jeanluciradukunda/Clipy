@@ -42,6 +42,19 @@ open Clipy.xcworkspace
 
 **Requires**: macOS 14.0 Sonoma+ and Xcode 15.0+
 
+### Updating
+
+Until we have an Apple Developer ID certificate, updating requires re-granting Accessibility:
+
+1. Quit Clipy
+2. Install the new DMG (drag to Applications, replace existing)
+3. Run `xattr -cr /Applications/Clipy.app`
+4. Open **System Settings → Privacy & Security → Accessibility**
+5. Remove Clipy from the list, then re-add it
+6. Launch Clipy
+
+> This happens because macOS invalidates Accessibility trust when the unsigned binary changes. Apple Developer ID signing ([#45](https://github.com/jeanluciradukunda/Clipy/issues/45)) will fix this permanently.
+
 ### Uninstall
 
 1. Quit Clipy (click the menu bar icon → Quit, or `Cmd+Q`)
@@ -217,6 +230,9 @@ Both can coexist on the same Mac with separate data. To run both simultaneously,
 | Menu bar | Standard icon | Icon with orange **DEV** badge |
 | Settings title | "Clipy Settings" | "Clipy Dev Settings" |
 | Install | DMG from Releases | `Cmd+R` in Xcode |
+| Accessibility | Must re-grant after each DMG update | Persists across rebuilds (same local signing identity) |
+
+> **Note for developers:** Debug builds use your local Xcode signing identity which stays consistent, so Accessibility permission persists across rebuilds. No need to remove and re-add it. This is only an issue for unsigned release DMGs.
 
 ### Debugging
 
