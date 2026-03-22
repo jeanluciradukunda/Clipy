@@ -26,6 +26,29 @@ final class ClipService {
     private var monitorTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
+    /// When > 0, the next N clipboard changes are skipped (not saved to history).
+    /// Used by ephemeral paste to prevent secrets from being stored.
+    private var skipCaptureCount: Int = 0
+    private let skipLock = NSLock()
+
+    /// Tell ClipService to skip the next clipboard change (ephemeral paste).
+    func skipNextCapture() {
+        skipLock.lock()
+        skipCaptureCount += 1
+        skipLock.unlock()
+    }
+
+    /// Check and consume a skip token. Returns true if this capture should be skipped.
+    private func shouldSkipCapture() -> Bool {
+        skipLock.lock()
+        defer { skipLock.unlock() }
+        if skipCaptureCount > 0 {
+            skipCaptureCount -= 1
+            return true
+        }
+        return false
+    }
+
     // MARK: - Thumbnail Cache
     private static let thumbnailCache = NSCache<NSString, NSImage>()
 
@@ -129,6 +152,12 @@ extension ClipService {
     fileprivate func create() {
         lock.lock(); defer { lock.unlock() }
 
+        // Ephemeral paste: skip this clipboard change
+        if shouldSkipCapture() {
+            logger.debug("Skipping ephemeral clipboard capture")
+            return
+        }
+
         // Store types
         if !storeTypes.values.contains(NSNumber(value: true)) { return }
         // Pasteboard types
@@ -203,6 +232,10 @@ extension ClipService {
                         dispatchRealm.add(clip, update: .all)
                     }
                     UsageMetricsService.shared.track(.clipsCopied)
+                    // Run auto-trigger plugins on string content (short-circuits when none registered)
+                    if PluginManager.shared.hasAutoPlugins, !data.stringValue.isEmpty {
+                        PluginManager.shared.runAutoPlugins(input: data.stringValue)
+                    }
                     // Immediately evict oldest non-pinned clips over the limit
                     AppEnvironment.current.dataCleanService.cleanDatas()
                 }

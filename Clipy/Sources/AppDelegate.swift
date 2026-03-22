@@ -140,9 +140,39 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             NSSound.beep()
             return
         }
-        let processed = SnippetVariableProcessor.process(snippet.content)
-        AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
-        AppEnvironment.current.pasteService.paste()
+
+        switch snippet.type {
+        case .plainText:
+            let processed = SnippetVariableProcessor.process(snippet.content)
+            AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
+            AppEnvironment.current.pasteService.paste()
+        case .script:
+            let script = snippet.content
+            let shell = snippet.scriptShell
+            let timeout = TimeInterval(snippet.scriptTimeout)
+            let ephemeral = snippet.isEphemeral
+            ScriptExecutionService.execute(script: script, shell: shell, timeout: timeout) { result in
+                if result.timedOut {
+                    Self.showScriptError("Script timed out after \(Int(timeout))s")
+                } else if result.exitCode != 0, let error = result.error {
+                    Self.showScriptError("Script failed (exit \(result.exitCode)): \(error)")
+                } else if ephemeral {
+                    AppEnvironment.current.pasteService.pasteEphemeral(with: result.output)
+                } else {
+                    AppEnvironment.current.pasteService.copyToPasteboard(with: result.output)
+                    AppEnvironment.current.pasteService.paste()
+                }
+            }
+        }
+    }
+
+    private static func showScriptError(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Script Snippet Error"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     func terminateApplication() {

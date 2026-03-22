@@ -182,6 +182,9 @@ extension CPYSnippetsEditorWindowController {
                             let snippet = CPYSnippet()
                             snippet.title = snippetElement[Constants.Xml.titleElement].value ?? "untitled snippet"
                             snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
+                            snippet.snippetType = Int(snippetElement["type"].value ?? "0") ?? 0
+                            snippet.scriptShell = snippetElement["shell"].value ?? CPYSnippet.defaultShell
+                            snippet.scriptTimeout = Int(snippetElement["timeout"].value ?? "\(CPYSnippet.defaultTimeout)") ?? CPYSnippet.defaultTimeout
                             snippet.index = snippetIndex
                             realm.transaction { folder.snippets.append(snippet) }
                             snippetIndex += 1
@@ -214,6 +217,11 @@ extension CPYSnippetsEditorWindowController {
                     let snippetElement = snippetsElement.addChild(name: Constants.Xml.snippetElement)
                     snippetElement.addChild(name: Constants.Xml.titleElement, value: snippet.title)
                     snippetElement.addChild(name: Constants.Xml.contentElement, value: snippet.content)
+                    if snippet.snippetType != CPYSnippet.SnippetType.plainText.rawValue {
+                        snippetElement.addChild(name: "type", value: "\(snippet.snippetType)")
+                        snippetElement.addChild(name: "shell", value: snippet.scriptShell)
+                        snippetElement.addChild(name: "timeout", value: "\(snippet.scriptTimeout)")
+                    }
                 }
         }
 

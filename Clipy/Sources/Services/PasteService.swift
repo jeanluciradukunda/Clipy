@@ -129,6 +129,31 @@ extension PasteService {
     }
 }
 
+// MARK: - Ephemeral Paste
+extension PasteService {
+    /// Paste a string ephemerally — it goes to the pasteboard and triggers ⌘V,
+    /// but ClipService will NOT store it in history. Optionally auto-clears the
+    /// pasteboard after a delay.
+    func pasteEphemeral(with string: String) {
+        // Tell ClipService to skip the next clipboard capture
+        AppEnvironment.current.clipService.skipNextCapture()
+        copyToPasteboard(with: string)
+        paste()
+
+        // Auto-clear pasteboard after configured delay
+        let clearDelay = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.ephemeralAutoClearSeconds)
+        if clearDelay > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(clearDelay)) {
+                // Only clear if the pasteboard still has what we put there
+                if NSPasteboard.general.string(forType: .clipyString) == string {
+                    AppEnvironment.current.clipService.skipNextCapture()
+                    NSPasteboard.general.clearContents()
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Paste
 extension PasteService {
     func paste() {

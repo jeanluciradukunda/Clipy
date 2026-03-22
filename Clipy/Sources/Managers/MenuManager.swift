@@ -558,8 +558,18 @@ private extension MenuManager {
 
         let menuItem = NSMenuItem(title: titleWithMark, action: #selector(AppDelegate.selectSnippetMenuItem(_:)), keyEquivalent: "")
         menuItem.representedObject = snippet.identifier
-        menuItem.toolTip = snippet.content
-        menuItem.image = (isShowIcon) ? snippetIcon : nil
+
+        if snippet.type == .script {
+            menuItem.toolTip = "[Script] \(snippet.content)"
+            if isShowIcon, let scriptIcon = NSImage(systemSymbolName: "terminal.fill", accessibilityDescription: "Script") {
+                scriptIcon.isTemplate = true
+                scriptIcon.size = NSSize(width: 12, height: 13)
+                menuItem.image = scriptIcon
+            }
+        } else {
+            menuItem.toolTip = snippet.content
+            menuItem.image = (isShowIcon) ? snippetIcon : nil
+        }
 
         return menuItem
     }

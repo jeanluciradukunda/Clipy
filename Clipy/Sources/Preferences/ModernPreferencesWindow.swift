@@ -18,6 +18,7 @@ enum PreferenceTab: String, Identifiable {
     case types = "Types"
     case shortcuts = "Shortcuts"
     case excludedApps = "Excluded Apps"
+    case plugins = "Plugins"
     case updates = "Updates"
     case developer = "Developer"
 
@@ -30,6 +31,7 @@ enum PreferenceTab: String, Identifiable {
         case .types: return "doc.on.clipboard"
         case .shortcuts: return "keyboard"
         case .excludedApps: return "xmark.app"
+        case .plugins: return "puzzlepiece.extension"
         case .updates: return "arrow.triangle.2.circlepath"
         case .developer: return "hammer"
         }
@@ -37,7 +39,7 @@ enum PreferenceTab: String, Identifiable {
 
     /// Tabs visible by default (developer tab requires dev mode)
     static var visibleTabs: [PreferenceTab] {
-        var tabs: [PreferenceTab] = [.general, .menu, .types, .shortcuts, .excludedApps, .updates]
+        var tabs: [PreferenceTab] = [.general, .menu, .types, .shortcuts, .excludedApps, .plugins, .updates]
         if UserDefaults.standard.bool(forKey: Constants.Developer.devModeEnabled) {
             tabs.append(.developer)
         }
@@ -101,6 +103,8 @@ struct ModernPreferencesView: View {
                     ShortcutsPreferencesView()
                 case .excludedApps:
                     ExcludedAppsPreferencesView()
+                case .plugins:
+                    PluginsPreferencesView()
                 case .updates:
                     UpdatesPreferencesView()
                 case .developer:
@@ -141,6 +145,9 @@ struct GeneralPreferencesView: View {
     @AppStorage(Constants.Snippets.useModernPicker)
     private var useModernSnippetPicker = true
 
+    @AppStorage(Constants.UserDefaults.ephemeralAutoClearSeconds)
+    private var ephemeralAutoClear = 30
+
     @AppStorage(Constants.Developer.devModeEnabled)
     private var devMode = false
 
@@ -174,6 +181,14 @@ struct GeneralPreferencesView: View {
                     Text("Last Used").tag(true)
                     Text("Date Created").tag(false)
                 }
+
+                Picker("Auto-clear ephemeral paste", selection: $ephemeralAutoClear) {
+                    Text("Off").tag(0)
+                    Text("15 seconds").tag(15)
+                    Text("30 seconds").tag(30)
+                    Text("60 seconds").tag(60)
+                }
+                .help("Script snippets marked as ephemeral will auto-clear the pasteboard after this delay")
             } header: {
                 Label("Clipboard History", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
             }
@@ -1201,6 +1216,123 @@ enum UpdateState: Equatable {
     case downloading(progress: Double)
     case installing
     case failed(message: String)
+}
+
+// MARK: - Plugins Preferences
+struct PluginsPreferencesView: View {
+    @StateObject private var pluginManager = PluginManager.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Plugins")
+                    .font(.system(size: 18, weight: .semibold))
+                Spacer()
+                Button {
+                    pluginManager.reload()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text("Reload")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                }
+                Button {
+                    pluginManager.openPluginsFolder()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "folder")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text("Open Folder")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                }
+            }
+
+            Text("Place plugins in ~/.clipy/plugins/ — each plugin is a folder with a manifest.json.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+
+            if pluginManager.plugins.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "puzzlepiece.extension")
+                        .font(.system(size: 28, weight: .ultraLight))
+                        .foregroundStyle(.quaternary)
+                    Text("No plugins installed")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
+                    Text("Create a folder in ~/.clipy/plugins/ with a manifest.json to get started.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.quaternary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(pluginManager.plugins) { plugin in
+                            pluginRow(plugin)
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .padding(24)
+    }
+
+    private func pluginRow(_ plugin: Plugin) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: plugin.trigger == .auto ? "bolt.fill" : "hand.tap.fill")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(plugin.isEnabled ? AnyShapeStyle(.blue) : AnyShapeStyle(.quaternary))
+                .frame(width: 28, height: 28)
+                .background(plugin.isEnabled ? SwiftUI.Color.blue.opacity(0.1) : SwiftUI.Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(plugin.name)
+                        .font(.system(size: 12, weight: .medium))
+                    Text("v\(plugin.version)")
+                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(.quaternary.opacity(0.3))
+                        .clipShape(Capsule())
+                    Text(plugin.trigger == .auto ? "Auto" : "Manual")
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .foregroundStyle(plugin.trigger == .auto ? .orange : .blue)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background((plugin.trigger == .auto ? SwiftUI.Color.orange : SwiftUI.Color.blue).opacity(0.1))
+                        .clipShape(Capsule())
+                }
+                if !plugin.description.isEmpty {
+                    Text(plugin.description)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            Toggle("", isOn: Binding(
+                get: { plugin.isEnabled },
+                set: { pluginManager.setEnabled(plugin.id, enabled: $0) }
+            ))
+            .toggleStyle(.switch)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.03))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
 }
 
 struct UpdatesPreferencesView: View {

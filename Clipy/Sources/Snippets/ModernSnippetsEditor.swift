@@ -22,10 +22,17 @@ class SnippetsEditorViewModel: ObservableObject {
     @Published var selectedSnippetID: String?
     @Published var editingTitle = ""
     @Published var editingContent = ""
+    @Published var editingSnippetType = CPYSnippet.SnippetType.plainText.rawValue
+    @Published var editingScriptShell = CPYSnippet.defaultShell
+    @Published var editingScriptTimeout = CPYSnippet.defaultTimeout
+    @Published var editingIsEphemeral = true
     @Published var sidebarFilter = ""
     @Published var hasUnsavedChanges = false
     @Published var expandedFolderIDs = Set<String>()
     @Published var needsRefocus = false
+    @Published var scriptTestOutput: String?
+    @Published var isRunningTest = false
+    @Published var showingTemplates = false
 
     struct FolderItem: Identifiable, Hashable {
         let id: String
@@ -40,6 +47,12 @@ class SnippetsEditorViewModel: ObservableObject {
         var title: String
         var content: String
         var enabled: Bool
+        var snippetType: Int
+        var scriptShell: String
+        var scriptTimeout: Int
+        var isEphemeral: Bool
+
+        var isScript: Bool { snippetType == CPYSnippet.SnippetType.script.rawValue }
     }
 
     func load() {
@@ -51,7 +64,7 @@ class SnippetsEditorViewModel: ObservableObject {
             let snippets = folder.snippets
                 .sorted(byKeyPath: #keyPath(CPYSnippet.index), ascending: true)
                 .map { snippet in
-                    SnippetItem(id: snippet.identifier, title: snippet.title, content: snippet.content, enabled: snippet.enable)
+                    SnippetItem(id: snippet.identifier, title: snippet.title, content: snippet.content, enabled: snippet.enable, snippetType: snippet.snippetType, scriptShell: snippet.scriptShell, scriptTimeout: snippet.scriptTimeout, isEphemeral: snippet.isEphemeral)
                 }
             return FolderItem(id: folder.identifier, title: folder.title, enabled: folder.enable, isVault: folder.isVault, snippets: Array(snippets))
         }
@@ -70,6 +83,10 @@ class SnippetsEditorViewModel: ObservableObject {
                let snippet = folder.snippets.first(where: { $0.id == snippetID }) {
                 editingTitle = snippet.title
                 editingContent = snippet.content
+                editingSnippetType = snippet.snippetType
+                editingScriptShell = snippet.scriptShell
+                editingScriptTimeout = snippet.scriptTimeout
+                editingIsEphemeral = snippet.isEphemeral
                 hasUnsavedChanges = false
             }
         }
@@ -80,6 +97,11 @@ class SnippetsEditorViewModel: ObservableObject {
         selectedSnippetID = snippet.id
         editingTitle = snippet.title
         editingContent = snippet.content
+        editingSnippetType = snippet.snippetType
+        editingScriptShell = snippet.scriptShell
+        editingScriptTimeout = snippet.scriptTimeout
+        editingIsEphemeral = snippet.isEphemeral
+        scriptTestOutput = nil
         hasUnsavedChanges = false
     }
 
@@ -90,9 +112,67 @@ class SnippetsEditorViewModel: ObservableObject {
         realm.transaction {
             snippet.title = editingTitle
             snippet.content = editingContent
+            snippet.snippetType = editingSnippetType
+            snippet.scriptShell = editingScriptShell
+            snippet.scriptTimeout = editingScriptTimeout
+            snippet.isEphemeral = editingIsEphemeral
         }
         hasUnsavedChanges = false
         load()
+    }
+
+    func testRunScript() {
+        guard editingSnippetType == CPYSnippet.SnippetType.script.rawValue else { return }
+        isRunningTest = true
+        scriptTestOutput = nil
+        ScriptExecutionService.execute(
+            script: editingContent,
+            shell: editingScriptShell,
+            timeout: TimeInterval(editingScriptTimeout)
+        ) { [weak self] result in
+            self?.isRunningTest = false
+            if result.timedOut {
+                self?.scriptTestOutput = "[Timed out after \(self?.editingScriptTimeout ?? 10)s]"
+            } else if result.exitCode != 0 {
+                self?.scriptTestOutput = "[Exit \(result.exitCode)] \(result.error ?? "")\n\(result.output)"
+            } else {
+                self?.scriptTestOutput = result.output.isEmpty ? "[No output]" : result.output
+            }
+        }
+    }
+
+    func installTemplate(_ template: SnippetTemplate) {
+        // Install into the currently selected folder, or create a new one
+        let folderID: String
+        if let selected = selectedFolderID {
+            folderID = selected
+        } else {
+            let newFolder = CPYFolder.create()
+            newFolder.title = "Script Snippets"
+            newFolder.merge()
+            load()
+            folderID = newFolder.identifier
+            selectedFolderID = folderID
+        }
+
+        guard let realm = Realm.safeInstance() else { return }
+        guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folderID) else { return }
+        let snippet = folder.createSnippet()
+        snippet.title = template.name
+        snippet.content = template.content
+        snippet.snippetType = CPYSnippet.SnippetType.script.rawValue
+        snippet.scriptShell = template.shell
+        snippet.scriptTimeout = template.timeout
+        folder.mergeSnippet(snippet)
+        load()
+
+        // Select the new snippet
+        if let folderItem = folders.first(where: { $0.id == folderID }),
+           let newSnippet = folderItem.snippets.last {
+            selectSnippet(newSnippet)
+            expandedFolderIDs.insert(folderID)
+        }
+        showingTemplates = false
     }
 
     func addFolder() {
@@ -133,6 +213,10 @@ class SnippetsEditorViewModel: ObservableObject {
             selectedSnippetID = nil
             editingTitle = ""
             editingContent = ""
+            editingSnippetType = CPYSnippet.SnippetType.plainText.rawValue
+            editingScriptShell = CPYSnippet.defaultShell
+            editingScriptTimeout = CPYSnippet.defaultTimeout
+            scriptTestOutput = nil
             hasUnsavedChanges = false
         }
         load()
@@ -331,6 +415,11 @@ class SnippetsEditorViewModel: ObservableObject {
                     let snippetElement = snippetsElement.addChild(name: Constants.Xml.snippetElement)
                     snippetElement.addChild(name: Constants.Xml.titleElement, value: snippet.title)
                     snippetElement.addChild(name: Constants.Xml.contentElement, value: snippet.content)
+                    if snippet.snippetType != CPYSnippet.SnippetType.plainText.rawValue {
+                        snippetElement.addChild(name: "type", value: "\(snippet.snippetType)")
+                        snippetElement.addChild(name: "shell", value: snippet.scriptShell)
+                        snippetElement.addChild(name: "timeout", value: "\(snippet.scriptTimeout)")
+                    }
                 }
         }
 
@@ -383,6 +472,9 @@ class SnippetsEditorViewModel: ObservableObject {
                             let snippet = CPYSnippet()
                             snippet.title = snippetElement[Constants.Xml.titleElement].value ?? "untitled snippet"
                             snippet.content = snippetElement[Constants.Xml.contentElement].value ?? ""
+                            snippet.snippetType = Int(snippetElement["type"].value ?? "0") ?? 0
+                            snippet.scriptShell = snippetElement["shell"].value ?? CPYSnippet.defaultShell
+                            snippet.scriptTimeout = Int(snippetElement["timeout"].value ?? "\(CPYSnippet.defaultTimeout)") ?? CPYSnippet.defaultTimeout
                             snippet.index = snippetIndex
                             folder.snippets.append(snippet)
                             snippetIndex += 1
@@ -426,6 +518,9 @@ struct ModernSnippetsEditorView: View {
                 viewModel.needsRefocus = false
                 sidebarFocused = true
             }
+        }
+        .sheet(isPresented: $viewModel.showingTemplates) {
+            SnippetTemplateGalleryView(viewModel: viewModel)
         }
     }
 
@@ -524,6 +619,10 @@ struct ModernSnippetsEditorView: View {
 
             Spacer()
 
+            SnippetToolbarButton(icon: "puzzlepiece.extension", help: "Templates") {
+                viewModel.showingTemplates = true
+            }
+
             SnippetToolbarButton(icon: "square.and.arrow.down", help: "Import") {
                 viewModel.importSnippets()
             }
@@ -558,84 +657,248 @@ struct ModernSnippetsEditorView: View {
     }
 
     private func editorHeader(snippet: SnippetsEditorViewModel.SnippetItem, folder: SnippetsEditorViewModel.FolderItem) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "doc.text.fill")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.blue)
-                .frame(width: 26, height: 26)
-                .background(.blue.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: viewModel.editingSnippetType == CPYSnippet.SnippetType.script.rawValue ? "terminal.fill" : "doc.text.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(viewModel.editingSnippetType == CPYSnippet.SnippetType.script.rawValue ? .green : .blue)
+                    .frame(width: 26, height: 26)
+                    .background((viewModel.editingSnippetType == CPYSnippet.SnippetType.script.rawValue ? SwiftUI.Color.green : SwiftUI.Color.blue).opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
 
-            TextField("Snippet title", text: $viewModel.editingTitle)
-                .textFieldStyle(.plain)
-                .font(.system(size: 15, weight: .medium))
-                .onChange(of: viewModel.editingTitle) { _, _ in
+                TextField("Snippet title", text: $viewModel.editingTitle)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 15, weight: .medium))
+                    .onChange(of: viewModel.editingTitle) { _, _ in
+                        viewModel.hasUnsavedChanges = true
+                    }
+
+                Spacer()
+
+                // Type toggle
+                Picker("", selection: $viewModel.editingSnippetType) {
+                    Text("Text").tag(0)
+                    Text("Script").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 120)
+                .onChange(of: viewModel.editingSnippetType) { _, _ in
                     viewModel.hasUnsavedChanges = true
                 }
 
-            Spacer()
+                // Folder breadcrumb
+                HStack(spacing: 3) {
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 8))
+                    Text(folder.title)
+                        .font(.system(size: 9, weight: .medium))
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .foregroundStyle(.secondary)
 
-            // Folder breadcrumb
-            HStack(spacing: 3) {
-                Image(systemName: "folder.fill")
-                    .font(.system(size: 8))
-                Text(folder.title)
-                    .font(.system(size: 9, weight: .medium))
+                // Enabled/disabled badge
+                Circle()
+                    .fill(snippet.enabled ? SwiftUI.Color.green : SwiftUI.Color.gray)
+                    .frame(width: 7, height: 7)
+                    .help(snippet.enabled ? "Enabled" : "Disabled")
             }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(.ultraThinMaterial)
-            .clipShape(Capsule())
-            .foregroundStyle(.secondary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
 
-            // Enabled/disabled badge
-            Circle()
-                .fill(snippet.enabled ? SwiftUI.Color.green : SwiftUI.Color.gray)
-                .frame(width: 7, height: 7)
-                .help(snippet.enabled ? "Enabled" : "Disabled")
+            // Script settings row (only visible in script mode)
+            if viewModel.editingSnippetType == CPYSnippet.SnippetType.script.rawValue {
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "terminal")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Picker("Shell", selection: $viewModel.editingScriptShell) {
+                            Text("/bin/bash").tag("/bin/bash")
+                            Text("/bin/zsh").tag("/bin/zsh")
+                            Text("/bin/sh").tag("/bin/sh")
+                            Text("/usr/bin/env python3").tag("/usr/bin/env python3")
+                        }
+                        .labelsHidden()
+                        .frame(width: 140)
+                        .onChange(of: viewModel.editingScriptShell) { _, _ in
+                            viewModel.hasUnsavedChanges = true
+                        }
+                    }
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Picker("Timeout", selection: $viewModel.editingScriptTimeout) {
+                            Text("5s").tag(5)
+                            Text("10s").tag(10)
+                            Text("30s").tag(30)
+                            Text("60s").tag(60)
+                        }
+                        .labelsHidden()
+                        .frame(width: 70)
+                        .onChange(of: viewModel.editingScriptTimeout) { _, _ in
+                            viewModel.hasUnsavedChanges = true
+                        }
+                    }
+
+                    // Ephemeral toggle — output not saved to history
+                    Toggle(isOn: $viewModel.editingIsEphemeral) {
+                        HStack(spacing: 3) {
+                            Image(systemName: viewModel.editingIsEphemeral ? "eye.slash.fill" : "eye.fill")
+                                .font(.system(size: 9, weight: .medium))
+                            Text("Ephemeral")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .help(viewModel.editingIsEphemeral ? "Output will NOT be saved to clipboard history (secure)" : "Output WILL be saved to clipboard history")
+                    .onChange(of: viewModel.editingIsEphemeral) { _, _ in
+                        viewModel.hasUnsavedChanges = true
+                    }
+
+                    Spacer()
+
+                    Button {
+                        viewModel.testRunScript()
+                    } label: {
+                        HStack(spacing: 4) {
+                            if viewModel.isRunningTest {
+                                ProgressView()
+                                    .controlSize(.mini)
+                            } else {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 9))
+                            }
+                            Text("Test Run")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(.green.opacity(0.12))
+                        .foregroundStyle(.green)
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.isRunningTest)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .animation(.easeOut(duration: 0.15), value: viewModel.editingSnippetType)
     }
 
     private var editorBody: some View {
-        TextEditor(text: $viewModel.editingContent)
-            .font(.system(size: 13, design: .monospaced))
-            .scrollContentBackground(.hidden)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .onChange(of: viewModel.editingContent) { _, _ in
-                viewModel.hasUnsavedChanges = true
+        VStack(spacing: 0) {
+            TextEditor(text: $viewModel.editingContent)
+                .font(.system(size: 13, design: .monospaced))
+                .scrollContentBackground(.hidden)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .onChange(of: viewModel.editingContent) { _, _ in
+                    viewModel.hasUnsavedChanges = true
+                }
+
+            // Script test output panel
+            if viewModel.editingSnippetType == CPYSnippet.SnippetType.script.rawValue, let output = viewModel.scriptTestOutput {
+                Divider().opacity(0.3)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Image(systemName: "text.terminal")
+                            .font(.system(size: 9, weight: .semibold))
+                        Text("Test Output")
+                            .font(.system(size: 10, weight: .semibold))
+                        Spacer()
+                        Button {
+                            viewModel.scriptTestOutput = nil
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .foregroundStyle(.secondary)
+
+                    ScrollView {
+                        Text(output)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(output.hasPrefix("[") ? .orange : .primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                    .frame(maxHeight: 120)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.black.opacity(0.04))
             }
+        }
     }
 
     private var variablesBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 5) {
-                Image(systemName: "percent")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-                    .padding(.trailing, 2)
+                if viewModel.editingSnippetType == CPYSnippet.SnippetType.script.rawValue {
+                    // Script mode: show environment variable hints
+                    Image(systemName: "terminal")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.green.opacity(0.6))
+                        .padding(.trailing, 2)
 
-                ForEach(SnippetVariableProcessor.availableVariables, id: \.name) { variable in
-                    Button {
-                        viewModel.editingContent += variable.name
-                        viewModel.hasUnsavedChanges = true
-                    } label: {
-                        Text(variable.name)
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.white.opacity(0.06))
-                            .foregroundStyle(.secondary)
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
-                            )
+                    ForEach(ScriptExecutionService.availableEnvVars, id: \.name) { envVar in
+                        Button {
+                            viewModel.editingContent += envVar.name
+                            viewModel.hasUnsavedChanges = true
+                        } label: {
+                            Text(envVar.name)
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.green.opacity(0.06))
+                                .foregroundStyle(.green.opacity(0.8))
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(.green.opacity(0.1), lineWidth: 0.5)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .help(envVar.desc)
                     }
-                    .buttonStyle(.plain)
-                    .help(variable.desc)
+                } else {
+                    // Plain text mode: show variable placeholders
+                    Image(systemName: "percent")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .padding(.trailing, 2)
+
+                    ForEach(SnippetVariableProcessor.availableVariables, id: \.name) { variable in
+                        Button {
+                            viewModel.editingContent += variable.name
+                            viewModel.hasUnsavedChanges = true
+                        } label: {
+                            Text(variable.name)
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.white.opacity(0.06))
+                                .foregroundStyle(.secondary)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .help(variable.desc)
+                    }
                 }
             }
             .padding(.horizontal, 14)
@@ -886,14 +1149,14 @@ struct SnippetItemRow: View {
         HStack(spacing: 6) {
             Spacer().frame(width: 14)
 
-            Image(systemName: snippet.enabled ? "doc.text.fill" : "doc.text")
+            Image(systemName: snippet.isScript ? (snippet.enabled ? "terminal.fill" : "terminal") : (snippet.enabled ? "doc.text.fill" : "doc.text"))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(isSelected ? AnyShapeStyle(.white) : snippet.enabled ? AnyShapeStyle(.blue) : AnyShapeStyle(.quaternary))
+                .foregroundStyle(isSelected ? AnyShapeStyle(.white) : snippet.enabled ? AnyShapeStyle(snippet.isScript ? SwiftUI.Color.green : SwiftUI.Color.blue) : AnyShapeStyle(.quaternary))
                 .frame(width: 22, height: 22)
                 .background(
                     isSelected
                         ? AnyShapeStyle(.white.opacity(0.15))
-                        : AnyShapeStyle(snippet.enabled ? SwiftUI.Color.blue.opacity(0.08) : SwiftUI.Color.clear)
+                        : AnyShapeStyle(snippet.enabled ? (snippet.isScript ? SwiftUI.Color.green : SwiftUI.Color.blue).opacity(0.08) : SwiftUI.Color.clear)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
 
@@ -1051,5 +1314,98 @@ extension ModernSnippetsWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         NotificationCenter.default.post(name: Notification.Name(rawValue: Constants.Notification.closeSnippetEditor), object: nil)
         NSApp.deactivate()
+    }
+}
+
+// MARK: - Snippet Template Gallery
+
+struct SnippetTemplateGalleryView: View {
+    @ObservedObject var viewModel: SnippetsEditorViewModel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Image(systemName: "puzzlepiece.extension.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.blue)
+                Text("Script Templates")
+                    .font(.system(size: 16, weight: .semibold))
+                Spacer()
+                Button { viewModel.showingTemplates = false } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(16)
+
+            Divider().opacity(0.3)
+
+            // Template list grouped by category
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(SnippetTemplateLibrary.categories, id: \.self) { category in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(category.uppercased())
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 4)
+
+                            ForEach(SnippetTemplateLibrary.templates(in: category)) { template in
+                                templateRow(template)
+                            }
+                        }
+                    }
+                }
+                .padding(16)
+            }
+        }
+        .frame(width: 480, height: 440)
+        .background(.regularMaterial)
+    }
+
+    private func templateRow(_ template: SnippetTemplate) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: template.icon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.green)
+                .frame(width: 28, height: 28)
+                .background(SwiftUI.Color.green.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(template.name)
+                    .font(.system(size: 12, weight: .medium))
+                Text(template.description)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            Button {
+                viewModel.installTemplate(template)
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("Add")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.blue.opacity(0.12))
+                .foregroundStyle(.blue)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.03))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
