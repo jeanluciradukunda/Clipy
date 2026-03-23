@@ -28,13 +28,21 @@ struct PickerSnippet: Identifiable, Hashable {
     let content: String
     let folderTitle: String
     let hasVariables: Bool
+    let isScript: Bool
+    let scriptShell: String
+    let scriptTimeout: Int
+    let isEphemeral: Bool
 
-    init(id: String, title: String, content: String, folderTitle: String) {
+    init(id: String, title: String, content: String, folderTitle: String, snippetType: Int = CPYSnippet.SnippetType.plainText.rawValue, scriptShell: String = CPYSnippet.defaultShell, scriptTimeout: Int = CPYSnippet.defaultTimeout, isEphemeral: Bool = true) {
         self.id = id
         self.title = title
         self.content = content
         self.folderTitle = folderTitle
-        self.hasVariables = content.contains("%") && SnippetVariableProcessor.availableVariables.contains { content.contains($0.name) }
+        self.isScript = snippetType == CPYSnippet.SnippetType.script.rawValue
+        self.scriptShell = scriptShell
+        self.scriptTimeout = scriptTimeout
+        self.isEphemeral = isEphemeral
+        self.hasVariables = !self.isScript && content.contains("%") && SnippetVariableProcessor.availableVariables.contains { content.contains($0.name) }
     }
 
     var preview: String {
@@ -116,7 +124,11 @@ class SnippetPickerViewModel: ObservableObject {
                         id: snippet.identifier,
                         title: snippet.title,
                         content: snippet.content,
-                        folderTitle: folder.title
+                        folderTitle: folder.title,
+                        snippetType: snippet.snippetType,
+                        scriptShell: snippet.scriptShell,
+                        scriptTimeout: snippet.scriptTimeout,
+                        isEphemeral: snippet.isEphemeral
                     )
                 }
             guard !snippets.isEmpty else { return nil }
@@ -254,10 +266,33 @@ class SnippetPickerViewModel: ObservableObject {
     func pasteSnippet(withID id: String) {
         for folder in allFolders {
             if let snippet = folder.snippets.first(where: { $0.id == id }) {
-                let processed = SnippetVariableProcessor.process(snippet.content)
                 UsageMetricsService.shared.track(.snippetPasted)
-                AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
-                SnippetPickerWindowController.shared.dismissAndPaste()
+
+                if snippet.isScript {
+                    // Dismiss picker first, then run script async and paste output
+                    let ephemeral = snippet.isEphemeral
+                    SnippetPickerWindowController.shared.dismiss()
+                    ScriptExecutionService.execute(
+                        script: snippet.content,
+                        shell: snippet.scriptShell,
+                        timeout: TimeInterval(snippet.scriptTimeout)
+                    ) { result in
+                        if !result.timedOut && result.exitCode == 0 {
+                            if ephemeral {
+                                AppEnvironment.current.pasteService.pasteEphemeral(with: result.output)
+                            } else {
+                                AppEnvironment.current.pasteService.copyToPasteboard(with: result.output)
+                                AppEnvironment.current.pasteService.paste()
+                            }
+                        } else {
+                            NSSound.beep()
+                        }
+                    }
+                } else {
+                    let processed = SnippetVariableProcessor.process(snippet.content)
+                    AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
+                    SnippetPickerWindowController.shared.dismissAndPaste()
+                }
                 return
             }
         }
@@ -504,14 +539,14 @@ struct SnippetPickerPanelView: View {
                 .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary.opacity(0.5))
                 .frame(width: 18)
 
-            Image(systemName: snippet.hasVariables ? "function" : "doc.text.fill")
+            Image(systemName: snippet.isScript ? "terminal.fill" : snippet.hasVariables ? "function" : "doc.text.fill")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(isSelected ? AnyShapeStyle(.white) : snippet.hasVariables ? AnyShapeStyle(.orange) : AnyShapeStyle(.blue))
+                .foregroundStyle(isSelected ? AnyShapeStyle(.white) : snippet.isScript ? AnyShapeStyle(.green) : snippet.hasVariables ? AnyShapeStyle(.orange) : AnyShapeStyle(.blue))
                 .frame(width: 22, height: 22)
                 .background(
                     isSelected
                         ? AnyShapeStyle(.white.opacity(0.15))
-                        : AnyShapeStyle(snippet.hasVariables ? SwiftUI.Color.orange.opacity(0.08) : SwiftUI.Color.blue.opacity(0.08))
+                        : AnyShapeStyle(snippet.isScript ? SwiftUI.Color.green.opacity(0.08) : snippet.hasVariables ? SwiftUI.Color.orange.opacity(0.08) : SwiftUI.Color.blue.opacity(0.08))
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
 
@@ -522,7 +557,15 @@ struct SnippetPickerPanelView: View {
                         .foregroundStyle(isSelected ? .white : .primary)
                         .lineLimit(1)
 
-                    if snippet.hasVariables {
+                    if snippet.isScript {
+                        Text("SCRIPT")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundStyle(isSelected ? .white.opacity(0.7) : .green)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(isSelected ? .white.opacity(0.15) : SwiftUI.Color.green.opacity(0.12))
+                            .clipShape(Capsule())
+                    } else if snippet.hasVariables {
                         Text("%VAR")
                             .font(.system(size: 8, weight: .bold, design: .rounded))
                             .foregroundStyle(isSelected ? .white.opacity(0.7) : .orange)
