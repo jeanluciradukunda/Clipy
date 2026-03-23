@@ -141,8 +141,11 @@ class SnippetsEditorViewModel: ObservableObject {
         }
     }
 
-    func installTemplate(_ template: SnippetTemplate) {
-        // Install into the currently selected folder, or create a new one
+    /// Template pending parameter configuration (shown in config sheet).
+    @Published var pendingTemplate: SnippetTemplate?
+    @Published var pendingTemplateValues: [String: String] = [:]
+
+    func installTemplate(_ template: SnippetTemplate, values: [String: String] = [:]) {
         let folderID: String
         if let selected = selectedFolderID {
             folderID = selected
@@ -159,7 +162,7 @@ class SnippetsEditorViewModel: ObservableObject {
         guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folderID) else { return }
         let snippet = folder.createSnippet()
         snippet.title = template.name
-        snippet.content = template.content
+        snippet.content = template.resolvedContent(with: values)
         snippet.snippetType = CPYSnippet.SnippetType.script.rawValue
         snippet.scriptShell = template.shell
         snippet.scriptTimeout = template.timeout
@@ -1324,7 +1327,22 @@ struct SnippetTemplateGalleryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            if let template = viewModel.pendingTemplate {
+                // Parameter configuration form
+                templateConfigView(template)
+            } else {
+                // Template browser
+                templateBrowser
+            }
+        }
+        .frame(width: 480, height: 440)
+        .background(.regularMaterial)
+    }
+
+    // MARK: - Template Browser
+
+    private var templateBrowser: some View {
+        VStack(spacing: 0) {
             HStack {
                 Image(systemName: "puzzlepiece.extension.fill")
                     .font(.system(size: 16, weight: .medium))
@@ -1343,7 +1361,6 @@ struct SnippetTemplateGalleryView: View {
 
             Divider().opacity(0.3)
 
-            // Template list grouped by category
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(SnippetTemplateLibrary.categories, id: \.self) { category in
@@ -1362,8 +1379,6 @@ struct SnippetTemplateGalleryView: View {
                 .padding(16)
             }
         }
-        .frame(width: 480, height: 440)
-        .background(.regularMaterial)
     }
 
     private func templateRow(_ template: SnippetTemplate) -> some View {
@@ -1376,8 +1391,19 @@ struct SnippetTemplateGalleryView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(template.name)
-                    .font(.system(size: 12, weight: .medium))
+                HStack(spacing: 4) {
+                    Text(template.name)
+                        .font(.system(size: 12, weight: .medium))
+                    if template.hasParameters {
+                        Text("\(template.parameters.count) fields")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(SwiftUI.Color.blue.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                }
                 Text(template.description)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
@@ -1387,12 +1413,23 @@ struct SnippetTemplateGalleryView: View {
             Spacer()
 
             Button {
-                viewModel.installTemplate(template)
+                if template.hasParameters {
+                    // Show config form
+                    var defaults = [String: String]()
+                    for param in template.parameters {
+                        defaults[param.key] = param.defaultValue
+                    }
+                    viewModel.pendingTemplateValues = defaults
+                    viewModel.pendingTemplate = template
+                } else {
+                    // Install directly
+                    viewModel.installTemplate(template)
+                }
             } label: {
                 HStack(spacing: 3) {
-                    Image(systemName: "plus")
+                    Image(systemName: template.hasParameters ? "slider.horizontal.3" : "plus")
                         .font(.system(size: 9, weight: .bold))
-                    Text("Add")
+                    Text(template.hasParameters ? "Configure" : "Add")
                         .font(.system(size: 10, weight: .medium))
                 }
                 .padding(.horizontal, 10)
@@ -1407,5 +1444,115 @@ struct SnippetTemplateGalleryView: View {
         .padding(.vertical, 8)
         .background(.white.opacity(0.03))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    // MARK: - Parameter Configuration Form
+
+    private func templateConfigView(_ template: SnippetTemplate) -> some View {
+        VStack(spacing: 0) {
+            // Header with back button
+            HStack(spacing: 10) {
+                Button {
+                    viewModel.pendingTemplate = nil
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+
+                Image(systemName: template.icon)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.green)
+
+                Text(template.name)
+                    .font(.system(size: 15, weight: .semibold))
+
+                Spacer()
+
+                Button { viewModel.showingTemplates = false; viewModel.pendingTemplate = nil } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(16)
+
+            Divider().opacity(0.3)
+
+            // Form fields
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(template.description)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .padding(.bottom, 4)
+
+                    ForEach(template.parameters) { param in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(param.label)
+                                .font(.system(size: 11, weight: .medium))
+
+                            TextField(param.placeholder, text: Binding(
+                                get: { viewModel.pendingTemplateValues[param.key] ?? param.defaultValue },
+                                set: { viewModel.pendingTemplateValues[param.key] = $0 }
+                            ))
+                            .textFieldStyle(.roundedBorder)
+                            .font(.system(size: 12, design: .monospaced))
+                        }
+                    }
+
+                    // Preview of resolved script
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Preview")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+
+                        Text(template.resolvedContent(with: viewModel.pendingTemplateValues))
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(12)
+                            .padding(8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(.black.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(16)
+            }
+
+            Divider().opacity(0.3)
+
+            // Footer with Create button
+            HStack {
+                Text("Recommended: place in a Vault folder for Touch ID protection")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+
+                Spacer()
+
+                Button {
+                    viewModel.installTemplate(template, values: viewModel.pendingTemplateValues)
+                    viewModel.pendingTemplate = nil
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 11))
+                        Text("Create Snippet")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(.blue)
+                    .foregroundStyle(.white)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
     }
 }

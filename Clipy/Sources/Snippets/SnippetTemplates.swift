@@ -8,6 +8,14 @@
 
 import Foundation
 
+struct TemplateParameter: Identifiable {
+    let id = UUID().uuidString
+    let key: String          // placeholder in script, e.g. "{{PROFILE}}"
+    let label: String        // shown in form, e.g. "AWS Profile"
+    let placeholder: String  // hint text, e.g. "my-sso-profile"
+    let defaultValue: String
+}
+
 struct SnippetTemplate: Identifiable {
     let id = UUID().uuidString
     let name: String
@@ -17,55 +25,76 @@ struct SnippetTemplate: Identifiable {
     let shell: String
     let content: String
     let timeout: Int
+    let parameters: [TemplateParameter]
+
+    init(name: String, description: String, category: String, icon: String,
+         shell: String, content: String, timeout: Int,
+         parameters: [TemplateParameter] = []) {
+        self.name = name
+        self.description = description
+        self.category = category
+        self.icon = icon
+        self.shell = shell
+        self.content = content
+        self.timeout = timeout
+        self.parameters = parameters
+    }
+
+    /// Replace {{KEY}} placeholders in content with provided values.
+    func resolvedContent(with values: [String: String]) -> String {
+        var result = content
+        for param in parameters {
+            let value = values[param.key] ?? param.defaultValue
+            result = result.replacingOccurrences(of: "{{\(param.key)}}", with: value)
+        }
+        return result
+    }
+
+    var hasParameters: Bool { !parameters.isEmpty }
 }
 
 struct SnippetTemplateLibrary {
 
     static let templates: [SnippetTemplate] = [
         // MARK: - AWS
-        // Each template uses hardcoded config — edit PROFILE/SECRET_NAME after adding.
-        // Recommended: place AWS snippets in a Vault folder (Touch ID protected).
         SnippetTemplate(
-            name: "AWS SSO Credentials (env vars)",
-            description: "Auto-refreshes SSO session and pastes credentials as export statements. Edit PROFILE below.",
+            name: "AWS SSO Credentials",
+            description: "Auto-refreshes SSO session and pastes credentials as export statements.",
             category: "AWS",
             icon: "cloud.fill",
             shell: "/bin/bash",
             content: """
             #!/bin/bash
-            # ✏️ Set your AWS profile name here:
-            PROFILE="your-profile-name"
+            PROFILE="{{PROFILE}}"
 
-            # Auto-authenticate if session expired
             if ! aws sts get-caller-identity --profile "$PROFILE" &>/dev/null; then
                 aws sso login --profile "$PROFILE" >&2
             fi
 
-            # Export credentials as env vars
             aws configure export-credentials --profile "$PROFILE" --format env 2>/dev/null || \\
                 echo "# Failed to get credentials for profile: $PROFILE"
             """,
-            timeout: 30
+            timeout: 30,
+            parameters: [
+                TemplateParameter(key: "PROFILE", label: "AWS Profile", placeholder: "my-sso-profile", defaultValue: "default"),
+            ]
         ),
 
         SnippetTemplate(
             name: "AWS Secret Fetch",
-            description: "Fetches a secret from AWS Secrets Manager by name. Edit PROFILE and SECRET_NAME below.",
+            description: "Fetches a secret value from AWS Secrets Manager.",
             category: "AWS",
             icon: "lock.shield.fill",
             shell: "/bin/bash",
             content: """
             #!/bin/bash
-            # ✏️ Configure your AWS profile and secret:
-            PROFILE="your-profile-name"
-            SECRET_NAME="your/secret/name"
+            PROFILE="{{PROFILE}}"
+            SECRET_NAME="{{SECRET_NAME}}"
 
-            # Auto-authenticate if session expired
             if ! aws sts get-caller-identity --profile "$PROFILE" &>/dev/null; then
                 aws sso login --profile "$PROFILE" >&2
             fi
 
-            # Fetch the secret value
             aws secretsmanager get-secret-value \\
                 --profile "$PROFILE" \\
                 --secret-id "$SECRET_NAME" \\
@@ -73,28 +102,29 @@ struct SnippetTemplateLibrary {
                 --output text 2>/dev/null || \\
                 echo "[Failed to fetch secret: $SECRET_NAME]"
             """,
-            timeout: 15
+            timeout: 15,
+            parameters: [
+                TemplateParameter(key: "PROFILE", label: "AWS Profile", placeholder: "my-sso-profile", defaultValue: "default"),
+                TemplateParameter(key: "SECRET_NAME", label: "Secret Name", placeholder: "prod/database/password", defaultValue: ""),
+            ]
         ),
 
         SnippetTemplate(
             name: "AWS Secret Field (JSON key)",
-            description: "Fetches a JSON secret and extracts a specific field. Edit PROFILE, SECRET_NAME, and FIELD.",
+            description: "Fetches a JSON secret and extracts a specific field by key.",
             category: "AWS",
             icon: "key.fill",
             shell: "/bin/bash",
             content: """
             #!/bin/bash
-            # ✏️ Configure your AWS profile, secret, and JSON field:
-            PROFILE="your-profile-name"
-            SECRET_NAME="your/secret/name"
-            FIELD="password"
+            PROFILE="{{PROFILE}}"
+            SECRET_NAME="{{SECRET_NAME}}"
+            FIELD="{{FIELD}}"
 
-            # Auto-authenticate if session expired
             if ! aws sts get-caller-identity --profile "$PROFILE" &>/dev/null; then
                 aws sso login --profile "$PROFILE" >&2
             fi
 
-            # Fetch secret and extract the field
             aws secretsmanager get-secret-value \\
                 --profile "$PROFILE" \\
                 --secret-id "$SECRET_NAME" \\
@@ -103,27 +133,29 @@ struct SnippetTemplateLibrary {
                 python3 -c "import sys,json; print(json.load(sys.stdin)['$FIELD'])" 2>/dev/null || \\
                 echo "[Failed to fetch field '$FIELD' from secret: $SECRET_NAME]"
             """,
-            timeout: 15
+            timeout: 15,
+            parameters: [
+                TemplateParameter(key: "PROFILE", label: "AWS Profile", placeholder: "my-sso-profile", defaultValue: "default"),
+                TemplateParameter(key: "SECRET_NAME", label: "Secret Name", placeholder: "prod/database/credentials", defaultValue: ""),
+                TemplateParameter(key: "FIELD", label: "JSON Field", placeholder: "password", defaultValue: "password"),
+            ]
         ),
 
         SnippetTemplate(
             name: "AWS SSM Parameter",
-            description: "Fetches a parameter from AWS Systems Manager Parameter Store. Edit PROFILE and PARAM_NAME.",
+            description: "Fetches a parameter from AWS Systems Manager Parameter Store.",
             category: "AWS",
             icon: "slider.horizontal.3",
             shell: "/bin/bash",
             content: """
             #!/bin/bash
-            # ✏️ Configure your AWS profile and parameter path:
-            PROFILE="your-profile-name"
-            PARAM_NAME="/your/parameter/path"
+            PROFILE="{{PROFILE}}"
+            PARAM_NAME="{{PARAM_NAME}}"
 
-            # Auto-authenticate if session expired
             if ! aws sts get-caller-identity --profile "$PROFILE" &>/dev/null; then
                 aws sso login --profile "$PROFILE" >&2
             fi
 
-            # Fetch the parameter value (with decryption for SecureString)
             aws ssm get-parameter \\
                 --profile "$PROFILE" \\
                 --name "$PARAM_NAME" \\
@@ -132,7 +164,11 @@ struct SnippetTemplateLibrary {
                 --output text 2>/dev/null || \\
                 echo "[Failed to fetch parameter: $PARAM_NAME]"
             """,
-            timeout: 15
+            timeout: 15,
+            parameters: [
+                TemplateParameter(key: "PROFILE", label: "AWS Profile", placeholder: "my-sso-profile", defaultValue: "default"),
+                TemplateParameter(key: "PARAM_NAME", label: "Parameter Path", placeholder: "/app/config/db-host", defaultValue: ""),
+            ]
         ),
 
         // MARK: - JSON
