@@ -42,7 +42,7 @@ open Clipy.xcworkspace
 
 ### Updating
 
-**Auto-update:** Preferences → Updates → Check for Updates. Downloads, installs, and relaunches in one click.
+**Auto-update:** Preferences → Updates → Check for Updates, then click **Update Now** and follow the prompts.
 
 **Manual:** Download the latest DMG, drag to Applications (replace existing), and launch.
 
@@ -223,7 +223,7 @@ Both can coexist on the same Mac with separate data. To run both simultaneously,
 | Menu bar | Standard icon | Icon with orange **DEV** badge |
 | Settings title | "Clipy Settings" | "Clipy Dev Settings" |
 | Install | DMG from Releases | `Cmd+R` in Xcode |
-| Accessibility | Persists across updates (Developer ID signed) | Persists across rebuilds (same local signing identity) |
+| Accessibility | Persists across updates (Developer ID-signed) | Persists across rebuilds (same local signing identity) |
 
 > **Note for developers:** Both debug builds (local Xcode signing) and release DMGs (Developer ID signing) use a consistent identity, so Accessibility permission persists across updates and rebuilds.
 
