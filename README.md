@@ -24,11 +24,9 @@
 
 1. Grab the latest `.dmg` from [**Releases**](https://github.com/jeanluciradukunda/Clipy/releases/latest)
 2. Open the DMG and drag Clipy to Applications
-3. If macOS shows a security warning, right-click the app → **Open** → **Open Anyway**, or run:
-   ```bash
-   xattr -cr /Applications/Clipy.app
-   ```
-   > This is expected — the app is not notarized yet. We're working on Apple Developer ID signing.
+3. Launch Clipy — it appears in your menu bar
+
+> Signed and notarized with Apple Developer ID. No Terminal commands or security workarounds needed.
 
 ### Build from Source
 
@@ -44,16 +42,11 @@ open Clipy.xcworkspace
 
 ### Updating
 
-Until we have an Apple Developer ID certificate, updating requires re-granting Accessibility:
-
 1. Quit Clipy
 2. Install the new DMG (drag to Applications, replace existing)
-3. Run `xattr -cr /Applications/Clipy.app`
-4. Open **System Settings → Privacy & Security → Accessibility**
-5. Remove Clipy from the list, then re-add it
-6. Launch Clipy
+3. Launch Clipy
 
-> This happens because macOS invalidates Accessibility trust when the unsigned binary changes. Apple Developer ID signing ([#45](https://github.com/jeanluciradukunda/Clipy/issues/45)) will fix this permanently.
+> Accessibility permission persists across updates since the app is signed with a consistent Developer ID.
 
 ### Uninstall
 
@@ -232,7 +225,7 @@ Both can coexist on the same Mac with separate data. To run both simultaneously,
 | Install | DMG from Releases | `Cmd+R` in Xcode |
 | Accessibility | Must re-grant after each DMG update | Persists across rebuilds (same local signing identity) |
 
-> **Note for developers:** Debug builds use your local Xcode signing identity which stays consistent, so Accessibility permission persists across rebuilds. No need to remove and re-add it. This is only an issue for unsigned release DMGs.
+> **Note for developers:** Both debug builds (local Xcode signing) and release DMGs (Developer ID signing) use a consistent identity, so Accessibility permission persists across updates and rebuilds.
 
 ### Debugging
 

@@ -1421,13 +1421,6 @@ struct UpdatesPreferencesView: View {
                 try? FileManager.default.removeItem(atPath: destApp)
                 try FileManager.default.copyItem(atPath: sourceApp, toPath: destApp)
 
-                // Remove quarantine attribute
-                let xattrProcess = Process()
-                xattrProcess.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
-                xattrProcess.arguments = ["-cr", destApp]
-                try xattrProcess.run()
-                xattrProcess.waitUntilExit()
-
                 // Unmount DMG
                 let detachProcess = Process()
                 detachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
