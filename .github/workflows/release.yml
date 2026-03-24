@@ -61,6 +61,38 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.VERSION }}" "Clipy/Supporting Files/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.VERSION }}" "Clipy/Supporting Files/Info.plist"
 
+      # ---------- Code Signing Setup ----------
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          # Decode certificate
+          CERTIFICATE_PATH=${{ runner.temp }}/certificate.p12
+          echo "$CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+
+          # Create temporary keychain
+          KEYCHAIN_PATH=${{ runner.temp }}/signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 16)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import certificate
+          security import "$CERTIFICATE_PATH" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          # Allow codesign to access the keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Add to search list
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+      # ---------- Build & Sign ----------
       - name: Archive
         run: |
           xcodebuild \
@@ -68,8 +100,10 @@ jobs:
             -scheme Clipy \
             -configuration Release \
             -archivePath ${{ runner.temp }}/Clipy.xcarchive \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            CODE_SIGN_STYLE=Manual \
+            OTHER_CODE_SIGN_FLAGS="--options runtime" \
             archive
 
       - name: Export app
@@ -78,6 +112,12 @@ jobs:
           cp -R "${{ runner.temp }}/Clipy.xcarchive/Products/Applications/Clipy.app" \
             "${{ runner.temp }}/export/Clipy.app"
 
+      - name: Verify signature
+        run: |
+          codesign --verify --deep --strict --verbose=2 "${{ runner.temp }}/export/Clipy.app"
+          echo "✅ Code signature verified"
+
+      # ---------- Notarization ----------
       - name: Create DMG
         run: |
           brew install create-dmg || true
@@ -102,6 +142,31 @@ jobs:
               "${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg"
           fi
 
+      - name: Notarize DMG
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          DMG_PATH="${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg"
+
+          echo "Submitting for notarization..."
+          xcrun notarytool submit "$DMG_PATH" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+          echo "Stapling notarization ticket..."
+          xcrun stapler staple "$DMG_PATH"
+
+          echo "✅ Notarization complete"
+
+      # ---------- Cleanup & Release ----------
+      - name: Clean up keychain
+        if: always()
+        run: security delete-keychain ${{ runner.temp }}/signing.keychain-db 2>/dev/null || true
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -115,12 +180,9 @@ jobs:
             ### Install
             1. Download `Clipy-${{ steps.version.outputs.VERSION }}.dmg` below
             2. Open the DMG and drag Clipy to Applications
-            3. **If macOS blocks it**: right-click → Open → Open Anyway, or run `xattr -cr /Applications/Clipy.app`
-            4. Launch Clipy — it appears in your menu bar
+            3. Launch Clipy — it appears in your menu bar
 
-            > **Note:** The app is not yet notarized with Apple. The security warning is expected and safe to bypass.
-
-            **Requires macOS 14.0 Sonoma or later.**
+            **Signed and notarized with Apple Developer ID.** Requires macOS 14.0 Sonoma or later.
           files: |
             ${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg
           draft: false

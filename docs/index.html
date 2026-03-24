@@ -524,37 +524,29 @@ footer a:hover{color:var(--accent)}
           <p><strong>Step 1:</strong> Download the <code style="padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);font-family:var(--mono);font-size:12px">.dmg</code> from the button above</p>
           <p><strong>Step 2:</strong> Double-click the <code style="padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);font-family:var(--mono);font-size:12px">.dmg</code> to open it</p>
           <p><strong>Step 3:</strong> Drag <strong>Clipy</strong> to the <strong>Applications</strong> folder</p>
-          <p><strong>Step 4:</strong> Open <strong>Terminal</strong> (search for it in Spotlight) and paste this:</p>
-          <code style="display:block;margin:8px 0 4px;padding:12px 16px;border-radius:8px;background:rgba(255,255,255,.04);font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.02em">xattr -cr /Applications/Clipy.app</code>
-          <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px">This removes the macOS quarantine flag. It's the same thing Xcode does when you build an app locally — completely safe.</p>
-          <p><strong>Step 5:</strong> Open Clipy from Applications. It appears in your menu bar</p>
-          <p><strong>Step 6:</strong> Grant <strong>Accessibility</strong> permission when prompted (needed to paste)</p>
+          <p><strong>Step 4:</strong> Open Clipy from Applications. It appears in your menu bar</p>
+          <p><strong>Step 5:</strong> Grant <strong>Accessibility</strong> permission when prompted (needed to paste)</p>
+          <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Signed and notarized with Apple Developer ID — no Terminal commands needed.</p>
         </div>
       </div>
     </div>
 
     <div class="features-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:16px">
       <div class="feature-card reveal">
-        <div class="feature-icon" style="background:rgba(234,179,8,.1)">&#x26A0;</div>
-        <h3>"Clipy is damaged" error?</h3>
-        <p>You skipped Step 4. Open Terminal and run:</p>
-        <code style="display:block;margin-top:8px;padding:8px 12px;border-radius:6px;background:rgba(255,255,255,.04);font-family:var(--mono);font-size:12px;color:var(--accent)">xattr -cr /Applications/Clipy.app</code>
-        <p style="margin-top:8px;font-size:11px;color:var(--text-muted)">Or right-click Clipy in Applications → Open → Open Anyway</p>
+        <div class="feature-icon" style="background:rgba(34,197,94,.1)">&#x2705;</div>
+        <h3>Signed &amp; Notarized</h3>
+        <p>Clipy is signed with an Apple Developer ID certificate and notarized by Apple. No security warnings, no Terminal commands — just download and run.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-1">
         <div class="feature-icon" style="background:rgba(59,130,246,.1)">&#x1F504;</div>
         <h3>Updating to a new version</h3>
-        <p>Until we get an Apple Developer certificate, updating requires re-granting Accessibility permission:</p>
         <div style="line-height:1.8;font-size:12px;margin-top:6px">
           <p>1. Quit Clipy</p>
           <p>2. Install the new DMG (drag to Applications, replace)</p>
-          <p>3. Run <code style="padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);font-family:var(--mono);font-size:11px;color:var(--accent)">xattr -cr /Applications/Clipy.app</code></p>
-          <p>4. Open System Settings → Privacy → Accessibility</p>
-          <p>5. Remove Clipy from the list, then re-add it</p>
-          <p>6. Launch Clipy</p>
+          <p>3. Launch Clipy</p>
         </div>
-        <p style="margin-top:8px;font-size:10px;color:var(--text-muted)">This is because macOS invalidates Accessibility trust when the app binary changes. A signed Developer ID certificate (coming soon) will fix this permanently.</p>
+        <p style="margin-top:8px;font-size:10px;color:var(--text-muted)">Accessibility permission persists across updates since the app is signed with a consistent Developer ID.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-2">
