@@ -112,25 +112,64 @@ jobs:
           cp -R "${{ runner.temp }}/Clipy.xcarchive/Products/Applications/Clipy.app" \
             "${{ runner.temp }}/export/Clipy.app"
 
-      - name: Re-sign embedded frameworks and app
+      - name: Re-sign all embedded binaries and app
         run: |
           APP_PATH="${{ runner.temp }}/export/Clipy.app"
+          SIGN_ID="Developer ID Application"
 
-          # Sign all embedded frameworks with hardened runtime + timestamp
-          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -type d -print0 2>/dev/null | while IFS= read -r -d '' fw; do
+          # Create entitlements file that strips com.apple.security.get-task-allow
+          # (debug entitlement that Apple rejects during notarization)
+          cat > "${{ runner.temp }}/release.entitlements" << 'ENTITLEMENTS'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.security.app-sandbox</key>
+            <false/>
+          </dict>
+          </plist>
+          ENTITLEMENTS
+
+          # Sign every Mach-O binary inside the app bundle (innermost first)
+          # This catches nested .app bundles like Sparkle's Autoupdate.app
+          find "$APP_PATH" -type f -print0 2>/dev/null | while IFS= read -r -d '' f; do
+            # Check if it's a Mach-O binary
+            if file "$f" | grep -q "Mach-O"; then
+              echo "Signing: ${f#$APP_PATH/}"
+              codesign --force --options runtime --timestamp \
+                --entitlements "${{ runner.temp }}/release.entitlements" \
+                --sign "$SIGN_ID" "$f"
+            fi
+          done
+
+          # Sign all .app bundles inside frameworks (e.g., Sparkle's Autoupdate.app)
+          find "$APP_PATH/Contents/Frameworks" -name "*.app" -type d -print0 2>/dev/null | while IFS= read -r -d '' app; do
+            echo "Signing bundle: ${app#$APP_PATH/}"
             codesign --force --deep --options runtime --timestamp \
-              --sign "Developer ID Application" "$fw"
+              --entitlements "${{ runner.temp }}/release.entitlements" \
+              --sign "$SIGN_ID" "$app"
           done
 
-          # Sign any embedded dylibs
+          # Sign all frameworks
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -type d -print0 2>/dev/null | while IFS= read -r -d '' fw; do
+            echo "Signing framework: ${fw#$APP_PATH/}"
+            codesign --force --deep --options runtime --timestamp \
+              --sign "$SIGN_ID" "$fw"
+          done
+
+          # Sign any loose dylibs
           find "$APP_PATH" -name "*.dylib" -type f -print0 2>/dev/null | while IFS= read -r -d '' lib; do
+            echo "Signing dylib: ${lib#$APP_PATH/}"
             codesign --force --options runtime --timestamp \
-              --sign "Developer ID Application" "$lib"
+              --sign "$SIGN_ID" "$lib"
           done
 
-          # Re-sign the main app bundle (must be last)
+          # Re-sign the main app bundle last
           codesign --force --deep --options runtime --timestamp \
-            --sign "Developer ID Application" "$APP_PATH"
+            --entitlements "${{ runner.temp }}/release.entitlements" \
+            --sign "$SIGN_ID" "$APP_PATH"
+
+          echo "✅ All binaries signed"
 
       - name: Verify signature
         run: |
