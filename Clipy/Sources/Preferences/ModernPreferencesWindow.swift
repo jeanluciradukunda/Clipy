@@ -1417,9 +1417,12 @@ struct UpdatesPreferencesView: View {
                 let sourceApp = "\(volume)/\(appName)"
                 let destApp = "/Applications/Clipy.app"
 
-                // Remove old app and copy new one
+                // Atomic replace: copy new app to temp, then swap
+                let tempDest = destApp + ".update-\(UUID().uuidString)"
+                try FileManager.default.copyItem(atPath: sourceApp, toPath: tempDest)
+                // Only remove old app after new copy succeeds
                 try? FileManager.default.removeItem(atPath: destApp)
-                try FileManager.default.copyItem(atPath: sourceApp, toPath: destApp)
+                try FileManager.default.moveItem(atPath: tempDest, toPath: destApp)
 
                 // Unmount DMG
                 let detachProcess = Process()
