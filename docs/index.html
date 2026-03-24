@@ -413,51 +413,68 @@ footer a:hover{color:var(--accent)}
 <section class="section" id="changelog">
   <div class="container">
     <div class="section-label reveal">What's New</div>
-    <h2 class="section-title reveal reveal-delay-1" id="version-title">v2.0 — The Big One</h2>
-    <p class="section-desc reveal reveal-delay-2">A complete rewrite of Clipy. Everything is new. <a href="https://github.com/jeanluciradukunda/Clipy/blob/main/CHANGELOG.md" style="color:var(--accent);text-decoration:underline;text-underline-offset:2px">Full changelog →</a></p>
+    <h2 class="section-title reveal reveal-delay-1" id="version-title">v2.1 — Scripts, Plugins &amp; Signed</h2>
+    <p class="section-desc reveal reveal-delay-2">Script snippets, a plugin system, ephemeral paste for secrets, and Apple Developer ID signing. <a href="https://github.com/jeanluciradukunda/Clipy/blob/main/CHANGELOG.md" style="color:var(--accent);text-decoration:underline;text-underline-offset:2px">Full changelog →</a></p>
 
     <div class="changelog">
       <div class="changelog-item reveal">
         <span class="changelog-tag tag-added">Added</span>
-        <h4>SwiftUI Search Panel</h4>
-        <p>Spotlight-style split-pane UI with fuzzy search, content filters, syntax highlighting, and rich preview.</p>
+        <h4>Script Snippets</h4>
+        <p>Snippets that execute shell scripts and paste the output. Choose your shell, set a timeout, and test-run from the editor. Fetch secrets, transform formats, generate UUIDs — all from a hotkey.</p>
       </div>
       <div class="changelog-item reveal reveal-delay-1">
         <span class="changelog-tag tag-added">Added</span>
-        <h4>OCR with Caching</h4>
-        <p>Extract text from images using Vision framework. Results cached in Realm — instant on subsequent views.</p>
+        <h4>Ephemeral Paste</h4>
+        <p>Script output is never saved to clipboard history. Secrets are pasted, used, and auto-cleared from the pasteboard. Clipy doesn't become a target for credential theft.</p>
       </div>
       <div class="changelog-item reveal reveal-delay-2">
         <span class="changelog-tag tag-added">Added</span>
-        <h4>Vault Folders</h4>
-        <p>Touch ID / password protection for sensitive snippet folders. Hidden from search and export when locked.</p>
-      </div>
-      <div class="changelog-item reveal reveal-delay-1">
-        <span class="changelog-tag tag-improved">Improved</span>
-        <h4>Snippet Editor</h4>
-        <p>Full keyboard navigation, inline rename, variable insertion bar, XML import/export. Arrow keys to browse, expand, collapse.</p>
-      </div>
-      <div class="changelog-item reveal reveal-delay-2">
-        <span class="changelog-tag tag-improved">Improved</span>
-        <h4>All Preferences in SwiftUI</h4>
-        <p>Modern settings window — clipboard types, excluded apps, shortcuts, developer mode. No more legacy XIBs (except global hotkeys).</p>
-      </div>
-      <div class="changelog-item reveal reveal-delay-3">
-        <span class="changelog-tag tag-improved">Improved</span>
-        <h4>Pin Preservation & History Limits</h4>
-        <p>Pinned clips stay pinned when re-copied. History strictly respects your size limit with immediate eviction of oldest items.</p>
+        <h4>Plugin System</h4>
+        <p>Drop shell scripts into ~/.clipy/plugins/ with a manifest.json. Auto-trigger plugins process every clipboard change. Manual plugins run on demand. Manage in Preferences → Plugins.</p>
       </div>
       <div class="changelog-item reveal">
         <span class="changelog-tag tag-added">Added</span>
-        <h4>Auto-update from GitHub</h4>
-        <p>One-click update: checks releases, downloads .dmg, installs, and relaunches. No more manual downloads after first install.</p>
+        <h4>Template Gallery</h4>
+        <p>14 built-in script templates across 7 categories. AWS templates with a configuration form — fill in your profile and secret name, see a live preview, create the snippet. No raw script editing needed.</p>
       </div>
       <div class="changelog-item reveal reveal-delay-1">
-        <span class="changelog-tag tag-added">Added</span>
-        <h4>Developer Mode & Side-by-side Builds</h4>
-        <p>Debug builds show orange DEV badge everywhere. Disable hotkeys to run alongside the release build. Database info, TipKit controls, and a vibing Clippy.</p>
+        <span class="changelog-tag tag-security">Security</span>
+        <h4>Apple Developer ID Signing &amp; Notarization</h4>
+        <p>No more "Clipy is damaged" errors. No more xattr commands. Download, install, and run — like any normal Mac app.</p>
+      </div>
+      <div class="changelog-item reveal reveal-delay-2">
+        <span class="changelog-tag tag-security">Security</span>
+        <h4>Auto-clear Pasteboard</h4>
+        <p>Ephemeral pastes auto-clear after a configurable delay (default 30s). Like 1Password, but for any script-fetched secret. Configure in Preferences → General.</p>
       </div>
     </div>
+
+    <!-- v2.0 highlights -->
+    <details style="margin-top:24px;cursor:pointer">
+      <summary style="font-size:13px;font-weight:500;color:var(--text-dim);padding:8px 0">v2.0 highlights</summary>
+      <div class="changelog" style="margin-top:8px">
+        <div class="changelog-item">
+          <span class="changelog-tag tag-added">Added</span>
+          <h4>SwiftUI Search Panel</h4>
+          <p>Spotlight-style split-pane UI with fuzzy search, content filters, syntax highlighting, and rich preview.</p>
+        </div>
+        <div class="changelog-item">
+          <span class="changelog-tag tag-added">Added</span>
+          <h4>OCR with Caching</h4>
+          <p>Extract text from images using Vision framework. Results cached in Realm — instant on subsequent views.</p>
+        </div>
+        <div class="changelog-item">
+          <span class="changelog-tag tag-added">Added</span>
+          <h4>Vault Folders</h4>
+          <p>Touch ID / password protection for sensitive snippet folders. Hidden from search and export when locked.</p>
+        </div>
+        <div class="changelog-item">
+          <span class="changelog-tag tag-improved">Improved</span>
+          <h4>Snippet Editor &amp; Preferences</h4>
+          <p>Full keyboard nav, variable bar, modern SwiftUI settings, auto-update, developer mode with side-by-side builds.</p>
+        </div>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -540,13 +557,10 @@ footer a:hover{color:var(--accent)}
 
       <div class="feature-card reveal reveal-delay-1">
         <div class="feature-icon" style="background:rgba(59,130,246,.1)">&#x1F504;</div>
-        <h3>Updating to a new version</h3>
-        <div style="line-height:1.8;font-size:12px;margin-top:6px">
-          <p>1. Quit Clipy</p>
-          <p>2. Install the new DMG (drag to Applications, replace)</p>
-          <p>3. Launch Clipy</p>
-        </div>
-        <p style="margin-top:8px;font-size:10px;color:var(--text-muted)">Accessibility permission persists across updates since the app is signed with a consistent Developer ID.</p>
+        <h3>Updating</h3>
+        <p><strong>Auto-update:</strong> Open Preferences → Updates → Check for Updates. One click to download, install, and relaunch.</p>
+        <p style="margin-top:6px;font-size:12px"><strong>Manual:</strong> Download the latest DMG, drag to Applications (replace), and launch.</p>
+        <p style="margin-top:8px;font-size:10px;color:var(--text-muted)">Accessibility permission persists across updates — no need to re-grant.</p>
       </div>
 
       <div class="feature-card reveal reveal-delay-2">
