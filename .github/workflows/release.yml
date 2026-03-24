@@ -112,6 +112,26 @@ jobs:
           cp -R "${{ runner.temp }}/Clipy.xcarchive/Products/Applications/Clipy.app" \
             "${{ runner.temp }}/export/Clipy.app"
 
+      - name: Re-sign embedded frameworks and app
+        run: |
+          APP_PATH="${{ runner.temp }}/export/Clipy.app"
+
+          # Sign all embedded frameworks with hardened runtime
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -type d 2>/dev/null | while read fw; do
+            codesign --force --deep --options runtime \
+              --sign "Developer ID Application" "$fw"
+          done
+
+          # Sign any embedded dylibs
+          find "$APP_PATH" -name "*.dylib" -type f 2>/dev/null | while read lib; do
+            codesign --force --options runtime \
+              --sign "Developer ID Application" "$lib"
+          done
+
+          # Re-sign the main app bundle (must be last)
+          codesign --force --deep --options runtime \
+            --sign "Developer ID Application" "$APP_PATH"
+
       - name: Verify signature
         run: |
           codesign --verify --deep --strict --verbose=2 "${{ runner.temp }}/export/Clipy.app"
@@ -142,6 +162,12 @@ jobs:
               "${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg"
           fi
 
+      - name: Sign DMG
+        run: |
+          codesign --force --sign "Developer ID Application" \
+            "${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg"
+          echo "✅ DMG signed"
+
       - name: Notarize DMG
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -151,11 +177,30 @@ jobs:
           DMG_PATH="${{ runner.temp }}/Clipy-${{ steps.version.outputs.VERSION }}.dmg"
 
           echo "Submitting for notarization..."
-          xcrun notarytool submit "$DMG_PATH" \
+          SUBMIT_OUTPUT=$(xcrun notarytool submit "$DMG_PATH" \
             --apple-id "$APPLE_ID" \
             --password "$APPLE_ID_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait
+            --wait 2>&1) || true
+
+          echo "$SUBMIT_OUTPUT"
+
+          # Extract submission ID
+          SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep "id:" | head -1 | awk '{print $2}')
+
+          # Check if notarization succeeded
+          if echo "$SUBMIT_OUTPUT" | grep -q "status: Accepted"; then
+            echo "✅ Notarization accepted"
+          else
+            echo "❌ Notarization failed — fetching log..."
+            xcrun notarytool log "$SUBMISSION_ID" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_ID_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              developer_log.json 2>&1 || true
+            cat developer_log.json 2>/dev/null || true
+            exit 1
+          fi
 
           echo "Stapling notarization ticket..."
           xcrun stapler staple "$DMG_PATH"
