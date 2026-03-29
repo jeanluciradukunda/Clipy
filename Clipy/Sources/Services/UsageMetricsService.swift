@@ -61,10 +61,19 @@ final class UsageMetricsService: ObservableObject {
     }()
 
     private let calendar = Calendar.current
+    private var needsSave = false
+    private var saveWorkItem: DispatchWorkItem?
+    private let saveQueue = DispatchQueue(label: "com.clipy.UsageMetricsService.saveQueue")
 
     // MARK: - Init
     private init() {
         load()
+        // Schedule periodic save in case events keep firing (safety net)
+        schedulePeriodicSave()
+    }
+
+    deinit {
+        saveWorkItem?.cancel()
     }
 
     // MARK: - Tracking
@@ -79,12 +88,12 @@ final class UsageMetricsService: ObservableObject {
         let hour = calendar.component(.hour, from: now)
         hourlyHistogram[hour] += 1
 
-        save()
+        scheduleDelayedSave()
     }
 
     func trackFilterUsage(_ filter: String) {
         filterUsage[filter, default: 0] += 1
-        save()
+        scheduleDelayedSave()
     }
 
     // MARK: - Export
@@ -108,6 +117,10 @@ final class UsageMetricsService: ObservableObject {
         dailyActivity = [:]
         hourlyHistogram = Array(repeating: 0, count: 24)
         filterUsage = [:]
+        // Cancel any pending save to avoid writing old data
+        saveWorkItem?.cancel()
+        saveWorkItem = nil
+        needsSave = false
         save()
     }
 
@@ -123,6 +136,7 @@ final class UsageMetricsService: ObservableObject {
         if let data = try? JSONEncoder().encode(metrics) {
             UserDefaults.standard.set(data, forKey: Self.defaultsKey)
         }
+        needsSave = false
     }
 
     private func load() {
@@ -136,5 +150,37 @@ final class UsageMetricsService: ObservableObject {
             ? metrics.hourlyHistogram
             : Array(repeating: 0, count: 24)
         filterUsage = metrics.filterUsage
+    }
+
+    // MARK: - Batch Scheduling
+
+    private func scheduleDelayedSave() {
+        needsSave = true
+        saveQueue.async { [weak self] in
+            guard let self = self else { return }
+            // Cancel any pending work item
+            self.saveWorkItem?.cancel()
+            // Create a new work item
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                if self.needsSave {
+                    self.save()
+                }
+            }
+            self.saveWorkItem = workItem
+            // Schedule the work item to run after 2 seconds
+            self.saveQueue.asyncAfter(deadline: .now() + 2.0, execute: workItem)
+        }
+    }
+
+    private func schedulePeriodicSave() {
+        // Safety net: save every 5 minutes in case events keep firing and the delayed save never triggers
+        saveQueue.asyncAfter(deadline: .now() + 300) { [weak self] in
+            guard let self = self else { return }
+            if self.needsSave {
+                self.save()
+            }
+            self.schedulePeriodicSave()
+        }
     }
 }
