@@ -61,10 +61,19 @@ final class UsageMetricsService: ObservableObject {
     }()
 
     private let calendar = Calendar.current
+    private var saveTimer: Timer?
+    private var needsSave = false
 
     // MARK: - Init
     private init() {
         load()
+        startSaveTimer()
+        setupNotifications()
+    }
+
+    deinit {
+        saveTimer?.invalidate()
+        saveTimer = nil
     }
 
     // MARK: - Tracking
@@ -79,12 +88,12 @@ final class UsageMetricsService: ObservableObject {
         let hour = calendar.component(.hour, from: now)
         hourlyHistogram[hour] += 1
 
-        save()
+        needsSave = true
     }
 
     func trackFilterUsage(_ filter: String) {
         filterUsage[filter, default: 0] += 1
-        save()
+        needsSave = true
     }
 
     // MARK: - Export
@@ -113,6 +122,10 @@ final class UsageMetricsService: ObservableObject {
 
     // MARK: - Persistence
 
+    func flush() {
+        save()
+    }
+
     private func save() {
         let metrics = UsageMetrics(
             counters: counters,
@@ -123,6 +136,7 @@ final class UsageMetricsService: ObservableObject {
         if let data = try? JSONEncoder().encode(metrics) {
             UserDefaults.standard.set(data, forKey: Self.defaultsKey)
         }
+        needsSave = false
     }
 
     private func load() {
@@ -136,5 +150,27 @@ final class UsageMetricsService: ObservableObject {
             ? metrics.hourlyHistogram
             : Array(repeating: 0, count: 24)
         filterUsage = metrics.filterUsage
+    }
+
+    // MARK: - Batch Timer
+
+    private func startSaveTimer() {
+        // Save every 30 seconds if there are pending changes
+        saveTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.needsSave {
+                self.save()
+            }
+        }
+    }
+
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.flush()
+        }
     }
 }
