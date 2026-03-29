@@ -146,6 +146,8 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     }
 
     func terminateApplication() {
+        // Flush any pending metrics before terminating
+        UsageMetricsService.shared.flush()
         NSApplication.shared.terminate(nil)
     }
 
@@ -183,6 +185,11 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     private func reflectLoginItemState() {
         let isInLoginItems = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.loginItem)
         toggleAddingToLoginItems(isInLoginItems)
+    }
+    // MARK: - Application Termination
+    func applicationWillTerminate(_ notification: Notification) {
+        // Ensure any pending metrics are saved
+        UsageMetricsService.shared.flush()
     }
 }
 

@@ -65,6 +65,15 @@ final class UsageMetricsService: ObservableObject {
     // MARK: - Init
     private init() {
         load()
+        // Start timer if there are pending changes from load? Not necessary
+        // Timer will be started when first track() is called
+    }
+
+    deinit {
+        saveTimer?.invalidate()
+        saveTimer = nil
+        // Ensure any pending changes are saved
+        flush()
     }
 
     // MARK: - Tracking
@@ -79,12 +88,14 @@ final class UsageMetricsService: ObservableObject {
         let hour = calendar.component(.hour, from: now)
         hourlyHistogram[hour] += 1
 
-        save()
+        // Don't save immediately - batch writes
+        scheduleSave()
     }
 
     func trackFilterUsage(_ filter: String) {
         filterUsage[filter, default: 0] += 1
-        save()
+        // Don't save immediately - batch writes
+        scheduleSave()
     }
 
     // MARK: - Export
@@ -109,6 +120,44 @@ final class UsageMetricsService: ObservableObject {
         hourlyHistogram = Array(repeating: 0, count: 24)
         filterUsage = [:]
         save()
+    }
+
+    // MARK: - Batch Timer
+    private var saveTimer: Timer?
+    private let saveInterval: TimeInterval = 30.0 // Save every 30 seconds
+    private var needsSave = false
+
+    private func scheduleSave() {
+        needsSave = true
+        // Ensure timer is running
+        if saveTimer == nil {
+            startSaveTimer()
+        }
+    }
+
+    private func startSaveTimer() {
+        // Invalidate existing timer
+        saveTimer?.invalidate()
+        // Create a new timer
+        saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { [weak self] _ in
+            self?.performScheduledSave()
+        }
+        // Ensure timer fires during user interaction
+        RunLoop.current.add(saveTimer!, forMode: .common)
+    }
+
+    private func performScheduledSave() {
+        guard needsSave else { return }
+        save()
+        needsSave = false
+    }
+
+    // Force immediate save (e.g., on app termination)
+    func flush() {
+        if needsSave {
+            save()
+            needsSave = false
+        }
     }
 
     // MARK: - Persistence
