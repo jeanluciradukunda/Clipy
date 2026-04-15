@@ -17,6 +17,7 @@ import TipKit
 import Magnet
 import ServiceManagement
 import os.log
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "App")
 
@@ -231,6 +232,11 @@ extension AppDelegate: NSApplicationDelegate {
         #else
         logger.info("Clipy launched successfully")
         #endif
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Ensure any pending usage metrics are saved
+        UsageMetricsService.shared.flush()
     }
 
 }
