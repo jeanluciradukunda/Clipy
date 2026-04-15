@@ -9,6 +9,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 // MARK: - MetricEvent
 enum MetricEvent: String, CaseIterable, Codable {
@@ -61,10 +62,19 @@ final class UsageMetricsService: ObservableObject {
     }()
 
     private let calendar = Calendar.current
+    private var saveTimer: Timer?
+    private var needsSave = false
 
     // MARK: - Init
     private init() {
         load()
+        setupSaveTimer()
+        setupAppLifecycleObservers()
+    }
+
+    deinit {
+        saveTimer?.invalidate()
+        saveTimer = nil
     }
 
     // MARK: - Tracking
@@ -79,12 +89,12 @@ final class UsageMetricsService: ObservableObject {
         let hour = calendar.component(.hour, from: now)
         hourlyHistogram[hour] += 1
 
-        save()
+        needsSave = true
     }
 
     func trackFilterUsage(_ filter: String) {
         filterUsage[filter, default: 0] += 1
-        save()
+        needsSave = true
     }
 
     // MARK: - Export
@@ -108,12 +118,12 @@ final class UsageMetricsService: ObservableObject {
         dailyActivity = [:]
         hourlyHistogram = Array(repeating: 0, count: 24)
         filterUsage = [:]
-        save()
+        saveImmediately()
     }
 
     // MARK: - Persistence
 
-    private func save() {
+    private func saveImmediately() {
         let metrics = UsageMetrics(
             counters: counters,
             dailyActivity: dailyActivity,
@@ -123,6 +133,12 @@ final class UsageMetricsService: ObservableObject {
         if let data = try? JSONEncoder().encode(metrics) {
             UserDefaults.standard.set(data, forKey: Self.defaultsKey)
         }
+        needsSave = false
+    }
+
+    private func saveIfNeeded() {
+        guard needsSave else { return }
+        saveImmediately()
     }
 
     private func load() {
@@ -136,5 +152,35 @@ final class UsageMetricsService: ObservableObject {
             ? metrics.hourlyHistogram
             : Array(repeating: 0, count: 24)
         filterUsage = metrics.filterUsage
+    }
+
+    // MARK: - Batch Saving
+
+    private func setupSaveTimer() {
+        // Save every 30 seconds if there are pending changes
+        saveTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.saveIfNeeded()
+            }
+        }
+    }
+
+    private func setupAppLifecycleObservers() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.saveIfNeeded()
+        }
+        
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.saveImmediately()
+        }
     }
 }

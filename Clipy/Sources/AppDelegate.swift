@@ -226,6 +226,9 @@ extension AppDelegate: NSApplicationDelegate {
         // TipKit onboarding — show max one tip per week to avoid overwhelming new users
         try? Tips.configure([.displayFrequency(.weekly)])
 
+        // Initialize usage metrics service (starts batch timer)
+        _ = UsageMetricsService.shared
+
         #if DEBUG
         logger.info("Clipy Dev (debug build) launched")
         #else
