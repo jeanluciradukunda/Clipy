@@ -233,6 +233,11 @@ extension AppDelegate: NSApplicationDelegate {
         #endif
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        // Ensure any pending usage metrics are saved
+        UsageMetricsService.shared.saveImmediately()
+    }
+
 }
 
 // MARK: - Bind

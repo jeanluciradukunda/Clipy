@@ -61,10 +61,20 @@ final class UsageMetricsService: ObservableObject {
     }()
 
     private let calendar = Calendar.current
+    private var needsSave = false
+    private var saveTimer: Timer?
+    private let saveInterval: TimeInterval = 30.0 // Save every 30 seconds
 
     // MARK: - Init
     private init() {
         load()
+        setupSaveTimer()
+        setupAppLifecycleObservers()
+    }
+
+    deinit {
+        saveTimer?.invalidate()
+        saveTimer = nil
     }
 
     // MARK: - Tracking
@@ -79,12 +89,12 @@ final class UsageMetricsService: ObservableObject {
         let hour = calendar.component(.hour, from: now)
         hourlyHistogram[hour] += 1
 
-        save()
+        markNeedsSave()
     }
 
     func trackFilterUsage(_ filter: String) {
         filterUsage[filter, default: 0] += 1
-        save()
+        markNeedsSave()
     }
 
     // MARK: - Export
@@ -108,12 +118,17 @@ final class UsageMetricsService: ObservableObject {
         dailyActivity = [:]
         hourlyHistogram = Array(repeating: 0, count: 24)
         filterUsage = [:]
-        save()
+        saveImmediately()
     }
 
     // MARK: - Persistence
 
-    private func save() {
+    private func markNeedsSave() {
+        needsSave = true
+    }
+
+    func saveImmediately() {
+        guard needsSave else { return }
         let metrics = UsageMetrics(
             counters: counters,
             dailyActivity: dailyActivity,
@@ -123,6 +138,12 @@ final class UsageMetricsService: ObservableObject {
         if let data = try? JSONEncoder().encode(metrics) {
             UserDefaults.standard.set(data, forKey: Self.defaultsKey)
         }
+        needsSave = false
+    }
+
+    private func saveIfNeeded() {
+        guard needsSave else { return }
+        saveImmediately()
     }
 
     private func load() {
@@ -136,5 +157,37 @@ final class UsageMetricsService: ObservableObject {
             ? metrics.hourlyHistogram
             : Array(repeating: 0, count: 24)
         filterUsage = metrics.filterUsage
+    }
+
+    // MARK: - Timer & Lifecycle
+
+    private func setupSaveTimer() {
+        saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.saveIfNeeded()
+        }
+    }
+
+    private func setupAppLifecycleObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillResignActive),
+            name: NSApplication.willResignActiveNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillTerminate),
+            name: NSApplication.willTerminateNotification,
+            object: nil
+        )
+    }
+
+    @objc private func appWillResignActive() {
+        saveImmediately()
+    }
+
+    @objc private func appWillTerminate() {
+        saveImmediately()
     }
 }
