@@ -1035,7 +1035,7 @@ footer{
       <a href="#how-it-works">How It Works</a>
       <a href="#templates">Templates</a>
       <a href="#install">Install</a>
-      <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="nav-cta">Download</a>
+      <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="nav-cta download-link">Download</a>
     </div>
   </div>
 </nav>
@@ -1053,7 +1053,7 @@ footer{
       <p class="hero-sub">A clipboard manager for macOS that remembers everything, runs scripts, and keeps your secrets safe.</p>
       <p style="font-size:.82rem;color:var(--text-muted);margin-top:-4px;margin-bottom:12px;line-height:1.5">Shipping fast in the open. The core experience is solid, but expect UI refinements, new features landing frequently, and the occasional rough edge as we build toward v3.</p>
       <div class="hero-buttons">
-        <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="btn btn-amber">
+        <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="btn btn-amber download-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download for macOS
         </a>
@@ -1737,7 +1737,7 @@ footer{
       <h2>Ready to upgrade your clipboard?</h2>
       <p>Free, open source, and built for people who copy things a lot.</p>
       <div class="footer-cta-buttons">
-        <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="btn btn-amber">
+        <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="btn btn-amber download-link">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download for macOS
         </a>
@@ -1943,6 +1943,19 @@ footer{
       }
     });
   });
+
+  /* ── Resolve direct DMG download URL from GitHub API ── */
+  fetch('https://api.github.com/repos/jeanluciradukunda/Clipy/releases/latest')
+    .then(function(r){ return r.json(); })
+    .then(function(release){
+      var dmg = release.assets.find(function(a){ return a.name.endsWith('.dmg'); });
+      if(dmg){
+        document.querySelectorAll('.download-link').forEach(function(el){
+          el.href = dmg.browser_download_url;
+        });
+      }
+    })
+    .catch(function(){});
 
 })();
 </script>
