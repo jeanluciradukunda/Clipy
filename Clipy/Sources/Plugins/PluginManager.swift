@@ -51,46 +51,45 @@ class PluginManager: ObservableObject {
 
     func reload() {
         let baseURL = Self.pluginsDirectoryURL
-        guard let contents = try? FileManager.default.contentsOfDirectory(
-            at: baseURL,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            plugins = []
-            return
-        }
+        let savedEnabledIDs = enabledPluginIDs()
 
-        let enabledIDs = enabledPluginIDs()
-
-        plugins = contents.compactMap { dirURL -> Plugin? in
-            guard (try? dirURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { return nil }
-            let manifestURL = dirURL.appendingPathComponent("manifest.json")
-            guard let data = try? Data(contentsOf: manifestURL) else {
-                logger.warning("No manifest.json in plugin \(dirURL.lastPathComponent)")
-                return nil
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let contents = try? FileManager.default.contentsOfDirectory(
+                at: baseURL,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                await MainActor.run { self?.plugins = [] }
+                return
             }
-            guard var plugin = try? JSONDecoder().decode(Plugin.self, from: data) else {
-                logger.error("Invalid manifest.json in plugin \(dirURL.lastPathComponent)")
-                return nil
-            }
-            plugin = Plugin(
-                id: dirURL.lastPathComponent,
-                name: plugin.name,
-                version: plugin.version,
-                description: plugin.description,
-                author: plugin.author,
-                type: plugin.type,
-                trigger: plugin.trigger,
-                inputTypes: plugin.inputTypes,
-                command: plugin.command,
-                timeout: plugin.timeout,
-                directoryURL: dirURL
-            )
-            plugin.isEnabled = enabledIDs[plugin.id] ?? true
-            return plugin
-        }
 
-        logger.info("Loaded \(self.plugins.count) plugin(s)")
+            let loaded: [Plugin] = contents.compactMap { dirURL -> Plugin? in
+                guard (try? dirURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { return nil }
+                let manifestURL = dirURL.appendingPathComponent("manifest.json")
+                guard let data = try? Data(contentsOf: manifestURL) else { return nil }
+                guard var plugin = try? JSONDecoder().decode(Plugin.self, from: data) else { return nil }
+                plugin = Plugin(
+                    id: dirURL.lastPathComponent,
+                    name: plugin.name,
+                    version: plugin.version,
+                    description: plugin.description,
+                    author: plugin.author,
+                    type: plugin.type,
+                    trigger: plugin.trigger,
+                    inputTypes: plugin.inputTypes,
+                    command: plugin.command,
+                    timeout: plugin.timeout,
+                    directoryURL: dirURL
+                )
+                plugin.isEnabled = savedEnabledIDs[plugin.id] ?? true
+                return plugin
+            }
+
+            await MainActor.run {
+                self?.plugins = loaded
+                logger.info("Loaded \(loaded.count) plugin(s)")
+            }
+        }
     }
 
     // MARK: - Plugin Execution

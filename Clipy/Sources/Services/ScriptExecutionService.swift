@@ -97,19 +97,20 @@ struct ScriptExecutionService {
         timer.resume()
 
         // Read pipe data concurrently BEFORE waitUntilExit to prevent kernel pipe buffer deadlock.
+        // Drain fully even past maxOutputSize so the child process can't block on a full pipe buffer.
         var stdoutData = Data()
         var stderrData = Data()
         let readGroup = DispatchGroup()
 
         readGroup.enter()
         DispatchQueue.global().async {
-            stdoutData = stdoutPipe.fileHandleForReading.readData(ofLength: maxOutputSize)
+            stdoutData = drainPipe(stdoutPipe.fileHandleForReading, limit: maxOutputSize)
             readGroup.leave()
         }
 
         readGroup.enter()
         DispatchQueue.global().async {
-            stderrData = stderrPipe.fileHandleForReading.readData(ofLength: maxOutputSize)
+            stderrData = drainPipe(stderrPipe.fileHandleForReading, limit: maxOutputSize)
             readGroup.leave()
         }
 
@@ -136,6 +137,24 @@ struct ScriptExecutionService {
             timedOut: didTimeout,
             error: errorOutput.isEmpty ? nil : errorOutput
         )
+    }
+
+    /// Drain a pipe fully to EOF, keeping only the first `limit` bytes.
+    /// Continues reading past the limit so the child process doesn't block on a full pipe buffer.
+    private static func drainPipe(_ handle: FileHandle, limit: Int) -> Data {
+        var collected = Data()
+        let chunkSize = 64 * 1024
+        var stored = 0
+        while true {
+            let chunk = handle.readData(ofLength: chunkSize)
+            if chunk.isEmpty { break }
+            if stored < limit {
+                let remaining = limit - stored
+                collected.append(chunk.prefix(remaining))
+                stored += min(chunk.count, remaining)
+            }
+        }
+        return collected
     }
 
     /// Environment variables available to script snippets (for UI hints).

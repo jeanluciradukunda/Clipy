@@ -424,6 +424,7 @@ extension SnippetsEditorViewModel {
                         snippetElement.addChild(name: "type", value: "\(snippet.snippetType)")
                         snippetElement.addChild(name: "shell", value: snippet.scriptShell)
                         snippetElement.addChild(name: "timeout", value: "\(snippet.scriptTimeout)")
+                        snippetElement.addChild(name: "ephemeral", value: snippet.isEphemeral ? "true" : "false")
                     }
                 }
         }
@@ -480,6 +481,9 @@ extension SnippetsEditorViewModel {
                             snippet.snippetType = Int(snippetElement["type"].value ?? "0") ?? 0
                             snippet.scriptShell = snippetElement["shell"].value ?? CPYSnippet.defaultShell
                             snippet.scriptTimeout = Int(snippetElement["timeout"].value ?? "\(CPYSnippet.defaultTimeout)") ?? CPYSnippet.defaultTimeout
+                            if let ephemeralValue = snippetElement["ephemeral"].value {
+                                snippet.isEphemeral = (ephemeralValue.lowercased() == "true" || ephemeralValue == "1")
+                            }
                             snippet.index = snippetIndex
                             folder.snippets.append(snippet)
                             snippetIndex += 1
