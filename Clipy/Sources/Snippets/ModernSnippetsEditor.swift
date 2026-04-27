@@ -396,8 +396,10 @@ class SnippetsEditorViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Import / Export
+}
 
+// MARK: - Import / Export
+extension SnippetsEditorViewModel {
     func exportSnippets() {
         let xmlDocument = AEXMLDocument()
         let rootElement = xmlDocument.addChild(name: Constants.Xml.rootElement)
