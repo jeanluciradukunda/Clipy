@@ -24,11 +24,9 @@
 
 1. Grab the latest `.dmg` from [**Releases**](https://github.com/jeanluciradukunda/Clipy/releases/latest)
 2. Open the DMG and drag Clipy to Applications
-3. If macOS shows a security warning, right-click the app → **Open** → **Open Anyway**, or run:
-   ```bash
-   xattr -cr /Applications/Clipy.app
-   ```
-   > This is expected — the app is not notarized yet. We're working on Apple Developer ID signing.
+3. Launch Clipy — it appears in your menu bar
+
+> Signed and notarized with Apple Developer ID. No Terminal commands or security workarounds needed.
 
 ### Build from Source
 
@@ -44,16 +42,11 @@ open Clipy.xcworkspace
 
 ### Updating
 
-Until we have an Apple Developer ID certificate, updating requires re-granting Accessibility:
+**Auto-update:** Preferences → Updates → Check for Updates, then click **Update Now** and follow the prompts.
 
-1. Quit Clipy
-2. Install the new DMG (drag to Applications, replace existing)
-3. Run `xattr -cr /Applications/Clipy.app`
-4. Open **System Settings → Privacy & Security → Accessibility**
-5. Remove Clipy from the list, then re-add it
-6. Launch Clipy
+**Manual:** Download the latest DMG, drag to Applications (replace existing), and launch.
 
-> This happens because macOS invalidates Accessibility trust when the unsigned binary changes. Apple Developer ID signing ([#45](https://github.com/jeanluciradukunda/Clipy/issues/45)) will fix this permanently.
+> Accessibility permission persists across updates — no need to re-grant.
 
 ### Uninstall
 
@@ -230,9 +223,9 @@ Both can coexist on the same Mac with separate data. To run both simultaneously,
 | Menu bar | Standard icon | Icon with orange **DEV** badge |
 | Settings title | "Clipy Settings" | "Clipy Dev Settings" |
 | Install | DMG from Releases | `Cmd+R` in Xcode |
-| Accessibility | Must re-grant after each DMG update | Persists across rebuilds (same local signing identity) |
+| Accessibility | Persists across updates (Developer ID-signed) | Persists across rebuilds (same local signing identity) |
 
-> **Note for developers:** Debug builds use your local Xcode signing identity which stays consistent, so Accessibility permission persists across rebuilds. No need to remove and re-add it. This is only an issue for unsigned release DMGs.
+> **Note for developers:** Both debug builds (local Xcode signing) and release DMGs (Developer ID signing) use a consistent identity, so Accessibility permission persists across updates and rebuilds.
 
 ### Debugging
 
@@ -266,6 +259,16 @@ See [Issues](https://github.com/jeanluciradukunda/Clipy/issues) for the full fea
 ## Attribution
 
 Clipy is a fork of [Clipy/Clipy](https://github.com/Clipy/Clipy) (v1.2.1), originally created by the [Clipy Project](https://github.com/Clipy). Special thanks to [@naotaka](https://github.com/naotaka) for publishing the original [ClipMenu](https://github.com/naotaka/ClipMenu) as open source.
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=jeanluciradukunda%2FClipy&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=jeanluciradukunda/Clipy&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=jeanluciradukunda/Clipy&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=jeanluciradukunda/Clipy&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ## License
 
