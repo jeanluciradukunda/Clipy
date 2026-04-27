@@ -57,6 +57,7 @@ final class CPYUtilities {
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.copySameHistory)
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.UserDefaults.showColorPreviewInTheMenu)
         defaultValues.updateValue(NSNumber(value: false), forKey: Constants.UserDefaults.clearHistoryIncludesPinned)
+        defaultValues.updateValue(NSNumber(value: 30), forKey: Constants.UserDefaults.ephemeralAutoClearSeconds)
 
         /* Snippets */
         defaultValues.updateValue(NSNumber(value: true), forKey: Constants.Snippets.useModernPicker)
