@@ -276,15 +276,16 @@ class SnippetPickerViewModel: ObservableObject {
                         shell: snippet.scriptShell,
                         timeout: TimeInterval(snippet.scriptTimeout)
                     ) { result in
-                        if !result.timedOut && result.exitCode == 0 {
-                            if ephemeral {
-                                AppEnvironment.current.pasteService.pasteEphemeral(with: result.output)
-                            } else {
-                                AppEnvironment.current.pasteService.copyToPasteboard(with: result.output)
-                                AppEnvironment.current.pasteService.paste()
-                            }
+                        if result.timedOut {
+                            Self.showScriptError("Script timed out after \(snippet.scriptTimeout)s")
+                        } else if result.exitCode != 0 {
+                            let detail = result.error ?? "No error output"
+                            Self.showScriptError("Script failed (exit \(result.exitCode)): \(detail)")
+                        } else if ephemeral {
+                            AppEnvironment.current.pasteService.pasteEphemeral(with: result.output)
                         } else {
-                            NSSound.beep()
+                            AppEnvironment.current.pasteService.copyToPasteboard(with: result.output)
+                            AppEnvironment.current.pasteService.paste()
                         }
                     }
                 } else {
@@ -295,6 +296,15 @@ class SnippetPickerViewModel: ObservableObject {
                 return
             }
         }
+    }
+
+    private static func showScriptError(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = "Script Snippet Error"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     func pasteQuickIndex(_ index: Int) {

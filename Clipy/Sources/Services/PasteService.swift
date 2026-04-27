@@ -138,14 +138,15 @@ extension PasteService {
         // Tell ClipService to skip the next clipboard capture
         AppEnvironment.current.clipService.skipNextCapture()
         copyToPasteboard(with: string)
+        let ephemeralChangeCount = NSPasteboard.general.changeCount
         paste()
 
         // Auto-clear pasteboard after configured delay
         let clearDelay = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.ephemeralAutoClearSeconds)
         if clearDelay > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(clearDelay)) {
-                // Only clear if the pasteboard still has what we put there
-                if NSPasteboard.general.string(forType: .clipyString) == string {
+                // Only clear if the pasteboard has not changed since we wrote the ephemeral content
+                if NSPasteboard.general.changeCount == ephemeralChangeCount {
                     AppEnvironment.current.clipService.skipNextCapture()
                     NSPasteboard.general.clearContents()
                 }

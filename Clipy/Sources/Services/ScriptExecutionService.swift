@@ -91,7 +91,15 @@ struct ScriptExecutionService {
                 timedOut = true
                 lock.unlock()
                 process.terminate()
-                logger.warning("Script timed out after \(timeout)s")
+                logger.warning("Script timed out after \(timeout)s, sending SIGTERM")
+                // Escalate to SIGKILL if process doesn't exit within 2s
+                let pid = process.processIdentifier
+                DispatchQueue.global().asyncAfter(deadline: .now() + 2) {
+                    if process.isRunning {
+                        kill(pid, SIGKILL)
+                        logger.warning("Script did not exit after SIGTERM, sent SIGKILL to pid \(pid)")
+                    }
+                }
             }
         }
         timer.resume()

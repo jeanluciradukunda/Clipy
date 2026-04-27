@@ -81,7 +81,7 @@ class PluginManager: ObservableObject {
                     timeout: plugin.timeout,
                     directoryURL: dirURL
                 )
-                plugin.isEnabled = savedEnabledIDs[plugin.id] ?? true
+                plugin.isEnabled = savedEnabledIDs[plugin.id] ?? false
                 return plugin
             }
 
@@ -101,12 +101,22 @@ class PluginManager: ObservableObject {
             return
         }
 
-        // Quote the command path to handle spaces/special characters safely
-        let commandPath = dirURL.appendingPathComponent(plugin.command).path
-        let quotedCommand = "'\(commandPath.replacingOccurrences(of: "'", with: "'\\''"))'"
+        // Validate command is a relative path without traversal
+        let command = plugin.command
+        guard !command.hasPrefix("/") && !command.contains("..") else {
+            completion(ScriptExecutionService.Result(output: "", exitCode: -1, timedOut: false, error: "Invalid plugin command path"))
+            return
+        }
+        let commandURL = dirURL.appendingPathComponent(command).standardized
+        guard commandURL.path.hasPrefix(dirURL.path) else {
+            completion(ScriptExecutionService.Result(output: "", exitCode: -1, timedOut: false, error: "Plugin command escapes plugin directory"))
+            return
+        }
+
+        let quotedCommand = "'\(commandURL.path.replacingOccurrences(of: "'", with: "'\\''"))'"
 
         ScriptExecutionService.execute(
-            script: quotedCommand,
+            script: "cd '\(dirURL.path.replacingOccurrences(of: "'", with: "'\\''"))' && " + quotedCommand,
             shell: CPYSnippet.defaultShell,
             timeout: TimeInterval(plugin.timeout),
             environment: ["CLIPY_INPUT": input, "PLUGIN_DIR": dirURL.path],

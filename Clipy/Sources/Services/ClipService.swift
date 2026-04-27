@@ -27,23 +27,25 @@ final class ClipService {
     private var cancellables = Set<AnyCancellable>()
 
     /// When > 0, the next N clipboard changes are skipped (not saved to history).
+    /// Specific pasteboard change counts that should be skipped (not saved to history).
     /// Used by ephemeral paste to prevent secrets from being stored.
-    private var skipCaptureCount: Int = 0
+    private var skippedChangeCounts = Set<Int>()
     private let skipLock = NSLock()
 
     /// Tell ClipService to skip the next clipboard change (ephemeral paste).
     func skipNextCapture() {
+        let nextChangeCount = NSPasteboard.general.changeCount
         skipLock.lock()
-        skipCaptureCount += 1
+        skippedChangeCounts.insert(nextChangeCount)
         skipLock.unlock()
     }
 
     /// Check and consume a skip token. Returns true if this capture should be skipped.
     private func shouldSkipCapture() -> Bool {
+        let current = NSPasteboard.general.changeCount
         skipLock.lock()
         defer { skipLock.unlock() }
-        if skipCaptureCount > 0 {
-            skipCaptureCount -= 1
+        if skippedChangeCounts.remove(current) != nil {
             return true
         }
         return false

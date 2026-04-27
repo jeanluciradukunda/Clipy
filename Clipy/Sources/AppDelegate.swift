@@ -90,7 +90,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     @objc func clearAllHistory() {
         let isShowAlert = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.showAlertBeforeClearHistory)
         if isShowAlert {
-            
+
             let alert = NSAlert()
             alert.messageText = L10n.clearHistory
             alert.informativeText = L10n.areYouSureYouWantToClearYourClipboardHistory

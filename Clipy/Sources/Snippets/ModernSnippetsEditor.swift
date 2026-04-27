@@ -528,7 +528,10 @@ struct ModernSnippetsEditorView: View {
                 sidebarFocused = true
             }
         }
-        .sheet(isPresented: $viewModel.showingTemplates) {
+        .sheet(isPresented: $viewModel.showingTemplates, onDismiss: {
+            viewModel.pendingTemplate = nil
+            viewModel.pendingTemplateValues = [:]
+        }) {
             SnippetTemplateGalleryView(viewModel: viewModel)
         }
     }
@@ -728,7 +731,7 @@ struct ModernSnippetsEditorView: View {
                             Text("/bin/bash").tag("/bin/bash")
                             Text("/bin/zsh").tag("/bin/zsh")
                             Text("/bin/sh").tag("/bin/sh")
-                            Text("/usr/bin/env python3").tag("/usr/bin/env python3")
+                            Text("/usr/bin/python3").tag("/usr/bin/python3")
                         }
                         .labelsHidden()
                         .frame(width: 140)
