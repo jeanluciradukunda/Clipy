@@ -75,6 +75,14 @@ final class DataCleanService {
             .filter { !$0.isInvalidated }
             .compactMap { $0.dataPath.components(separatedBy: "/").last })
 
+        // Defence in depth: if the Realm came up with zero clips (fresh install, migration failure,
+        // running a different build that shares the folder, etc) do NOT assume every file on disk
+        // is an orphan. This guard prevents catastrophic data loss in those edge cases.
+        guard !allClipPaths.isEmpty else {
+            logger.warning("Skipping file cleanup: Realm has no clips, refusing to treat all on-disk files as orphans")
+            return
+        }
+
         DispatchQueue.main.async {
             Set(allClipPaths).symmetricDifference(paths)
                 .map { CPYUtilities.applicationSupportFolder() + "/" + "\($0)" }

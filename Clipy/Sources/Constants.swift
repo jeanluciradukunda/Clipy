@@ -20,7 +20,11 @@ struct Constants {
             static let name = "Clipy"
         #endif
         static let appcastURL = URL(string: "https://clipy-app.com/appcast.xml")!
-        static let supportDirectoryName = "ClipyDev"
+        #if DEBUG
+            static let supportDirectoryName = "ClipyDev"
+        #else
+            static let supportDirectoryName = "Clipy"
+        #endif
     }
 
     struct Menu {
