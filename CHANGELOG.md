@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-07-02
+
+### Fixed
+- **Cross-build data wipe** ([#99](https://github.com/jeanluciradukunda/Clipy/issues/99)) — the Release and Dev builds shared `~/Library/Application Support/ClipyDev/` for clip data files while each kept its own database, so every launch of one build deleted the other build's files as orphans. Pinned image clips kept their history entry but lost the underlying image. Data folders are now separated per build (`Clipy/` for Release, `ClipyDev/` for Dev), and the file cleanup refuses to run when the database reports zero clips, as defence in depth against wiping a folder it does not own.
+- **Clear History now erases clip files immediately** — clearing history removed the database records but left the clip data files on disk until a later cleanup pass (a side effect of the new zero-clips safety guard). The files are now deleted at clear time.
+
+### Known limitations
+- Clip data files created by v2.2.0 or earlier remain in the old shared `ClipyDev/` folder. The Release build keeps reading them, but running the Dev build can still clean them up as orphans. If you run both builds and want to keep old pinned images, re-copy them once in the Release build so they are stored in the new folder.
+
 ## [2.2.0] - 2026-05-09
 
 ### Added
