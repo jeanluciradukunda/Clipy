@@ -1549,25 +1549,32 @@ struct UpdatesPreferencesView: View {
                 let sourceApp = "\(volume)/\(appName)"
                 let destApp = "/Applications/Clipy.app"
 
-                // Atomic replace: replaceItemAt keeps a backup of the old app
-                // and swaps atomically so the user is never left without an app
-                let destURL = URL(fileURLWithPath: destApp)
-                let sourceURL = URL(fileURLWithPath: sourceApp)
-                if FileManager.default.fileExists(atPath: destApp) {
-                    _ = try FileManager.default.replaceItemAt(destURL, withItemAt: sourceURL, backupItemName: nil, options: .usingNewMetadataOnly)
-                } else {
-                    try FileManager.default.copyItem(at: sourceURL, to: destURL)
-                }
+                // Stage the new app in a temp folder first: replaceItemAt is
+                // move-based and cannot take ownership of a source on the
+                // read-only DMG volume (fails with Cocoa error 512), so the
+                // swap must run from a writable copy
+                let stagingDir = FileManager.default.temporaryDirectory.appendingPathComponent("Clipy-update-\(UUID().uuidString)")
+                try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
+                let stagedURL = stagingDir.appendingPathComponent(appName)
+                try FileManager.default.copyItem(at: URL(fileURLWithPath: sourceApp), to: stagedURL)
 
-                // Unmount DMG
+                // Unmount DMG before the swap so a failure cannot leak a mounted volume
                 let detachProcess = Process()
                 detachProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
                 detachProcess.arguments = ["detach", volume, "-quiet"]
                 try? detachProcess.run()
                 detachProcess.waitUntilExit()
-
-                // Clean up
                 try? FileManager.default.removeItem(at: dmgPath)
+
+                // Atomic replace: replaceItemAt keeps a backup of the old app
+                // and swaps atomically so the user is never left without an app
+                let destURL = URL(fileURLWithPath: destApp)
+                if FileManager.default.fileExists(atPath: destApp) {
+                    _ = try FileManager.default.replaceItemAt(destURL, withItemAt: stagedURL, backupItemName: nil, options: .usingNewMetadataOnly)
+                } else {
+                    try FileManager.default.copyItem(at: stagedURL, to: destURL)
+                }
+                try? FileManager.default.removeItem(at: stagingDir)
 
                 // Relaunch
                 await MainActor.run {

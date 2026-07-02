@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2026-07-03
+
+### Fixed
+- **In-app update failed with "The file "Clipy" couldn't be saved in the folder "Applications""** — a v2.0.x refactor made the updater swap the app directly from the mounted DMG, but the atomic swap (`replaceItemAt`) must take ownership of the source, which the read-only DMG volume forbids (Cocoa error 512). The new app is now staged in a temporary folder first, and the DMG is detached before the swap so a failure can no longer leave a phantom volume mounted.
+
+> **Note for v2.2.0 / v2.2.1 users:** the broken updater ships *inside* those versions, so updating to 2.2.2 requires one manual install — download the DMG from Releases and drag Clipy to Applications. In-app updates work again from 2.2.2 onwards. Your clipboard history and snippets are untouched by updates.
+
 ## [2.2.1] - 2026-07-02
 
 ### Fixed
