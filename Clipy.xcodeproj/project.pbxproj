@@ -93,6 +93,10 @@
 		FAC43E2B1B35DFDF00C06102 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAC43E2A1B35DFDF00C06102 /* WebKit.framework */; };
 		FAE911B91DE045E2008A4BEC /* HotKeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE911B81DE045E2008A4BEC /* HotKeyService.swift */; };
 		FAE911BB1DE054F1008A4BEC /* NSCoding+Archive.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE911BA1DE054F1008A4BEC /* NSCoding+Archive.swift */; };
+		CC06A8D20A26E90A00667788 /* ScriptExecutionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC06A8D10A26E90A00667788 /* ScriptExecutionService.swift */; };
+		CC07B9E30B37FA1B00778899 /* Plugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC07B9E20B37FA1B00778899 /* Plugin.swift */; };
+		CC08CAF20C48FB2C00889900 /* PluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC08CAF10C48FB2C00889900 /* PluginManager.swift */; };
+		CC09DB040D59FC3D00990011 /* SnippetTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC09DB030D59FC3D00990011 /* SnippetTemplates.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -252,6 +256,10 @@
 		FAC43E2A1B35DFDF00C06102 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		FAE911B81DE045E2008A4BEC /* HotKeyService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HotKeyService.swift; sourceTree = "<group>"; };
 		FAE911BA1DE054F1008A4BEC /* NSCoding+Archive.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSCoding+Archive.swift"; sourceTree = "<group>"; };
+		CC06A8D10A26E90A00667788 /* ScriptExecutionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptExecutionService.swift; sourceTree = "<group>"; };
+		CC07B9E20B37FA1B00778899 /* Plugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plugin.swift; sourceTree = "<group>"; };
+		CC08CAF10C48FB2C00889900 /* PluginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManager.swift; sourceTree = "<group>"; };
+		CC09DB030D59FC3D00990011 /* SnippetTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetTemplates.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -336,8 +344,18 @@
 				CB05E7E3FB15E8FF00556699 /* RealmEncryptionService.swift */,
 				CB05E7E5FB15E9FF00556699 /* UsageMetricsService.swift */,
 				CB05E7DBFB15E8FD00556699 /* VaultAuthService.swift */,
+				CC06A8D10A26E90A00667788 /* ScriptExecutionService.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		CC07B9E00B37FA1B00778800 /* Plugins */ = {
+			isa = PBXGroup;
+			children = (
+				CC07B9E20B37FA1B00778899 /* Plugin.swift */,
+				CC08CAF10C48FB2C00889900 /* PluginManager.swift */,
+			);
+			path = Plugins;
 			sourceTree = "<group>";
 		};
 		FA10897A20EC229300A3FEFC /* Generated */ = {
@@ -364,6 +382,7 @@
 			children = (
 				FA3778911F3B690D003B5BAB /* Environments */,
 				FA0D5CE61DDCC5D000AC9052 /* Services */,
+				CC07B9E00B37FA1B00778800 /* Plugins */,
 				CB05E7E2FB15E8FE00556699 /* Onboarding */,
 				FA1DB4EC1DDCB4C0007F95C8 /* Preferences */,
 				FA1DB50C1DDCB4C0007F95C8 /* Snippets */,
@@ -534,6 +553,7 @@
 			children = (
 				FA1DB50D1DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.swift */,
 				802DE837E59DA8EA94C6B53A /* ModernSnippetsEditor.swift */,
+				CC09DB030D59FC3D00990011 /* SnippetTemplates.swift */,
 				FA1DB50F1DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.xib */,
 			);
 			path = Snippets;
@@ -952,6 +972,10 @@
 				CB01A3F7E7D1A4B900112255 /* SyntaxHighlighter.swift in Sources */,
 				CB02B4A9F8E2B5CA00223366 /* ClipIntelligence.swift in Sources */,
 				FD44C0065950E4DBB9CF2AE8 /* ModernPreferencesWindow.swift in Sources */,
+				CC06A8D20A26E90A00667788 /* ScriptExecutionService.swift in Sources */,
+				CC07B9E30B37FA1B00778899 /* Plugin.swift in Sources */,
+				CC08CAF20C48FB2C00889900 /* PluginManager.swift in Sources */,
+				CC09DB040D59FC3D00990011 /* SnippetTemplates.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

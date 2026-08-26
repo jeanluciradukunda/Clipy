@@ -180,8 +180,8 @@ private extension MenuManager {
         // Current clipboard indicator
         addCurrentClipboardItem(clipMenu!)
 
-        // Recent clips (just a few for quick access)
-        addRecentClips(clipMenu!, maxItems: 5)
+        // Clipboard history (respects Layout preferences: inline count, folder size, max history)
+        addHistoryItems(clipMenu!)
 
         // Search History — the main way to browse
         clipMenu?.addItem(NSMenuItem.separator())
@@ -280,14 +280,6 @@ private extension MenuManager {
         return subMenuItem
     }
 
-    func incrementListNumber(_ listNumber: NSInteger, max: NSInteger, start: NSInteger) -> NSInteger {
-        var listNumber = listNumber + 1
-        if listNumber == max && max == 10 && start == 1 {
-            listNumber = 0
-        }
-        return listNumber
-    }
-
     func trimTitle(_ title: String?) -> String {
         if title == nil { return "" }
         let theString = title!.trimmingCharacters(in: .whitespacesAndNewlines) as NSString
@@ -344,35 +336,6 @@ private extension MenuManager {
 
 // MARK: - Clips
 private extension MenuManager {
-    func addRecentClips(_ menu: NSMenu, maxItems: Int) {
-        guard let realm = realm else { return }
-
-        let ascending = !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
-        let clipResults = realm.objects(CPYClip.self).sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: ascending)
-
-        guard !clipResults.isEmpty else { return }
-
-        let labelItem = NSMenuItem(title: L10n.history, action: nil)
-        labelItem.isEnabled = false
-        if let historyImage = NSImage(systemSymbolName: "clock.arrow.trianglehead.counterclockwise.rotate.90", accessibilityDescription: "History") {
-            historyImage.isTemplate = true
-            labelItem.image = historyImage
-        }
-        menu.addItem(labelItem)
-
-        let firstIndex = firstIndexOfMenuItems()
-        var listNumber = firstIndex
-        var count = 0
-
-        for clip in clipResults {
-            let menuItem = makeClipMenuItem(clip, index: count, listNumber: listNumber)
-            menu.addItem(menuItem)
-            listNumber = incrementListNumber(listNumber, max: maxItems, start: firstIndex)
-            count += 1
-            if count >= maxItems { break }
-        }
-    }
-
     func addHistoryItems(_ menu: NSMenu) {
         guard let realm = realm else { return }
         let placeInLine = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.numberOfItemsPlaceInline)
@@ -388,11 +351,12 @@ private extension MenuManager {
         }
         menu.addItem(labelItem)
 
-        // History
+        // Submenus appear after the label and any inline clips. Tolerates items added
+        // to the parent menu before this function is called (e.g. clipboard header).
         let firstIndex = firstIndexOfMenuItems()
         var listNumber = firstIndex
         var subMenuCount = placeInLine
-        var subMenuIndex = 1 + placeInLine
+        var subMenuIndex = menu.numberOfItems + placeInLine
 
         let ascending = !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
         // Show pinned items first, then sort by time
@@ -413,12 +377,12 @@ private extension MenuManager {
                 if let subMenu = menu.item(at: subMenuIndex)?.submenu {
                     let menuItem = makeClipMenuItem(clip, index: i, listNumber: listNumber)
                     subMenu.addItem(menuItem)
-                    listNumber = incrementListNumber(listNumber, max: placeInsideFolder, start: firstIndex)
+                    listNumber += 1
                 }
             } else {
                 let menuItem = makeClipMenuItem(clip, index: i, listNumber: listNumber)
                 menu.addItem(menuItem)
-                listNumber = incrementListNumber(listNumber, max: placeInLine, start: firstIndex)
+                listNumber += 1
             }
 
             i += 1
@@ -453,12 +417,7 @@ private extension MenuManager {
         let primaryPboardType = NSPasteboard.PasteboardType(rawValue: clip.primaryType)
         let clipString = clip.title
         let title = trimTitle(clipString)
-        var titleWithMark = menuItemTitle(title, listNumber: listNumber, isMarkWithNumber: isMarkWithNumber)
-
-        // Add pin indicator
-        if clip.isPinned {
-            titleWithMark = "\u{1F4CC} " + titleWithMark
-        }
+        let titleWithMark = menuItemTitle(title, listNumber: listNumber, isMarkWithNumber: isMarkWithNumber)
 
         let menuItem = NSMenuItem(title: titleWithMark, action: #selector(AppDelegate.selectClipMenuItem(_:)), keyEquivalent: keyEquivalent)
         menuItem.representedObject = clip.dataHash
@@ -504,6 +463,11 @@ private extension MenuManager {
             if let cached = ClipService.cachedThumbnail(forKey: clip.thumbnailPath) {
                 menuItem.image = cached
             }
+        }
+
+        // Pin indicator goes last so it survives type-specific title overrides above
+        if clip.isPinned {
+            menuItem.title = "\u{1F4CC} " + menuItem.title
         }
 
         return menuItem
@@ -558,8 +522,18 @@ private extension MenuManager {
 
         let menuItem = NSMenuItem(title: titleWithMark, action: #selector(AppDelegate.selectSnippetMenuItem(_:)), keyEquivalent: "")
         menuItem.representedObject = snippet.identifier
-        menuItem.toolTip = snippet.content
-        menuItem.image = (isShowIcon) ? snippetIcon : nil
+
+        if snippet.type == .script {
+            menuItem.toolTip = "[Script] \(snippet.content)"
+            if isShowIcon, let scriptIcon = NSImage(systemSymbolName: "terminal.fill", accessibilityDescription: "Script") {
+                scriptIcon.isTemplate = true
+                scriptIcon.size = NSSize(width: 12, height: 13)
+                menuItem.image = scriptIcon
+            }
+        } else {
+            menuItem.toolTip = snippet.content
+            menuItem.image = (isShowIcon) ? snippetIcon : nil
+        }
 
         return menuItem
     }

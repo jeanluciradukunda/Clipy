@@ -14,16 +14,35 @@ import RealmSwift
 
 final class CPYSnippet: Object {
 
+    // MARK: - Snippet Type
+    enum SnippetType: Int {
+        case plainText = 0
+        case script = 1
+    }
+
+    // MARK: - Defaults
+    static let defaultShell = "/bin/bash"
+    static let defaultTimeout = 10
+
     // MARK: - Properties
     @objc dynamic var index = 0
     @objc dynamic var enable = true
     @objc dynamic var title = ""
     @objc dynamic var content = ""
     @objc dynamic var identifier = UUID().uuidString
+    @objc dynamic var snippetType = SnippetType.plainText.rawValue
+    @objc dynamic var scriptShell = CPYSnippet.defaultShell
+    @objc dynamic var scriptTimeout = CPYSnippet.defaultTimeout  // seconds
+    @objc dynamic var isEphemeral = true  // script outputs not saved to history
     let folders = LinkingObjects(fromType: CPYFolder.self, property: "snippets")
 
     var folder: CPYFolder? {
         return folders.first
+    }
+
+    var type: SnippetType {
+        get { SnippetType(rawValue: snippetType) ?? .plainText }
+        set { snippetType = newValue.rawValue }
     }
 
     // MARK: Primary Key

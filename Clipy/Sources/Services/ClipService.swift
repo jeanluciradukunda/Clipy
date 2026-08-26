@@ -26,6 +26,31 @@ final class ClipService {
     private var monitorTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
+    /// When > 0, the next N clipboard changes are skipped (not saved to history).
+    /// Specific pasteboard change counts that should be skipped (not saved to history).
+    /// Used by ephemeral paste to prevent secrets from being stored.
+    private var skippedChangeCounts = Set<Int>()
+    private let skipLock = NSLock()
+
+    /// Tell ClipService to skip the next clipboard change (ephemeral paste).
+    func skipNextCapture() {
+        let nextChangeCount = NSPasteboard.general.changeCount
+        skipLock.lock()
+        skippedChangeCounts.insert(nextChangeCount)
+        skipLock.unlock()
+    }
+
+    /// Check and consume a skip token. Returns true if this capture should be skipped.
+    private func shouldSkipCapture() -> Bool {
+        let current = NSPasteboard.general.changeCount
+        skipLock.lock()
+        defer { skipLock.unlock() }
+        if skippedChangeCounts.remove(current) != nil {
+            return true
+        }
+        return false
+    }
+
     // MARK: - Thumbnail Cache
     private static let thumbnailCache = NSCache<NSString, NSImage>()
 
@@ -96,9 +121,13 @@ final class ClipService {
             .filter { !$0.thumbnailPath.isEmpty }
             .map { $0.thumbnailPath }
             .forEach { ClipService.removeCachedThumbnail(forKey: $0) }
+        // Capture data file paths before the Realm records are deleted
+        let dataPaths = clips.map { $0.dataPath }.filter { !$0.isEmpty }
         // Delete Realm
         realm.transaction { realm.delete(clips) }
-        // Delete stored data files
+        // Delete stored data files directly: cleanFiles refuses to sweep when the
+        // Realm has zero clips, so cleared clips' files must be removed here
+        dataPaths.forEach { CPYUtilities.deleteData(at: $0) }
         AppEnvironment.current.dataCleanService.cleanDatas()
     }
 
@@ -128,6 +157,12 @@ final class ClipService {
 extension ClipService {
     fileprivate func create() {
         lock.lock(); defer { lock.unlock() }
+
+        // Ephemeral paste: skip this clipboard change
+        if shouldSkipCapture() {
+            logger.debug("Skipping ephemeral clipboard capture")
+            return
+        }
 
         // Store types
         if !storeTypes.values.contains(NSNumber(value: true)) { return }
@@ -203,6 +238,10 @@ extension ClipService {
                         dispatchRealm.add(clip, update: .all)
                     }
                     UsageMetricsService.shared.track(.clipsCopied)
+                    // Run auto-trigger plugins on string content (short-circuits when none registered)
+                    if PluginManager.shared.hasAutoPlugins, !data.stringValue.isEmpty {
+                        PluginManager.shared.runAutoPlugins(input: data.stringValue)
+                    }
                     // Immediately evict oldest non-pinned clips over the limit
                     AppEnvironment.current.dataCleanService.cleanDatas()
                 }

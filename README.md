@@ -260,6 +260,16 @@ See [Issues](https://github.com/jeanluciradukunda/Clipy/issues) for the full fea
 
 Clipy is a fork of [Clipy/Clipy](https://github.com/Clipy/Clipy) (v1.2.1), originally created by the [Clipy Project](https://github.com/Clipy). Special thanks to [@naotaka](https://github.com/naotaka) for publishing the original [ClipMenu](https://github.com/naotaka/ClipMenu) as open source.
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=jeanluciradukunda%2FClipy&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=jeanluciradukunda/Clipy&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=jeanluciradukunda/Clipy&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=jeanluciradukunda/Clipy&type=date&legend=top-left" />
+ </picture>
+</a>
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
