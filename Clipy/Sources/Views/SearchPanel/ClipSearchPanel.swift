@@ -1007,14 +1007,19 @@ struct ClipSearchPanelView: View {
             kbHint(shortcuts.share.label, "share")
             kbHint("\u{21E7}\u{2191}\u{2193}", "select")
             kbHint(shortcuts.cycleFilter.label, "filter")
-            kbHint("1\u{2013}\(viewModel.clips.count)", "quick")
+            // Queue draws from its own data source, so the clip-list counts do not describe it
+            if viewModel.activeFilter != .queue {
+                kbHint("1\u{2013}\(viewModel.clips.count)", "quick")
+            }
             Spacer()
             if viewModel.selectedIndices.count > 1 {
                 Text("\(viewModel.selectedIndices.count) selected")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.orange)
             }
-            Text("\(viewModel.clips.count) items")
+            Text(viewModel.activeFilter == .queue
+                 ? "\(queueService.itemCount) queued"
+                 : "\(viewModel.clips.count) items")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.tertiary)
         }
