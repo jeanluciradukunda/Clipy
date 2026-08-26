@@ -25,6 +25,13 @@ enum ClipFilter: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// The next chip in the filter bar, wrapping from the last one back to `.all`.
+    var next: ClipFilter {
+        let chips = Self.allCases
+        guard let index = chips.firstIndex(of: self) else { return .all }
+        return chips[(index + 1) % chips.count]
+    }
+
     var icon: String {
         switch self {
         case .all: return "tray.full"
@@ -284,6 +291,10 @@ class ClipSearchViewModel: ObservableObject {
         selectedIndices = [selectedIndex]
     }
 
+    func advanceFilter() {
+        activeFilter = activeFilter.next
+    }
+
     func moveSelection(by offset: Int) {
         guard !clips.isEmpty else { return }
         selectedIndex = max(0, min(clips.count - 1, selectedIndex + offset))
@@ -514,6 +525,12 @@ struct ClipSearchPanelView: View {
                 viewModel.shareSelectedImage()
                 return .handled
             }
+            if shortcuts.matches(press, shortcut: shortcuts.cycleFilter) {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    viewModel.advanceFilter()
+                }
+                return .handled
+            }
             return .ignored
         }
         // Number keys for quick paste — type one digit or two digits quickly (e.g. "15" for item 15)
@@ -553,22 +570,30 @@ struct ClipSearchPanelView: View {
 
     // MARK: - Filter Bar
     private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(ClipFilter.allCases) { filter in
-                    FilterChip(
-                        filter: filter,
-                        isActive: viewModel.activeFilter == filter,
-                        count: countFor(filter)
-                    ) {
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            viewModel.activeFilter = filter
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(ClipFilter.allCases) { filter in
+                        FilterChip(
+                            filter: filter,
+                            isActive: viewModel.activeFilter == filter,
+                            count: countFor(filter)
+                        ) {
+                            withAnimation(.easeOut(duration: 0.15)) {
+                                viewModel.activeFilter = filter
+                            }
                         }
+                        .id(filter)
                     }
                 }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 8)
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
+            .onChange(of: viewModel.activeFilter) { _, filter in
+                withAnimation(.easeOut(duration: 0.15)) {
+                    proxy.scrollTo(filter, anchor: .center)
+                }
+            }
         }
     }
 
@@ -981,6 +1006,7 @@ struct ClipSearchPanelView: View {
             kbHint(shortcuts.ocr.label, "ocr")
             kbHint(shortcuts.share.label, "share")
             kbHint("\u{21E7}\u{2191}\u{2193}", "select")
+            kbHint(shortcuts.cycleFilter.label, "filter")
             kbHint("1\u{2013}\(viewModel.clips.count)", "quick")
             Spacer()
             if viewModel.selectedIndices.count > 1 {

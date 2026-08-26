@@ -1653,6 +1653,7 @@ struct PanelShortcutsList: View {
         ShortcutRow(name: "Delete clip", shortcut: service.delete, onRecord: { service.save($0) })
         ShortcutRow(name: "OCR (image clips)", shortcut: service.ocr, onRecord: { service.save($0) })
         ShortcutRow(name: "Share (image clips)", shortcut: service.share, onRecord: { service.save($0) })
+        ShortcutRow(name: "Cycle type filter", shortcut: service.cycleFilter, onRecord: { service.save($0) })
 
         HStack {
             Spacer()

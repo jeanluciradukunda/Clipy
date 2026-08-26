@@ -131,6 +131,7 @@ struct Constants {
         static let paste = "kCPYPanelShortcutPaste"
         static let ocr = "kCPYPanelShortcutOCR"
         static let share = "kCPYPanelShortcutShare"
+        static let cycleFilter = "kCPYPanelShortcutCycleFilter"
     }
 
 }
