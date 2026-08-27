@@ -65,31 +65,20 @@ class SnippetPickerViewModel: ObservableObject {
 
     private var allFolders = [PickerFolder]()
 
-    // Two-digit quick select: type "1" then "4" quickly to select snippet 14
-    var digitBuffer = ""
-    var digitTimer: DispatchWorkItem?
+    // Quick select by position — same two modes as the clip search panel.
+    let digitCapture = QuickPasteDigitBuffer()
+    static let legacyDigitDebounce: TimeInterval = 0.1
 
-    func handleDigitPress(_ digit: Character) {
-        digitTimer?.cancel()
-        digitBuffer.append(digit)
+    func handleDigitPress(_ digit: Character, requiresCommand: Bool) {
+        digitCapture.press(digit, mode: requiresCommand ? .commandHold : .legacyDebounce(Self.legacyDigitDebounce))
+    }
 
-        if digitBuffer.count >= 2 {
-            if let num = Int(digitBuffer) {
-                pasteQuickIndex(num - 1)
-            }
-            digitBuffer = ""
-            return
+    init() {
+        digitCapture.onResolve = { [weak self] position in
+            // Resolution can land after the picker was dismissed mid-gesture.
+            guard SnippetPickerWindowController.shared.window?.isVisible == true else { return }
+            self?.pasteQuickIndex(position - 1)
         }
-
-        let timer = DispatchWorkItem { [weak self] in
-            guard let self, !self.digitBuffer.isEmpty else { return }
-            if let num = Int(self.digitBuffer) {
-                self.pasteQuickIndex(num - 1)
-            }
-            self.digitBuffer = ""
-        }
-        digitTimer = timer
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: timer)
     }
 
     // Flat list of visible row IDs for keyboard navigation
@@ -366,13 +355,17 @@ struct SnippetPickerPanelView: View {
         .onKeyPress(.downArrow, phases: [.down, .repeat]) { _ in viewModel.moveSelection(by: 1); return .handled }
         .onKeyPress(.rightArrow, phases: .down) { _ in viewModel.handleRightArrow(); return .handled }
         .onKeyPress(.leftArrow, phases: .down) { _ in viewModel.handleLeftArrow(); return .handled }
-        .onKeyPress(.escape) { onDismiss(); return .handled }
+        .onKeyPress(.escape) {
+            viewModel.digitCapture.reset()
+            onDismiss()
+            return .handled
+        }
         .onKeyPress(.return) { viewModel.handleReturn(); return .handled }
         // Honours the same quickPasteRequiresCommand opt-in as the clip search panel
         .onKeyPress(characters: .init(charactersIn: "1234567890"), phases: .down) { press in
             let expected: EventModifiers = quickPasteRequiresCommand ? .command : []
             if press.modifiers == expected, let digit = press.characters.first {
-                viewModel.handleDigitPress(digit)
+                viewModel.handleDigitPress(digit, requiresCommand: quickPasteRequiresCommand)
                 return .handled
             }
             return .ignored

@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Cycle the search panel's type filter from the keyboard** ([#107](https://github.com/jeanluciradukunda/Clipy/issues/107)) — `Tab` advances the active filter chip (All → Text → Images → Links → Files → Pinned → Queue, then back to All) and scrolls it into view, so narrowing by type no longer needs the trackpad. Rebindable in Settings → Shortcuts as "Cycle type filter", alongside the other panel shortcuts.
 
-- **New setting: "Quick paste requires ⌘"** ([#108](https://github.com/jeanluciradukunda/Clipy/issues/108)) — quick paste by position claims every unmodified digit in both the clip search panel and the snippet picker, so a query containing a digit (`iPhone 15`, `2FA`) cannot be typed: the keystroke pastes an unrelated item into the frontmost app and closes the panel instead. Turning this on in Settings → Shortcuts moves quick paste to `⌘1`–`⌘0` and frees the number keys for search.
+- **New setting: "Quick paste requires ⌘"** ([#108](https://github.com/jeanluciradukunda/Clipy/issues/108)) — quick paste by position claims every unmodified digit in both the clip search panel and the snippet picker, so a query containing a digit (`iPhone 15`, `2FA`) cannot be typed: the keystroke pastes an unrelated item into the frontmost app and closes the panel instead. Turning this on frees the number keys for search and changes the gesture to hold `⌘`, type a position, release to paste.
+
+  Holding a modifier also makes the gesture better than the one it replaces. Releasing `⌘` is an unambiguous "done", so there is no longer a short wait after a single digit to see whether a second one follows, and no two-digit ceiling: `⌘` + `1` `5` `3` + release selects item 153.
 
   **Off by default**, so updating changes nothing about how your number keys behave today. It is planned to become the default in a coming release ([#110](https://github.com/jeanluciradukunda/Clipy/issues/110)) — the opt-in period is a grace period, so feedback either way is welcome.
 
