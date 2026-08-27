@@ -1654,8 +1654,8 @@ struct ShortcutsPreferencesView: View {
 
                     Text("Frees the number keys so you can type digits in search. Quick paste becomes: hold "
                          + "\u{2318}, type a position, release to paste. \u{238B} cancels before anything is pasted. "
-                         + "No waiting after a single digit, and no two-digit limit. Planned to become the default "
-                         + "in a coming release \u{2014} let us know on GitHub if you would rather it stayed optional.")
+                         + "No waiting after a single digit, and no two-digit limit. This is planned to become "
+                         + "the default in a coming release. Tell us on GitHub if you would rather it stayed optional.")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
