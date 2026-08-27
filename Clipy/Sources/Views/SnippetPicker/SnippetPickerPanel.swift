@@ -323,7 +323,7 @@ class SnippetPickerViewModel: ObservableObject {
 
 struct SnippetPickerPanelView: View {
     @StateObject private var viewModel = SnippetPickerViewModel()
-    @AppStorage(Constants.UserDefaults.quickPasteRequiresCommand)
+    @AppStorage(Constants.UserDefaults.snippetPickerQuickPasteRequiresCommand)
     private var quickPasteRequiresCommand = false
     @FocusState private var isSearchFocused: Bool
     let filterFolderID: String?
