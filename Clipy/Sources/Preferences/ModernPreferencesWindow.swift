@@ -1609,6 +1609,11 @@ struct LegacyPanelView: NSViewControllerRepresentable {
 // MARK: - Shortcuts Preferences
 
 struct ShortcutsPreferencesView: View {
+    @AppStorage(Constants.UserDefaults.searchPanelQuickPasteRequiresCommand)
+    private var searchPanelNeedsCommand = false
+    @AppStorage(Constants.UserDefaults.snippetPickerQuickPasteRequiresCommand)
+    private var snippetPickerNeedsCommand = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -1637,6 +1642,29 @@ struct ShortcutsPreferencesView: View {
                 }
                 .padding(.horizontal, 44)
                 .popoverTip(CustomizeShortcutsTip(), arrowEdge: .leading)
+
+                Divider()
+                    .padding(.horizontal, 44)
+
+                // Quick paste modifier — opt-in ahead of becoming the default, see issue #110
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Quick Paste", systemImage: "number")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+
+                    Toggle("Search panel: quick paste requires \u{2318}", isOn: $searchPanelNeedsCommand)
+                    Toggle("Snippet picker: quick paste requires \u{2318}", isOn: $snippetPickerNeedsCommand)
+
+                    Text("Frees that panel's number keys for searching. Quick paste becomes: hold \u{2318}, type a "
+                         + "position, release to paste. \u{238B} cancels before anything is pasted. No waiting after "
+                         + "a single digit, and no two-digit limit. The search panel is planned to default to this "
+                         + "in a coming release, because copied text so often contains digits. Snippet titles rarely "
+                         + "do, so the picker is likely to keep its bare number keys.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 44)
             }
             .padding(.vertical, 12)
         }

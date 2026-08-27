@@ -180,46 +180,29 @@ class ClipSearchViewModel: ObservableObject {
     private var allClips = [ClipItemViewModel]()
     private var cancellables = Set<AnyCancellable>()
 
-    // Two-digit quick select: type "1" then "5" quickly to select item 15
-    var digitBuffer = ""
-    var digitTimer: DispatchWorkItem?
+    // Quick select by position. Holding ⌘ makes the release the completion signal; without it,
+    // a bare digit has to wait out a debounce in case a second one follows.
+    let digitCapture = QuickPasteDigitBuffer()
+    static let legacyDigitDebounce: TimeInterval = 0.08
 
-    func handleDigitPress(_ digit: Character) {
-        digitTimer?.cancel()
-        digitBuffer.append(digit)
+    func handleDigitPress(_ digit: Character, requiresCommand: Bool) {
+        digitCapture.press(digit, mode: requiresCommand ? .commandHold : .legacyDebounce(Self.legacyDigitDebounce))
+    }
 
-        if digitBuffer.count >= 2 {
-            // Two digits entered — select immediately
-            if let num = Int(digitBuffer) {
-                let index = num - 1
-                if index >= 0 && index < clips.count {
-                    selectedIndex = index
-                    selectedIndices = [index]
-                    pasteSelected()
-                }
-            }
-            digitBuffer = ""
-            return
-        }
-
-        // Wait briefly for a second digit
-        let timer = DispatchWorkItem { [weak self] in
-            guard let self, !self.digitBuffer.isEmpty else { return }
-            if let num = Int(self.digitBuffer) {
-                let index = num - 1
-                if index >= 0 && index < self.clips.count {
-                    self.selectedIndex = index
-                    self.selectedIndices = [index]
-                    self.pasteSelected()
-                }
-            }
-            self.digitBuffer = ""
-        }
-        digitTimer = timer
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: timer)
+    func pasteQuickPosition(_ position: Int) {
+        // Resolution can land after the panel was dismissed mid-gesture; do not paste behind its back.
+        guard ClipSearchWindowController.shared.window?.isVisible == true else { return }
+        let index = position - 1
+        guard index >= 0, index < clips.count else { return }
+        selectedIndex = index
+        selectedIndices = [index]
+        pasteSelected()
     }
 
     init() {
+        digitCapture.onResolve = { [weak self] position in
+            self?.pasteQuickPosition(position)
+        }
         // React to search text or filter changes
         Publishers.CombineLatest($searchText.debounce(for: .milliseconds(60), scheduler: DispatchQueue.main), $activeFilter)
             .sink { [weak self] query, filter in
@@ -423,6 +406,7 @@ class ClipSearchViewModel: ObservableObject {
     }
 
     func reset() {
+        digitCapture.reset()
         searchText = ""
         selectedIndex = 0
         selectedIndices = [0]
@@ -447,6 +431,8 @@ struct ClipSearchPanelView: View {
     @StateObject private var viewModel = ClipSearchViewModel()
     @ObservedObject private var queueService = ClipboardQueueService.shared
     @ObservedObject private var shortcuts = PanelShortcutService.shared
+    @AppStorage(Constants.UserDefaults.searchPanelQuickPasteRequiresCommand)
+    private var quickPasteRequiresCommand = false
     @FocusState private var isSearchFocused: Bool
     let onDismiss: () -> Void
 
@@ -486,6 +472,7 @@ struct ClipSearchPanelView: View {
         .overlay(DevBadgeOverlay())
         .onAppear {
             viewModel.reset()
+            viewModel.digitCapture.onCancel = { onDismiss() }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 isSearchFocused = true
             }
@@ -498,7 +485,11 @@ struct ClipSearchPanelView: View {
             if press.modifiers.contains(.shift) { viewModel.extendSelection(by: 1); return .handled }
             viewModel.moveSelection(by: 1); return .handled
         }
-        .onKeyPress(.escape) { onDismiss(); return .handled }
+        .onKeyPress(.escape) {
+            viewModel.digitCapture.reset()
+            onDismiss()
+            return .handled
+        }
         // Customizable panel shortcuts
         .onKeyPress(phases: .down) { press in
             if shortcuts.matches(press, shortcut: shortcuts.pastePlain) {
@@ -533,10 +524,14 @@ struct ClipSearchPanelView: View {
             }
             return .ignored
         }
-        // Number keys for quick paste — type one digit or two digits quickly (e.g. "15" for item 15)
+        // Quick paste by position — type one digit or two digits quickly (e.g. "15" for item 15).
+        // Opting into quickPasteRequiresCommand moves this behind ⌘ so that unmodified digits reach
+        // the search field instead: this is the outermost .onKeyPress, and returning .handled
+        // suppresses text insertion entirely (see issue #108).
         .onKeyPress(characters: .init(charactersIn: "1234567890"), phases: .down) { press in
-            if press.modifiers.isEmpty, let digit = press.characters.first {
-                viewModel.handleDigitPress(digit)
+            let expected: EventModifiers = quickPasteRequiresCommand ? .command : []
+            if press.modifiers == expected, let digit = press.characters.first {
+                viewModel.handleDigitPress(digit, requiresCommand: quickPasteRequiresCommand)
                 return .handled
             }
             return .ignored
@@ -1009,7 +1004,7 @@ struct ClipSearchPanelView: View {
             kbHint(shortcuts.cycleFilter.label, "filter")
             // Queue draws from its own data source, so the clip-list counts do not describe it
             if viewModel.activeFilter != .queue {
-                kbHint("1\u{2013}\(viewModel.clips.count)", "quick")
+                kbHint("\(quickPasteRequiresCommand ? "\u{2318}" : "")1\u{2013}\(viewModel.clips.count)", "quick")
             }
             Spacer()
             if viewModel.selectedIndices.count > 1 {
