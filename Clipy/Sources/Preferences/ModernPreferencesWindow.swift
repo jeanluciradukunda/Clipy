@@ -1609,8 +1609,10 @@ struct LegacyPanelView: NSViewControllerRepresentable {
 // MARK: - Shortcuts Preferences
 
 struct ShortcutsPreferencesView: View {
-    @AppStorage(Constants.UserDefaults.quickPasteRequiresCommand)
-    private var quickPasteRequiresCommand = false
+    @AppStorage(Constants.UserDefaults.searchPanelQuickPasteRequiresCommand)
+    private var searchPanelNeedsCommand = false
+    @AppStorage(Constants.UserDefaults.snippetPickerQuickPasteRequiresCommand)
+    private var snippetPickerNeedsCommand = false
 
     var body: some View {
         ScrollView {
@@ -1650,12 +1652,14 @@ struct ShortcutsPreferencesView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
 
-                    Toggle("Quick paste requires \u{2318}", isOn: $quickPasteRequiresCommand)
+                    Toggle("Search panel: quick paste requires \u{2318}", isOn: $searchPanelNeedsCommand)
+                    Toggle("Snippet picker: quick paste requires \u{2318}", isOn: $snippetPickerNeedsCommand)
 
-                    Text("Frees the number keys so you can type digits in search. Quick paste becomes: hold "
-                         + "\u{2318}, type a position, release to paste. \u{238B} cancels before anything is pasted. "
-                         + "No waiting after a single digit, and no two-digit limit. This is planned to become "
-                         + "the default in a coming release. Tell us on GitHub if you would rather it stayed optional.")
+                    Text("Frees that panel's number keys for searching. Quick paste becomes: hold \u{2318}, type a "
+                         + "position, release to paste. \u{238B} cancels before anything is pasted. No waiting after "
+                         + "a single digit, and no two-digit limit. The search panel is planned to default to this "
+                         + "in a coming release, because copied text so often contains digits. Snippet titles rarely "
+                         + "do, so the picker is likely to keep its bare number keys.")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

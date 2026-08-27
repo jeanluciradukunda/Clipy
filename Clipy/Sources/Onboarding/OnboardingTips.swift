@@ -15,7 +15,7 @@ struct QuickSelectTip: Tip {
     var title: Text { Text("Quick Select") }
     var message: Text? {
         Text("Type a number to instantly paste a clip. For two-digit items like 15, type both digits rapidly. "
-             + "Turn on \u{201C}Quick paste requires \u{2318}\u{201D} in Settings \u{2192} Shortcuts to hold "
+             + "Turn on \u{201C}Search panel: quick paste requires \u{2318}\u{201D} in Settings \u{2192} Shortcuts to hold "
              + "\u{2318} and release instead, which frees the number keys for search, drops the wait, "
              + "and lets \u{238B} cancel.")
     }

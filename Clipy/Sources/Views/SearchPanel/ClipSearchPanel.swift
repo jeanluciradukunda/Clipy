@@ -431,7 +431,7 @@ struct ClipSearchPanelView: View {
     @StateObject private var viewModel = ClipSearchViewModel()
     @ObservedObject private var queueService = ClipboardQueueService.shared
     @ObservedObject private var shortcuts = PanelShortcutService.shared
-    @AppStorage(Constants.UserDefaults.quickPasteRequiresCommand)
+    @AppStorage(Constants.UserDefaults.searchPanelQuickPasteRequiresCommand)
     private var quickPasteRequiresCommand = false
     @FocusState private var isSearchFocused: Bool
     let onDismiss: () -> Void

@@ -180,9 +180,11 @@ Default global hotkeys (configurable in Settings → Shortcuts):
 | `Cmd+S` | Share image via system share sheet |
 | `Escape` | Close panel |
 
-> **Number keys and search.** By default the number keys quick-paste by position, which means digits cannot be typed into the search field. Turn on *Settings → Shortcuts → Quick paste requires `⌘`* to free them.
+> **Number keys and search.** By default the number keys quick-paste by position, which means digits cannot be typed into the search field. *Settings → Shortcuts* has a toggle per panel (*Search panel* and *Snippet picker*) to free them.
 >
-> With it on, the gesture is: hold `⌘`, type a position, release to paste. `Escape` cancels before anything is pasted. Because releasing `⌘` says "done", there is no wait after a single digit and no two-digit limit — `⌘` + `1` `5` `3` selects item 153. Planned to become the default in a coming release ([#110](https://github.com/jeanluciradukunda/Clipy/issues/110)).
+> With one on, that panel's gesture becomes: hold `⌘`, type a position, release to paste. `Escape` cancels before anything is pasted. Because releasing `⌘` says "done", there is no wait after a single digit and no two-digit limit, so `⌘` + `1` `5` `3` selects item 153.
+>
+> Both are off by default. The search panel is planned to default to it ([#110](https://github.com/jeanluciradukunda/Clipy/issues/110)) because copied text so often contains digits; snippet titles rarely do, so the picker is likely to keep its bare number keys.
 
 ### Snippet Picker
 
