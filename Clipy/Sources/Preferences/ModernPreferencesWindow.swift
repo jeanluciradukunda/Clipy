@@ -1652,10 +1652,10 @@ struct ShortcutsPreferencesView: View {
 
                     Toggle("Quick paste requires \u{2318}", isOn: $quickPasteRequiresCommand)
 
-                    Text("Frees the number keys so you can type digits in search. Hold \u{2318}, type a position, "
-                         + "and release to paste \u{2014} no waiting for a second digit, and no two-digit limit. "
-                         + "Planned to become the default in a coming release \u{2014} let us know on GitHub "
-                         + "if you would rather it stayed optional.")
+                    Text("Frees the number keys so you can type digits in search. Quick paste becomes: hold "
+                         + "\u{2318}, type a position, release to paste. \u{238B} cancels before anything is pasted. "
+                         + "No waiting after a single digit, and no two-digit limit. Planned to become the default "
+                         + "in a coming release \u{2014} let us know on GitHub if you would rather it stayed optional.")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
