@@ -2,6 +2,8 @@ import Quick
 import Nimble
 @testable import Clipy
 
+// swiftlint:disable function_body_length
+
 class QuickPasteDigitBufferSpec: QuickSpec {
     override class func spec() {
 
@@ -65,6 +67,43 @@ class QuickPasteDigitBufferSpec: QuickSpec {
                 expect(resolved) == [4]
             }
 
+            it("abandons the gesture on cancel and reports it, so the panel can dismiss") {
+                var resolved = [Int]()
+                var cancelled = 0
+                let buffer = QuickPasteDigitBuffer()
+                buffer.onResolve = { resolved.append($0) }
+                buffer.onCancel = { cancelled += 1 }
+
+                buffer.press("2", mode: .commandHold)
+                buffer.cancel()
+
+                expect(resolved).to(beEmpty())
+                expect(cancelled) == 1
+                expect(buffer.pendingDigits).to(beEmpty())
+            }
+
+            it("does not paste when the modifier is released after a cancel") {
+                var resolved = [Int]()
+                let buffer = QuickPasteDigitBuffer()
+                buffer.onResolve = { resolved.append($0) }
+
+                buffer.press("2", mode: .commandHold)
+                buffer.cancel()
+                buffer.modifierReleased()
+
+                expect(resolved).to(beEmpty())
+            }
+
+            it("does not report a cancel when no gesture is in progress") {
+                var cancelled = 0
+                let buffer = QuickPasteDigitBuffer()
+                buffer.onCancel = { cancelled += 1 }
+
+                buffer.cancel()
+
+                expect(cancelled) == 0
+            }
+
             it("discards buffered digits when reset, so a dismissed panel cannot paste later") {
                 var resolved = [Int]()
                 let buffer = QuickPasteDigitBuffer()
@@ -114,3 +153,5 @@ class QuickPasteDigitBufferSpec: QuickSpec {
         }
     }
 }
+
+// swiftlint:enable function_body_length
