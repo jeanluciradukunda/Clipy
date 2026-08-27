@@ -59,6 +59,7 @@ struct Constants {
         static let showToolTipOnMenuItem = "showToolTipOnMenuItem"
         static let showImageInTheMenu = "showImageInTheMenu"
         static let addNumericKeyEquivalents = "addNumericKeyEquivalents"
+        static let quickPasteRequiresCommand = "kCPYPrefQuickPasteRequiresCommand"
         static let maxLengthOfToolTip = "maxLengthOfToolTipKey"
         static let loginItem = "loginItem"
         static let suppressAlertForLoginItem = "suppressAlertForLoginItem"

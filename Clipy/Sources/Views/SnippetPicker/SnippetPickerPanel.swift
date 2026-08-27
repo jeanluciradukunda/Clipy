@@ -334,6 +334,8 @@ class SnippetPickerViewModel: ObservableObject {
 
 struct SnippetPickerPanelView: View {
     @StateObject private var viewModel = SnippetPickerViewModel()
+    @AppStorage(Constants.UserDefaults.quickPasteRequiresCommand)
+    private var quickPasteRequiresCommand = false
     @FocusState private var isSearchFocused: Bool
     let filterFolderID: String?
     let onDismiss: () -> Void
@@ -366,8 +368,10 @@ struct SnippetPickerPanelView: View {
         .onKeyPress(.leftArrow, phases: .down) { _ in viewModel.handleLeftArrow(); return .handled }
         .onKeyPress(.escape) { onDismiss(); return .handled }
         .onKeyPress(.return) { viewModel.handleReturn(); return .handled }
+        // Honours the same quickPasteRequiresCommand opt-in as the clip search panel
         .onKeyPress(characters: .init(charactersIn: "1234567890"), phases: .down) { press in
-            if press.modifiers.isEmpty, let digit = press.characters.first {
+            let expected: EventModifiers = quickPasteRequiresCommand ? .command : []
+            if press.modifiers == expected, let digit = press.characters.first {
                 viewModel.handleDigitPress(digit)
                 return .handled
             }
