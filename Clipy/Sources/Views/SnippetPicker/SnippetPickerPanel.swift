@@ -347,6 +347,7 @@ struct SnippetPickerPanelView: View {
         .overlay(DevBadgeOverlay())
         .onAppear {
             viewModel.reset(filterFolderID: filterFolderID)
+            viewModel.digitCapture.onCancel = { onDismiss() }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 isSearchFocused = true
             }
