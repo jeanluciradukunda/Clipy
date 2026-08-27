@@ -1609,6 +1609,9 @@ struct LegacyPanelView: NSViewControllerRepresentable {
 // MARK: - Shortcuts Preferences
 
 struct ShortcutsPreferencesView: View {
+    @AppStorage(Constants.UserDefaults.quickPasteRequiresCommand)
+    private var quickPasteRequiresCommand = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -1637,6 +1640,24 @@ struct ShortcutsPreferencesView: View {
                 }
                 .padding(.horizontal, 44)
                 .popoverTip(CustomizeShortcutsTip(), arrowEdge: .leading)
+
+                Divider()
+                    .padding(.horizontal, 44)
+
+                // Quick paste modifier — opt-in ahead of becoming the default, see issue #110
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Quick Paste", systemImage: "number")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+
+                    Toggle("Quick paste requires \u{2318}", isOn: $quickPasteRequiresCommand)
+
+                    Text("Frees the number keys so you can type digits in search. Quick paste by position becomes \u{2318}1\u{2013}\u{2318}0. This is planned to become the default in a coming release \u{2014} let us know on GitHub if you would rather it stayed optional.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 44)
             }
             .padding(.vertical, 12)
         }

@@ -180,6 +180,8 @@ Default global hotkeys (configurable in Settings → Shortcuts):
 | `Cmd+S` | Share image via system share sheet |
 | `Escape` | Close panel |
 
+> **Number keys and search.** By default the number keys quick-paste by position, which means digits cannot be typed into the search field. Turn on *Settings → Shortcuts → Quick paste requires `⌘`* to move quick paste to `⌘1`-`⌘0` and free the number keys for searching. Planned to become the default in a coming release ([#110](https://github.com/jeanluciradukunda/Clipy/issues/110)).
+
 ### Snippet Picker
 
 | Shortcut | Action |

@@ -447,6 +447,8 @@ struct ClipSearchPanelView: View {
     @StateObject private var viewModel = ClipSearchViewModel()
     @ObservedObject private var queueService = ClipboardQueueService.shared
     @ObservedObject private var shortcuts = PanelShortcutService.shared
+    @AppStorage(Constants.UserDefaults.quickPasteRequiresCommand)
+    private var quickPasteRequiresCommand = false
     @FocusState private var isSearchFocused: Bool
     let onDismiss: () -> Void
 
@@ -533,9 +535,13 @@ struct ClipSearchPanelView: View {
             }
             return .ignored
         }
-        // Number keys for quick paste — type one digit or two digits quickly (e.g. "15" for item 15)
+        // Quick paste by position — type one digit or two digits quickly (e.g. "15" for item 15).
+        // Opting into quickPasteRequiresCommand moves this behind ⌘ so that unmodified digits reach
+        // the search field instead: this is the outermost .onKeyPress, and returning .handled
+        // suppresses text insertion entirely (see issue #108).
         .onKeyPress(characters: .init(charactersIn: "1234567890"), phases: .down) { press in
-            if press.modifiers.isEmpty, let digit = press.characters.first {
+            let expected: EventModifiers = quickPasteRequiresCommand ? .command : []
+            if press.modifiers == expected, let digit = press.characters.first {
                 viewModel.handleDigitPress(digit)
                 return .handled
             }
@@ -1009,7 +1015,7 @@ struct ClipSearchPanelView: View {
             kbHint(shortcuts.cycleFilter.label, "filter")
             // Queue draws from its own data source, so the clip-list counts do not describe it
             if viewModel.activeFilter != .queue {
-                kbHint("1\u{2013}\(viewModel.clips.count)", "quick")
+                kbHint("\(quickPasteRequiresCommand ? "\u{2318}" : "")1\u{2013}\(viewModel.clips.count)", "quick")
             }
             Spacer()
             if viewModel.selectedIndices.count > 1 {
