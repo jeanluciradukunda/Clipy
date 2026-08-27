@@ -431,6 +431,12 @@ class ClipSearchViewModel: ObservableObject {
         loadCachedOCR()
     }
 
+    func clearSensitiveData() {
+        allClips = []
+        clips = []
+        ocrText = nil
+    }
+
     /// Auto-load cached OCR text for the selected clip (if it's an image with stored OCR)
     func loadCachedOCR() {
         ocrText = nil
@@ -489,6 +495,9 @@ struct ClipSearchPanelView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 isSearchFocused = true
             }
+        }
+        .onDisappear {
+            viewModel.clearSensitiveData()
         }
         .onKeyPress(.upArrow, phases: [.down, .repeat]) { press in
             if press.modifiers.contains(.shift) { viewModel.extendSelection(by: -1); return .handled }
