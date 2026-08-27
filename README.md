@@ -170,6 +170,7 @@ Default global hotkeys (configurable in Settings → Shortcuts):
 |---|---|
 | `Up/Down` | Navigate clips (hold to repeat) |
 | `Shift+Up/Down` | Extend multi-selection |
+| `Tab` | Cycle type filter (All → Text → Images → Links → Files → Pinned → Queue → All) |
 | `Return` | Paste selected clip |
 | `Shift+Return` | Paste as plain text |
 | `1`-`30` (type rapidly) | Quick select by number |

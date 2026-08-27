@@ -52,6 +52,7 @@ class PanelShortcutService: ObservableObject {
     @Published var paste: PanelShortcutDef
     @Published var ocr: PanelShortcutDef
     @Published var share: PanelShortcutDef
+    @Published var cycleFilter: PanelShortcutDef
 
     static let defaultPin = PanelShortcutDef(id: "pin", key: "d", modifiers: NSEvent.ModifierFlags.command.rawValue)
     static let defaultDelete = PanelShortcutDef(id: "delete", key: "backspace", modifiers: NSEvent.ModifierFlags.command.rawValue)
@@ -59,6 +60,7 @@ class PanelShortcutService: ObservableObject {
     static let defaultPaste = PanelShortcutDef(id: "paste", key: "return", modifiers: 0)
     static let defaultOCR = PanelShortcutDef(id: "ocr", key: "o", modifiers: NSEvent.ModifierFlags.command.rawValue)
     static let defaultShare = PanelShortcutDef(id: "share", key: "s", modifiers: NSEvent.ModifierFlags.command.rawValue)
+    static let defaultCycleFilter = PanelShortcutDef(id: "cycleFilter", key: "tab", modifiers: 0)
 
     private init() {
         pin = Self.load(key: Constants.PanelShortcuts.pin, fallback: Self.defaultPin)
@@ -67,6 +69,7 @@ class PanelShortcutService: ObservableObject {
         paste = Self.load(key: Constants.PanelShortcuts.paste, fallback: Self.defaultPaste)
         ocr = Self.load(key: Constants.PanelShortcuts.ocr, fallback: Self.defaultOCR)
         share = Self.load(key: Constants.PanelShortcuts.share, fallback: Self.defaultShare)
+        cycleFilter = Self.load(key: Constants.PanelShortcuts.cycleFilter, fallback: Self.defaultCycleFilter)
     }
 
     func save(_ shortcut: PanelShortcutDef) {
@@ -78,6 +81,7 @@ class PanelShortcutService: ObservableObject {
         case "paste": paste = shortcut; key = Constants.PanelShortcuts.paste
         case "ocr": ocr = shortcut; key = Constants.PanelShortcuts.ocr
         case "share": share = shortcut; key = Constants.PanelShortcuts.share
+        case "cycleFilter": cycleFilter = shortcut; key = Constants.PanelShortcuts.cycleFilter
         default: return
         }
         if let data = try? JSONEncoder().encode(shortcut) {
@@ -92,6 +96,7 @@ class PanelShortcutService: ObservableObject {
         save(Self.defaultPaste)
         save(Self.defaultOCR)
         save(Self.defaultShare)
+        save(Self.defaultCycleFilter)
     }
 
     private static func load(key: String, fallback: PanelShortcutDef) -> PanelShortcutDef {
