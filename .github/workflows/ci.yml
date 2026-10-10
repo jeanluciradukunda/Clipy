@@ -27,7 +27,7 @@ jobs:
           gem install cocoapods
           pod install
 
-      - name: Build
+      - name: Build app and tests
         run: |
           xcodebuild \
             -workspace Clipy.xcworkspace \
@@ -36,4 +36,4 @@ jobs:
             -destination 'platform=macOS,arch=arm64' \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
-            build
+            build-for-testing
