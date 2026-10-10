@@ -10,7 +10,6 @@
 //
 
 import Cocoa
-import SwiftHEXColors
 
 final class CPYClipData: NSObject {
 

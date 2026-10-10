@@ -25,7 +25,6 @@ PODS:
   - Sauce (2.1.0)
   - Sparkle (1.26.0)
   - SwiftGen (6.4.0)
-  - SwiftHEXColors (1.4.1)
   - SwiftLint (0.40.3)
 
 DEPENDENCIES:
@@ -39,7 +38,6 @@ DEPENDENCIES:
   - Sauce
   - Sparkle
   - SwiftGen
-  - SwiftHEXColors
   - SwiftLint
 
 SPEC REPOS:
@@ -60,7 +58,6 @@ SPEC REPOS:
     - Sauce
     - Sparkle
     - SwiftGen
-    - SwiftHEXColors
     - SwiftLint
 
 SPEC CHECKSUMS:
@@ -80,9 +77,8 @@ SPEC CHECKSUMS:
   Sauce: a4075a04b6041e7a0c992a952cc79f7a0ebdb8e3
   Sparkle: d56d028f4b0c123577825f5d1004f6140d77f90e
   SwiftGen: 67860cc7c3cfc2ed25b9b74cfd55495fc89f9108
-  SwiftHEXColors: 1cb6e5d55c52749aa33db8f088ac55eb71ca4c7f
   SwiftLint: dfd554ff0dff17288ee574814ccdd5cea85d76f7
 
-PODFILE CHECKSUM: c90c4e837a5701cf5b41ebc929e79ae7054bbf33
+PODFILE CHECKSUM: 858fa1fc1c5189713ae4bb75e65f159ef706b81f
 
 COCOAPODS: 1.16.2

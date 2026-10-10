@@ -10,7 +10,6 @@ target 'Clipy' do
   pod 'KeyHolder'
   pod 'Magnet'
   pod 'AEXML'
-  pod 'SwiftHEXColors'
   # Utility
   pod 'BartyCrouch'
   pod 'SwiftLint'
