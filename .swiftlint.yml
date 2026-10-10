@@ -53,3 +53,8 @@ custom_rules:
     regex: "UserDefaults\\.standard"
     message: "Tests are hosted in Clipy Dev, so UserDefaults.standard is the real app's preferences. Use AppEnvironment.current.defaults."
     severity: error
+  no_standard_defaults_in_app:
+    included: "Clipy/Sources/.*\\.swift"
+    regex: "UserDefaults\\.standard"
+    message: "Use AppEnvironment.current.defaults, so tests hosted in Clipy Dev never reach the real preferences."
+    severity: error
