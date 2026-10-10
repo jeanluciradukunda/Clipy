@@ -130,7 +130,7 @@ final class CPYClipData: NSObject {
         return types.count == 1 && (types.first?.isStringType() ?? false)
     }
     var thumbnailImage: NSImage? {
-        let defaults = UserDefaults.standard
+        let defaults = AppEnvironment.current.defaults
         let width = defaults.integer(forKey: Constants.UserDefaults.thumbnailWidth)
         let height = defaults.integer(forKey: Constants.UserDefaults.thumbnailHeight)
 
