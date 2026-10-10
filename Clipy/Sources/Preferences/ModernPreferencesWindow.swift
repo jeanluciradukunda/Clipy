@@ -40,7 +40,7 @@ enum PreferenceTab: String, Identifiable {
     /// Tabs visible by default (developer tab requires dev mode)
     static var visibleTabs: [PreferenceTab] {
         var tabs: [PreferenceTab] = [.general, .menu, .types, .shortcuts, .excludedApps, .plugins, .updates]
-        if UserDefaults.standard.bool(forKey: Constants.Developer.devModeEnabled) {
+        if AppEnvironment.current.defaults.bool(forKey: Constants.Developer.devModeEnabled) {
             tabs.append(.developer)
         }
         return tabs
@@ -1112,7 +1112,7 @@ struct ClipboardTypesPreferencesView: View {
     }
 
     private func loadTypes() {
-        if let dict = UserDefaults.standard.object(forKey: Constants.UserDefaults.storeTypes) as? [String: NSNumber] {
+        if let dict = AppEnvironment.current.defaults.object(forKey: Constants.UserDefaults.storeTypes) as? [String: NSNumber] {
             storeTypes = dict.mapValues { $0.boolValue }
         } else {
             // Default: all enabled
@@ -1122,7 +1122,7 @@ struct ClipboardTypesPreferencesView: View {
 
     private func saveTypes() {
         let nsDict = storeTypes.mapValues { NSNumber(value: $0) }
-        UserDefaults.standard.set(nsDict, forKey: Constants.UserDefaults.storeTypes)
+        AppEnvironment.current.defaults.set(nsDict, forKey: Constants.UserDefaults.storeTypes)
     }
 }
 
