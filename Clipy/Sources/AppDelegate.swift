@@ -30,6 +30,10 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     // MARK: - Init
     override func awakeFromNib() {
         super.awakeFromNib()
+        if TestIsolation.isRunningTests {
+            Realm.Configuration.defaultConfiguration = Realm.Configuration(inMemoryIdentifier: TestIsolation.suiteName)
+            return
+        }
         Realm.migration()
     }
 
@@ -223,6 +227,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
 extension AppDelegate: NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        guard !TestIsolation.isRunningTests else { return }
         // Environments
         AppEnvironment.replaceCurrent(environment: AppEnvironment.fromStorage())
         // UserDefaults

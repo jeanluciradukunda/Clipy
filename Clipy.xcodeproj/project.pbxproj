@@ -11,6 +11,8 @@
 		B7CC520B88EAA6AD38E93462 /* Pods_Clipy.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73A92F6DEE6CFF50A567CFEF /* Pods_Clipy.framework */; };
 		C5F1B7331FF74A2D00D2DA83 /* NSPasteboard+Deprecated.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F1B7321FF74A2D00D2DA83 /* NSPasteboard+Deprecated.swift */; };
 		FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA08EDF71D1FED7D000D1D13 /* HotKeyServiceSpec.swift */; };
+		D1A0DE062E5A4B6C00A1B2C3 /* TestIsolationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0DE052E5A4B6C00A1B2C3 /* TestIsolationSpec.swift */; };
+		D1A0DE042E5A4B6C00A1B2C3 /* TestIsolationConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0DE032E5A4B6C00A1B2C3 /* TestIsolationConfiguration.swift */; };
 		FA0D5CE81DDCC61600AC9052 /* ClipService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0D5CE71DDCC61600AC9052 /* ClipService.swift */; };
 		FA10897D20EC22E200A3FEFC /* AssetsImages.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA10897B20EC22E200A3FEFC /* AssetsImages.swift */; };
 		FA10897E20EC22E200A3FEFC /* LocalizedStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA10897C20EC22E200A3FEFC /* LocalizedStrings.swift */; };
@@ -66,6 +68,7 @@
 		FA1DB5221DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = FA1DB50F1DDCB4C0007F95C8 /* CPYSnippetsEditorWindowController.xib */; };
 		FA3778931F3B691A003B5BAB /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3778921F3B691A003B5BAB /* AppEnvironment.swift */; };
 		FA3778951F3B6920003B5BAB /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3778941F3B6920003B5BAB /* Environment.swift */; };
+		D1A0DE022E5A4B6C00A1B2C3 /* TestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0DE012E5A4B6C00A1B2C3 /* TestIsolation.swift */; };
 		FA431F021E6718CE00ACFF56 /* Collection+Safe.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */; };
 		FA610702C1F0DE0000000107 /* ClipFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */; };
 		FA610702C1F0DE0000000105 /* ClipHistoryOrderSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */; };
@@ -219,6 +222,7 @@
 		CB01A3F3E7D1A4B900112244 /* CollectModeIndicator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CollectModeIndicator.swift; sourceTree = "<group>"; };
 		FA3778921F3B691A003B5BAB /* AppEnvironment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		FA3778941F3B6920003B5BAB /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
+		D1A0DE012E5A4B6C00A1B2C3 /* TestIsolation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolation.swift; sourceTree = "<group>"; };
 		FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Safe.swift"; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipFilterSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipHistoryOrderSpec.swift; sourceTree = "<group>"; };
@@ -226,6 +230,8 @@
 		FA610701C1F0DE0000000098 /* StatsRadarSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatsRadarSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchPanelFocusLossSpec.swift; sourceTree = "<group>"; };
 		FA6167911D3ABEB10049FA14 /* FolderSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FolderSpec.swift; sourceTree = "<group>"; };
+		D1A0DE052E5A4B6C00A1B2C3 /* TestIsolationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolationSpec.swift; sourceTree = "<group>"; };
+		D1A0DE032E5A4B6C00A1B2C3 /* TestIsolationConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolationConfiguration.swift; sourceTree = "<group>"; };
 		FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DraggedDataSpec.swift; sourceTree = "<group>"; };
 		FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SnippetSpec.swift; sourceTree = "<group>"; };
 		FA9B2C011DDCB49C007F95C8 /* ClipSearchPanel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipSearchPanel.swift; sourceTree = "<group>"; };
@@ -574,6 +580,7 @@
 			children = (
 				FA3778921F3B691A003B5BAB /* AppEnvironment.swift */,
 				FA3778941F3B6920003B5BAB /* Environment.swift */,
+				D1A0DE012E5A4B6C00A1B2C3 /* TestIsolation.swift */,
 			);
 			path = Environments;
 			sourceTree = "<group>";
@@ -639,6 +646,8 @@
 				FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */,
 				FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */,
 				FA6167911D3ABEB10049FA14 /* FolderSpec.swift */,
+				D1A0DE052E5A4B6C00A1B2C3 /* TestIsolationSpec.swift */,
+				D1A0DE032E5A4B6C00A1B2C3 /* TestIsolationConfiguration.swift */,
 				FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */,
 				FAC43DDC1B35D8B100C06102 /* Supporting Files */,
 			);
@@ -983,6 +992,7 @@
 				FA1DB5121DDCB4C0007F95C8 /* CPYPreferencesWindowController.swift in Sources */,
 				FAE911BB1DE054F1008A4BEC /* NSCoding+Archive.swift in Sources */,
 				FA3778951F3B6920003B5BAB /* Environment.swift in Sources */,
+				D1A0DE022E5A4B6C00A1B2C3 /* TestIsolation.swift in Sources */,
 				FA9B2C021DDCB49C007F95C8 /* ClipSearchPanel.swift in Sources */,
 				CB01A3F7E7D1A4B900112255 /* SyntaxHighlighter.swift in Sources */,
 				CB02B4A9F8E2B5CA00223366 /* ClipIntelligence.swift in Sources */,
@@ -1005,6 +1015,8 @@
 				FA610702C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift in Sources */,
 				FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */,
 				FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */,
+				D1A0DE062E5A4B6C00A1B2C3 /* TestIsolationSpec.swift in Sources */,
+				D1A0DE042E5A4B6C00A1B2C3 /* TestIsolationConfiguration.swift in Sources */,
 				FA6167961D3ACDD80049FA14 /* SnippetSpec.swift in Sources */,
 				FA6167941D3ACCB90049FA14 /* DraggedDataSpec.swift in Sources */,
 			);
