@@ -119,7 +119,7 @@ class CollectModeIndicatorController {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
 
-        let hostView = NSHostingView(rootView: CollectModeIndicatorView())
+        let hostView = NSHostingView(rootView: CollectModeIndicatorView().defaultAppStorage(AppEnvironment.current.defaults))
         hostView.frame = NSRect(x: 0, y: 0, width: 280, height: 40)
         panel.contentView = hostView
 

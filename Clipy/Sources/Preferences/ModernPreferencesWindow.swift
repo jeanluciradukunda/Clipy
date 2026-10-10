@@ -1797,7 +1797,7 @@ class ModernPreferencesWindowController: NSWindowController {
 
         super.init(window: window)
 
-        window.contentView = NSHostingView(rootView: ModernPreferencesView())
+        window.contentView = NSHostingView(rootView: ModernPreferencesView().defaultAppStorage(AppEnvironment.current.defaults))
         window.delegate = self
     }
 
