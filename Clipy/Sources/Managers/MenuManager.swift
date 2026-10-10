@@ -554,13 +554,12 @@ private extension MenuManager {
             image?.isTemplate = true
             button.image = image
             button.imagePosition = .imageLeading
-            // Add orange "DEV" badge
-            let devLabel = NSTextField(labelWithString: "DEV")
-            devLabel.font = NSFont.systemFont(ofSize: 7, weight: .bold)
-            devLabel.textColor = .orange
-            devLabel.sizeToFit()
-            devLabel.frame.origin = CGPoint(x: 20, y: 2)
-            button.addSubview(devLabel)
+            // The badge is the button's own title, never a subview: a subview on a status
+            // item button makes AppKit re-snapshot the menu bar replicants nonstop (~60% CPU).
+            button.attributedTitle = NSAttributedString(string: "DEV", attributes: [
+                .font: NSFont.systemFont(ofSize: 7, weight: .bold),
+                .foregroundColor: NSColor.orange
+            ])
             button.toolTip = "Clipy Dev \(Bundle.main.appVersion ?? "") (Debug Build)"
         }
         #else
