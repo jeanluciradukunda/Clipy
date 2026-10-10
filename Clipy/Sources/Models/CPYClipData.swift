@@ -11,7 +11,6 @@
 
 import Cocoa
 import CryptoKit
-import SwiftHEXColors
 
 final class CPYClipData: NSObject {
 
