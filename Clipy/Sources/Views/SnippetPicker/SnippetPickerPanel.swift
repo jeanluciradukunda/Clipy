@@ -679,7 +679,7 @@ class SnippetPickerWindowController: NSWindowController, NSWindowDelegate {
         let hostView = NSHostingView(rootView: SnippetPickerPanelView(
             filterFolderID: filterFolderID,
             onDismiss: { [weak self] in self?.dismiss() }
-        ))
+        ).defaultAppStorage(AppEnvironment.current.defaults))
         hostView.frame = NSRect(x: 0, y: 0, width: 440, height: 460)
         panel.contentView = hostView
         // Ensure hosting view layer is transparent after being added to window
