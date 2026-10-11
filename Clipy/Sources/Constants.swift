@@ -60,6 +60,8 @@ struct Constants {
         static let showToolTipOnMenuItem = "showToolTipOnMenuItem"
         static let showImageInTheMenu = "showImageInTheMenu"
         static let addNumericKeyEquivalents = "addNumericKeyEquivalents"
+        static let searchPanelQuickPasteRequiresCommand = "kCPYPrefQuickPasteRequiresCommand"
+        static let snippetPickerQuickPasteRequiresCommand = "kCPYPrefSnippetPickerQuickPasteRequiresCommand"
         static let maxLengthOfToolTip = "maxLengthOfToolTipKey"
         static let loginItem = "loginItem"
         static let suppressAlertForLoginItem = "suppressAlertForLoginItem"
