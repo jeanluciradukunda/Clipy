@@ -23,6 +23,7 @@ final class ClipService {
     private var cachedChangeCount: Int = 0
     private var storeTypes = [String: NSNumber]()
     private let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.ClipUpdatable")
+    private let keyQueue = DispatchQueue(label: "com.clipy-app.Clipy.ClipKeys", qos: .userInitiated)
     private var monitorTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
@@ -178,22 +179,48 @@ extension ClipService {
 
         // Create data
         let data = CPYClipData(pasteboard: pasteboard, types: types)
-        save(with: data)
+        saveWithKeysOffMain(data)
     }
 
     func create(with image: NSImage) {
         lock.lock(); defer { lock.unlock() }
 
         let data = CPYClipData(image: image)
-        save(with: data)
+        saveWithKeysOffMain(data)
     }
 
-    fileprivate func save(with data: CPYClipData) {
+    /// The serial queue keeps clips in capture order; the save itself stays on the main thread.
+    private func saveWithKeysOffMain(_ data: CPYClipData) {
+        keyQueue.async { [weak self] in
+            let legacyKey: String? = autoreleasepool {
+                data.prepareKeys()
+                return Self.legacyDuplicateKey(for: data, in: Realm.safeInstance())
+            }
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.lock.lock(); defer { self.lock.unlock() }
+                self.save(with: data, replacingLegacyKey: legacyKey)
+            }
+        }
+    }
+
+    /// The key of a clip an earlier release saved for this same image under its old size-based key,
+    /// so upgrading does not list the image twice. A different image under that key is left alone.
+    static func legacyDuplicateKey(for data: CPYClipData, in realm: Realm?) -> String? {
+        guard let legacyHash = data.legacyHash, legacyHash != data.hash,
+              let legacyClip = realm?.object(ofType: CPYClip.self, forPrimaryKey: "\(legacyHash)"),
+              let stored = NSKeyedUnarchiver.unarchiveObject(withFile: legacyClip.dataPath) as? CPYClipData,
+              stored.hash == data.hash else { return nil }
+        return legacyClip.dataHash
+    }
+
+    fileprivate func save(with data: CPYClipData, replacingLegacyKey legacyKey: String? = nil) {
         guard let realm = Realm.safeInstance() else { return }
 
         // Copy already copied history
         let isCopySameHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.copySameHistory)
-        if realm.object(ofType: CPYClip.self, forPrimaryKey: "\(data.hash)") != nil, !isCopySameHistory { return }
+        let isAlreadySaved = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(data.hash)") != nil || legacyKey != nil
+        if isAlreadySaved, !isCopySameHistory { return }
         // Don't save invalidated clip
         if let clip = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(data.hash)"), clip.isInvalidated { return }
 
@@ -204,8 +231,11 @@ extension ClipService {
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
         let savedHash = (isOverwriteHistory) ? data.hash : Int(arc4random() % 1000000)
 
+        let replacedLegacyKey = isOverwriteHistory ? legacyKey : nil
+        let legacyIsPinned = replacedLegacyKey.flatMap { realm.object(ofType: CPYClip.self, forPrimaryKey: $0) }?.isPinned ?? false
+
         // Preserve pinned state from existing clip being overwritten
-        let existingIsPinned = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")?.isPinned ?? false
+        let existingIsPinned = (realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")?.isPinned ?? false) || legacyIsPinned
 
         // Saved time and path
         let unixTime = Int(Date().timeIntervalSince1970)
@@ -234,8 +264,17 @@ extension ClipService {
             guard let dispatchRealm = Realm.safeInstance() else { return }
             if CPYUtilities.prepareSaveToPath(CPYUtilities.applicationSupportFolder()) {
                 if NSKeyedArchiver.archiveRootObject(data, toFile: savedPath) {
+                    var replacedLegacyFiles: (dataPath: String, thumbnailPath: String)?
                     dispatchRealm.transaction {
+                        if let key = replacedLegacyKey, let legacy = dispatchRealm.object(ofType: CPYClip.self, forPrimaryKey: key) {
+                            replacedLegacyFiles = (legacy.dataPath, legacy.thumbnailPath)
+                            dispatchRealm.delete(legacy)
+                        }
                         dispatchRealm.add(clip, update: .all)
+                    }
+                    if let files = replacedLegacyFiles {
+                        CPYUtilities.deleteData(at: files.dataPath)
+                        if !files.thumbnailPath.isEmpty { ClipService.removeCachedThumbnail(forKey: files.thumbnailPath) }
                     }
                     UsageMetricsService.shared.track(.clipsCopied)
                     // Run auto-trigger plugins on string content (short-circuits when none registered)

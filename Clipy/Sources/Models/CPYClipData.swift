@@ -10,6 +10,7 @@
 //
 
 import Cocoa
+import CryptoKit
 import SwiftHEXColors
 
 final class CPYClipData: NSObject {
@@ -31,10 +32,29 @@ final class CPYClipData: NSObject {
     var PDF: Data?
     var image: NSImage?
 
+    private var cachedKeys: (hash: Int, legacyHash: Int?)?
+
+    /// The clip's primary key. Images are keyed by a digest of their TIFF bytes; the TIFF encode
+    /// is expensive, so call `prepareKeys()` off the main thread before the first read.
     override var hash: Int {
+        return prepareKeys().hash
+    }
+
+    /// The key earlier releases gave an image clip, built from its TIFF byte count, so every
+    /// image of the same size shared one key. Nil for clips without an image.
+    var legacyHash: Int? {
+        return prepareKeys().legacyHash
+    }
+
+    @discardableResult
+    func prepareKeys() -> (hash: Int, legacyHash: Int?) {
+        if let cachedKeys = cachedKeys { return cachedKeys }
         var hash = types.map { $0.rawValue }.joined().hash
+        var imageKeyParts: (digest: Int, byteCount: Int)?
         if let image = self.image, let imageData = image.tiffRepresentation {
-            hash ^= imageData.count
+            let digest = Self.digest(of: imageData)
+            imageKeyParts = (digest, imageData.count)
+            hash ^= digest
         } else if let image = self.image {
             hash ^= image.hash
         }
@@ -50,8 +70,15 @@ final class CPYClipData: NSObject {
         if let data = RTFData {
             hash ^= data.count
         }
-        return hash
+        let keys = (hash: hash, legacyHash: imageKeyParts.map { hash ^ $0.digest ^ $0.byteCount })
+        cachedKeys = keys
+        return keys
     }
+
+    static func digest(of data: Data) -> Int {
+        return SHA256.hash(data: data).withUnsafeBytes { $0.loadUnaligned(as: Int.self) }
+    }
+
     var primaryType: NSPasteboard.PasteboardType? {
         return types.first
     }
