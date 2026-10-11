@@ -125,6 +125,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             return
         }
 
+        MainActor.assumeIsolated { UsageMetricsService.shared.track(.pasteFromMenu) }
         AppEnvironment.current.pasteService.paste(with: clip)
     }
 
