@@ -1578,6 +1578,7 @@ struct UpdatesPreferencesView: View {
 
                 do {
                     try UpdateVerifier.verify(appAt: stagedURL)
+                    try UpdateVerifier.verifyNewer(appAt: stagedURL, than: currentVersion)
                 } catch {
                     try? FileManager.default.removeItem(at: stagingDir)
                     let detach = Process()
@@ -1585,7 +1586,7 @@ struct UpdatesPreferencesView: View {
                     detach.arguments = ["detach", volume, "-quiet"]
                     try? detach.run()
                     detach.waitUntilExit()
-                    await MainActor.run { state = .failed(message: "The update's signature could not be verified, so it was not installed") }
+                    await MainActor.run { state = .failed(message: "The update could not be verified as a newer, signed Clipy, so it was not installed") }
                     return
                 }
 

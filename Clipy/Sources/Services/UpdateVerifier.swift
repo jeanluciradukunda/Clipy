@@ -19,6 +19,7 @@ enum UpdateVerifier {
         case invalidRequirement(OSStatus)
         case signatureRejected(OSStatus)
         case wrongBundleIdentifier(String?)
+        case notNewer(String?)
     }
 
     /// Whether `candidate` is a strictly newer dotted version than `current` ("2.10.0" > "2.9.1").
@@ -40,6 +41,13 @@ enum UpdateVerifier {
         guard let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
               let entities = plist["system-entities"] as? [[String: Any]] else { return nil }
         return entities.compactMap { $0["mount-point"] as? String }.first
+    }
+
+    /// A validly signed but older Clipy behind a newer release tag would bring back an older updater,
+    /// so the staged app's own version must be newer than the running one.
+    static func verifyNewer(appAt url: URL, than runningVersion: String) throws {
+        let stagedVersion = Bundle(url: url)?.appVersion
+        guard let version = stagedVersion, isNewer(version, than: runningVersion) else { throw Failure.notNewer(stagedVersion) }
     }
 
     static func runningTeamIdentifier() -> String? {
