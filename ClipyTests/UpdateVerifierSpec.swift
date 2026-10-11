@@ -30,6 +30,45 @@ class UpdateVerifierSpec: QuickSpec {
             }
         }
 
+        describe("UpdateVerifier.verifyNewer") {
+            var bundles: [URL] = []
+
+            func stagedApp(version: String?) -> URL {
+                let app = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Staged-\(UUID().uuidString).app")
+                let contents = app.appendingPathComponent("Contents")
+                try? FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+                var info: [String: Any] = ["CFBundleIdentifier": "com.clipy-app.Clipy", "CFBundlePackageType": "APPL"]
+                info["CFBundleShortVersionString"] = version
+                (info as NSDictionary).write(to: contents.appendingPathComponent("Info.plist"), atomically: true)
+                bundles.append(app)
+                return app
+            }
+
+            afterEach {
+                bundles.forEach { try? FileManager.default.removeItem(at: $0) }
+                bundles.removeAll()
+            }
+
+            it("accepts a staged app newer than the running one") {
+                expect { try UpdateVerifier.verifyNewer(appAt: stagedApp(version: "2.3.0"), than: "2.2.2") }.toNot(throwError())
+            }
+
+            it("rejects an older app behind a newer release tag") {
+                expect { try UpdateVerifier.verifyNewer(appAt: stagedApp(version: "2.1.0"), than: "2.2.2") }
+                    .to(throwError(UpdateVerifier.Failure.notNewer("2.1.0")))
+            }
+
+            it("rejects the same version") {
+                expect { try UpdateVerifier.verifyNewer(appAt: stagedApp(version: "2.2.2"), than: "2.2.2") }
+                    .to(throwError(UpdateVerifier.Failure.notNewer("2.2.2")))
+            }
+
+            it("rejects an app with no version") {
+                expect { try UpdateVerifier.verifyNewer(appAt: stagedApp(version: nil), than: "2.2.2") }
+                    .to(throwError(UpdateVerifier.Failure.notNewer(nil)))
+            }
+        }
+
         describe("UpdateVerifier.verify") {
             it("refuses when no team identifier is known") {
                 expect { try UpdateVerifier.verify(appAt: Bundle.main.bundleURL, teamIdentifier: nil) }
