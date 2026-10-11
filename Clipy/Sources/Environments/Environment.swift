@@ -33,7 +33,7 @@ struct Environment {
          excludeAppService: ExcludeAppService = ExcludeAppService(applications: []),
          accessibilityService: AccessibilityService = AccessibilityService(),
          menuManager: MenuManager = MenuManager(),
-         defaults: UserDefaults = .standard) {
+         defaults: UserDefaults = TestIsolation.isRunningTests ? TestIsolation.defaults : .standard) {
 
         self.clipService = clipService
         self.hotKeyService = hotKeyService

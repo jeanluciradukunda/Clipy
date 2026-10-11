@@ -47,3 +47,9 @@ file_length:
 function_body_length:
   warning: 100
   error: 200
+custom_rules:
+  no_standard_defaults_in_tests:
+    included: "ClipyTests/.*\\.swift"
+    regex: "UserDefaults\\.standard"
+    message: "Tests are hosted in Clipy Dev, so UserDefaults.standard is the real app's preferences. Use AppEnvironment.current.defaults."
+    severity: error
