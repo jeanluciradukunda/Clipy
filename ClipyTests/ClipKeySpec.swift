@@ -27,6 +27,53 @@ class ClipKeySpec: QuickSpec {
             it("matches for the same image copied twice") {
                 expect(CPYClipData(image: image(red: 0.5)).hash) == CPYClipData(image: image(red: 0.5)).hash
             }
+
+            it("still knows the size-based key earlier releases used") {
+                let data = CPYClipData(image: image(red: 0.5))
+                let byteCount = image(red: 0.5).tiffRepresentation!.count
+                expect(data.legacyHash) == NSPasteboard.PasteboardType.clipyTIFF.rawValue.hash ^ byteCount
+            }
+        }
+
+        describe("ClipService.legacyDuplicateKey") {
+            var realm: Realm!
+            var archivePath: String!
+
+            beforeEach {
+                realm = try! Realm(configuration: Realm.Configuration(inMemoryIdentifier: NSUUID().uuidString))
+                archivePath = NSTemporaryDirectory() + NSUUID().uuidString + ".data"
+            }
+
+            afterEach {
+                try? FileManager.default.removeItem(atPath: archivePath)
+            }
+
+            func saveLegacyClip(holding stored: CPYClipData, key: Int) {
+                NSKeyedArchiver.archiveRootObject(stored, toFile: archivePath)
+                let clip = CPYClip()
+                clip.dataHash = "\(key)"
+                clip.dataPath = archivePath
+                realm.transaction { realm.add(clip) }
+            }
+
+            it("finds the same image saved under its old key") {
+                let copied = CPYClipData(image: image(red: 0.3))
+                saveLegacyClip(holding: CPYClipData(image: image(red: 0.3)), key: copied.legacyHash!)
+                expect(ClipService.legacyDuplicateKey(for: copied, in: realm)) == "\(copied.legacyHash!)"
+            }
+
+            it("leaves a different same-size image under the old key alone") {
+                let copied = CPYClipData(image: image(red: 0.3))
+                saveLegacyClip(holding: CPYClipData(image: image(red: 0.7)), key: copied.legacyHash!)
+                expect(ClipService.legacyDuplicateKey(for: copied, in: realm)) == nil
+            }
+
+            it("ignores clips without an image") {
+                let text = CPYClipData(image: image(red: 0.3))
+                text.image = nil
+                text.stringValue = "hello"
+                expect(ClipService.legacyDuplicateKey(for: text, in: realm)) == nil
+            }
         }
     }
 }
