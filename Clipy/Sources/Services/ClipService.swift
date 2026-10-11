@@ -234,6 +234,12 @@ extension ClipService {
         return types.contains { privateMarkerTypes.contains($0) }
     }
 
+    /// Without "overwrite same history" every clip needs its own key; a random number in a million
+    /// could land on an existing clip and replace it.
+    static func storageKey(for data: CPYClipData, overwritingSameHistory: Bool) -> String {
+        return overwritingSameHistory ? "\(data.hash)" : UUID().uuidString
+    }
+
     fileprivate func save(with data: CPYClipData, replacingLegacyKey legacyKey: String? = nil) {
         guard let realm = Realm.safeInstance() else { return }
 
@@ -249,14 +255,14 @@ extension ClipService {
 
         // Overwrite same history
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
-        let savedHash = (isOverwriteHistory) ? data.hash : Int(arc4random() % 1000000)
+        let savedKey = Self.storageKey(for: data, overwritingSameHistory: isOverwriteHistory)
 
         let replacedLegacyKey = isOverwriteHistory ? legacyKey : nil
         let legacyClip = replacedLegacyKey.flatMap { realm.object(ofType: CPYClip.self, forPrimaryKey: $0) }
         let legacyIsPinned = legacyClip?.isPinned ?? false
 
         // Preserve pinned state from existing clip being overwritten
-        let existingClip = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")
+        let existingClip = realm.object(ofType: CPYClip.self, forPrimaryKey: savedKey)
         let existingIsPinned = (existingClip?.isPinned ?? false) || legacyIsPinned
         let reorderAfterPasting = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
 
@@ -267,7 +273,7 @@ extension ClipService {
         let clip = CPYClip()
         clip.dataPath = savedPath
         clip.title = data.stringValue[0...10000]
-        clip.dataHash = "\(savedHash)"
+        clip.dataHash = savedKey
         clip.updateTime = CPYClip.updateTime(existing: (existingClip ?? legacyClip)?.updateTime, now: unixTime, reorderAfterPasting: reorderAfterPasting)
         clip.primaryType = data.primaryType?.rawValue ?? ""
         clip.isPinned = existingIsPinned
