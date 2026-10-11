@@ -80,6 +80,18 @@ class ClipKeySpec: QuickSpec {
             }
         }
 
+        describe("ClipService.storageKey") {
+            it("gives every clip its own key when same-history clips are not overwritten") {
+                let data = text("same text")
+                let keys = (0..<5_000).map { _ in ClipService.storageKey(for: data, overwritingSameHistory: false) }
+                expect(Set(keys).count) == keys.count
+            }
+
+            it("keys by content when same-history clips are overwritten") {
+                expect(ClipService.storageKey(for: text("same text"), overwritingSameHistory: true)) == "\(text("same text").hash)"
+            }
+        }
+
         describe("ClipService.legacyDuplicateKey") {
             var realm: Realm!
             var archivePath: String!
