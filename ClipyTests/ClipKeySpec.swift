@@ -42,6 +42,38 @@ class ClipKeySpec: QuickSpec {
             }
         }
 
+        describe("CPYClipData.hash for text and documents") {
+            let first = "line one\nline two\nline three\nline four: password=hunter2\n" + String(repeating: "x", count: 200) + "\nend"
+            let second = first.replacingOccurrences(of: "hunter2", with: "secret7")
+
+            func text(_ string: String) -> CPYClipData {
+                let data = CPYClipData(image: NSImage())
+                data.image = nil
+                data.types = [.string]
+                data.stringValue = string
+                return data
+            }
+
+            it("differs for two different long texts that share an NSString hash") {
+                expect((first as NSString).hash) == (second as NSString).hash
+                expect(text(first).hash) != text(second).hash
+            }
+
+            it("matches for the same text copied twice") {
+                expect(text(first).hash) == text(first).hash
+            }
+
+            it("differs for two different PDFs of the same size") {
+                let pdfA = CPYClipData(image: NSImage()), pdfB = CPYClipData(image: NSImage())
+                for (data, byte) in [(pdfA, UInt8(1)), (pdfB, UInt8(2))] {
+                    data.image = nil
+                    data.types = [.pdf]
+                    data.PDF = Data(repeating: byte, count: 512)
+                }
+                expect(pdfA.hash) != pdfB.hash
+            }
+        }
+
         describe("ClipService.legacyDuplicateKey") {
             var realm: Realm!
             var archivePath: String!
