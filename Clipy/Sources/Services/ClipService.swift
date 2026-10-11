@@ -205,7 +205,9 @@ extension ClipService {
         let savedHash = (isOverwriteHistory) ? data.hash : Int(arc4random() % 1000000)
 
         // Preserve pinned state from existing clip being overwritten
-        let existingIsPinned = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")?.isPinned ?? false
+        let existingClip = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")
+        let existingIsPinned = existingClip?.isPinned ?? false
+        let reorderAfterPasting = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
 
         // Saved time and path
         let unixTime = Int(Date().timeIntervalSince1970)
@@ -215,7 +217,7 @@ extension ClipService {
         clip.dataPath = savedPath
         clip.title = data.stringValue[0...10000]
         clip.dataHash = "\(savedHash)"
-        clip.updateTime = unixTime
+        clip.updateTime = CPYClip.updateTime(existing: existingClip?.updateTime, now: unixTime, reorderAfterPasting: reorderAfterPasting)
         clip.primaryType = data.primaryType?.rawValue ?? ""
         clip.isPinned = existingIsPinned
 

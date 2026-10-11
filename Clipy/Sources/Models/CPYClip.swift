@@ -30,4 +30,18 @@ final class CPYClip: Object {
         return "dataHash"
     }
 
+    /// Pinned clips first, then newest first. The sort-order preference never flips this:
+    /// it decides whether copying an existing clip again refreshes its `updateTime`.
+    static func historyOrder(in realm: Realm) -> Results<CPYClip> {
+        return realm.objects(CPYClip.self).sorted(by: [
+            SortDescriptor(keyPath: #keyPath(CPYClip.isPinned), ascending: false),
+            SortDescriptor(keyPath: #keyPath(CPYClip.updateTime), ascending: false)
+        ])
+    }
+
+    static func updateTime(existing: Int?, now: Int, reorderAfterPasting: Bool) -> Int {
+        guard !reorderAfterPasting, let existing = existing else { return now }
+        return existing
+    }
+
 }
