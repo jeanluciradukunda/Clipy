@@ -873,6 +873,33 @@ h3{font-size:clamp(1.1rem,2vw,1.4rem);font-weight:700}
 }
 
 /* ══════════════════════════════════════
+   PRIVACY AND GOOD HABITS
+   ══════════════════════════════════════ */
+.privacy-heading{text-align:center;margin-bottom:48px}
+.privacy-heading p{color:var(--text-dim);max-width:640px;margin:16px auto 0}
+.privacy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1080px;margin:0 auto}
+.privacy-card{padding:28px 24px;border-radius:var(--radius-lg);background:rgba(255,255,255,.02);border:1px solid var(--border);transition:border-color .3s}
+.privacy-card:hover{border-color:var(--border-hover)}
+.privacy-card svg{width:28px;height:28px;color:var(--amber);margin-bottom:14px}
+.privacy-card h3{margin-bottom:8px;font-size:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.privacy-card p{color:var(--text-dim);font-size:.88rem;line-height:1.6}
+.privacy-card p + p{margin-top:8px}
+.privacy-card .where{color:var(--text);font-family:var(--font-mono);font-size:.8rem}
+.since{font-family:var(--font-mono);font-size:.68rem;font-weight:500;letter-spacing:.02em;color:var(--amber);background:var(--amber-glow);border:1px solid rgba(245,158,11,.25);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.privacy-figures{display:grid;grid-template-columns:1fr auto;gap:4px 16px;margin-top:10px;font-size:.82rem}
+.privacy-figures span{color:var(--text-dim)}
+.privacy-figures b{color:var(--text);font-family:var(--font-mono);font-weight:500;text-align:right}
+.privacy-data{max-width:1080px;margin:28px auto 0;padding:24px;border-radius:var(--radius-lg);background:rgba(255,255,255,.02);border:1px solid var(--border)}
+.privacy-data h3{font-size:1rem;margin-bottom:6px}
+.privacy-data > p{color:var(--text-dim);font-size:.88rem;margin-bottom:14px}
+.privacy-data table{width:100%;border-collapse:collapse;font-size:.85rem}
+.privacy-data th,.privacy-data td{text-align:left;padding:10px 12px;border-top:1px solid var(--border);vertical-align:top}
+.privacy-data th{color:var(--text-dim);font-weight:500}
+.privacy-data td code{font-family:var(--font-mono);font-size:.78rem;color:var(--text);word-break:break-all}
+@media(max-width:900px){.privacy-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.privacy-grid{grid-template-columns:1fr}.privacy-data th:first-child,.privacy-data td:first-child{width:38%}}
+
+/* ══════════════════════════════════════
    7. INSTALL
    ══════════════════════════════════════ */
 .install{background:var(--surface)}
@@ -1036,6 +1063,7 @@ footer{
       <a href="#use-cases">Use Cases</a>
       <a href="#how-it-works">How It Works</a>
       <a href="#templates">Templates</a>
+      <a href="#privacy">Privacy</a>
       <a href="#install">Install</a>
       <a href="https://github.com/jeanluciradukunda/Clipy/releases/latest" class="nav-cta download-link">Download</a>
     </div>
@@ -1644,7 +1672,7 @@ footer{
     <div class="security-grid">
       <div class="security-card reveal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        <h3>Ephemeral by default</h3>
+        <h3>Ephemeral by default <span class="since">from 2.2.3</span></h3>
         <p>Script output bypasses clipboard history entirely.</p>
       </div>
       <div class="security-card reveal">
@@ -1657,6 +1685,69 @@ footer{
         <h3>Signed &amp; notarized</h3>
         <p>Apple Developer ID. No security warnings.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRIVACY AND GOOD HABITS ═══ -->
+<section class="privacy" id="privacy">
+  <div class="container">
+    <div class="privacy-heading reveal">
+      <h2>Good habits, <span class="gradient-amber">built in</span></h2>
+      <p>What Clipy keeps, what it never keeps, and the few settings worth a minute of your time.</p>
+    </div>
+    <div class="privacy-grid">
+      <div class="privacy-card reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h3>Passwords stay out <span class="since">from 2.2.3</span></h3>
+        <p>Password managers mark what they copy as concealed or temporary, using the shared clipboard markers from nspasteboard.org. Clipy skips anything carrying them, whatever else is in your settings.</p>
+      </div>
+      <div class="privacy-card reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        <h3>Exclude whole apps</h3>
+        <p>Nothing you copy while an excluded app is in front is recorded. Add the apps you never want in your history: a banking app, a remote-desktop client, your password manager for belt and braces.</p>
+        <p class="where">Settings &rsaquo; Excluded Apps</p>
+      </div>
+      <div class="privacy-card reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        <h3>Ephemeral snippets <span class="since">from 2.2.3</span></h3>
+        <p>Script snippets marked ephemeral paste their output without saving it to history, and the clipboard is cleared after a short delay. Use them for tokens and one-time codes.</p>
+        <p class="where">Snippet editor &rsaquo; Ephemeral; Settings &rsaquo; General &rsaquo; Auto-clear ephemeral paste</p>
+      </div>
+      <div class="privacy-card reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        <h3>Updates you can trust <span class="since">from 2.2.3</span></h3>
+        <p>The in-app updater installs a release only if it carries a valid Apple Developer ID signature from the same developer as the copy you are running, and only if it is newer. Anything else is refused and nothing changes.</p>
+        <p class="where">Settings &rsaquo; Updates</p>
+      </div>
+      <div class="privacy-card reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 1 8-8"/><path d="M12 12l4-4"/><path d="M20 20h-4"/></svg>
+        <h3>Keep history lean</h3>
+        <p>Clipy keeps 30 clips by default, and at that size everything stays instant. Very long histories cost time and disk. In our tests, at 1,000 clips:</p>
+        <div class="privacy-figures">
+          <span>opening the search panel</span><b>about 0.7 s</b>
+          <span>work per copy</span><b>about 70 ms</b>
+          <span>disk, with 50 images</span><b>about 87 MB</b>
+        </div>
+        <p>Pin the clips you want to keep instead of raising the limit, and clear old screenshots now and then: they are the largest items.</p>
+        <p class="where">Settings &rsaquo; General &rsaquo; Max history size</p>
+      </div>
+      <div class="privacy-card reveal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/></svg>
+        <h3>Stays on your Mac</h3>
+        <p>Your history never leaves your Mac: Clipy has no account, no sync and no analytics service. It connects to the internet only to check for updates.</p>
+        <p>History is stored unencrypted, like most clipboard managers. Turn on FileVault so it is encrypted at rest along with the rest of your disk.</p>
+      </div>
+    </div>
+    <div class="privacy-data reveal">
+      <h3>Where your data lives</h3>
+      <p>Everything is in your user Library. To start completely fresh, quit Clipy and delete these.</p>
+      <table>
+        <tr><th>What</th><th>Where</th></tr>
+        <tr><td>Clip contents, one file per clip</td><td><code>~/Library/Application Support/Clipy/</code></td></tr>
+        <tr><td>History and snippets index</td><td><code>~/Library/Application Support/com.clipy-app.Clipy/default.realm</code></td></tr>
+        <tr><td>Settings and usage stats</td><td><code>~/Library/Preferences/com.clipy-app.Clipy.plist</code></td></tr>
+      </table>
     </div>
   </div>
 </section>
