@@ -29,22 +29,6 @@ class StatsRadarSpec: QuickSpec {
         }
 
         describe("Pasting from the history menu") {
-            let metricsKey = "kCPYUsageMetrics"
-            var savedMetrics: Data?
-
-            beforeEach {
-                savedMetrics = UserDefaults.standard.data(forKey: metricsKey)
-                Realm.Configuration.defaultConfiguration.inMemoryIdentifier = NSUUID().uuidString
-            }
-
-            afterEach {
-                if let savedMetrics = savedMetrics {
-                    UserDefaults.standard.set(savedMetrics, forKey: metricsKey)
-                } else {
-                    UserDefaults.standard.removeObject(forKey: metricsKey)
-                }
-            }
-
             it("counts towards the radar's Paste axis") {
                 let clip = CPYClip()
                 clip.dataHash = NSUUID().uuidString
