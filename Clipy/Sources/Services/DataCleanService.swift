@@ -24,7 +24,7 @@ final class DataCleanService {
     func startMonitoring() {
         stopMonitoring()
         // Clean data every 30 minutes
-        cleanTask = Task { [weak self] in
+        cleanTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60 * 30))
                 guard let self = self else { break }
@@ -83,10 +83,22 @@ final class DataCleanService {
             return
         }
 
-        DispatchQueue.main.async {
-            Set(allClipPaths).symmetricDifference(paths)
-                .map { CPYUtilities.applicationSupportFolder() + "/" + "\($0)" }
-                .forEach { CPYUtilities.deleteData(at: $0) }
-        }
+        Self.orphanedDataFiles(in: CPYUtilities.applicationSupportFolder(), names: paths, keeping: Set(allClipPaths), now: Date())
+            .forEach { CPYUtilities.deleteData(at: $0) }
+    }
+
+    /// Clip files no Realm row names. Only regular `.data` files old enough that no save can still be
+    /// writing them: a file archived just before its row commits must not look like an orphan.
+    static func orphanedDataFiles(in folder: String, names: [String], keeping kept: Set<String>,
+                                  now: Date, gracePeriod: TimeInterval = 5 * 60) -> [String] {
+        return names
+            .filter { $0.hasSuffix(".data") && !kept.contains($0) }
+            .map { folder + "/" + $0 }
+            .filter { path in
+                guard let attributes = try? FileManager.default.attributesOfItem(atPath: path),
+                      attributes[.type] as? FileAttributeType == .typeRegular,
+                      let modified = attributes[.modificationDate] as? Date else { return false }
+                return now.timeIntervalSince(modified) > gracePeriod
+            }
     }
 }
