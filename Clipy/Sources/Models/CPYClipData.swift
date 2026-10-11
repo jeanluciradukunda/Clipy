@@ -10,6 +10,7 @@
 //
 
 import Cocoa
+import CryptoKit
 import SwiftHEXColors
 
 final class CPYClipData: NSObject {
@@ -31,10 +32,55 @@ final class CPYClipData: NSObject {
     var PDF: Data?
     var image: NSImage?
 
+    private var cachedKeys: (hash: Int, legacyHash: Int?)?
+
+    /// The clip's primary key: a digest of everything the clip holds, so two clips share a key only
+    /// when their content matches. Images contribute a digest of their pixels, so a re-encoded copy
+    /// (a clip pasted back from history) keeps its key. Rendering is expensive, so call
+    /// `prepareKeys()` off the main thread before the first read.
     override var hash: Int {
+        return prepareKeys().hash
+    }
+
+    /// The key earlier releases gave this clip, built from sampled string hashes and byte counts,
+    /// so different clips could share it. Used to find a clip saved before upgrading.
+    var legacyHash: Int? {
+        return prepareKeys().legacyHash
+    }
+
+    @discardableResult
+    func prepareKeys() -> (hash: Int, legacyHash: Int?) {
+        if let cachedKeys = cachedKeys { return cachedKeys }
+        let imageData = image?.tiffRepresentation
+        let keys = (hash: contentDigest(imageData: imageData), legacyHash: legacyKey(imageByteCount: imageData?.count) as Int?)
+        cachedKeys = keys
+        return keys
+    }
+
+    private func contentDigest(imageData: Data?) -> Int {
+        var hasher = SHA256()
+        func add(_ part: String, _ data: Data?) {
+            guard let data = data else { return }
+            hasher.update(data: Data("\(part):\(data.count):".utf8))
+            hasher.update(data: data)
+        }
+        add("types", Data(types.map { $0.rawValue }.joined(separator: "\n").utf8))
+        if let image = image {
+            let pixels = Self.pixelDigest(of: image) ?? imageData.map { Self.digest(of: $0) } ?? 0
+            add("image", withUnsafeBytes(of: pixels) { Data($0) })
+        }
+        add("files", fileNames.isEmpty ? nil : Data(fileNames.joined(separator: "\n").utf8))
+        add("urls", URLs.isEmpty ? nil : Data(URLs.joined(separator: "\n").utf8))
+        add("pdf", PDF)
+        add("string", stringValue.isEmpty ? nil : Data(stringValue.utf8))
+        add("rtf", RTFData)
+        return hasher.finalize().withUnsafeBytes { $0.loadUnaligned(as: Int.self) }
+    }
+
+    private func legacyKey(imageByteCount: Int?) -> Int {
         var hash = types.map { $0.rawValue }.joined().hash
-        if let image = self.image, let imageData = image.tiffRepresentation {
-            hash ^= imageData.count
+        if let byteCount = imageByteCount {
+            hash ^= byteCount
         } else if let image = self.image {
             hash ^= image.hash
         }
@@ -52,6 +98,31 @@ final class CPYClipData: NSObject {
         }
         return hash
     }
+
+    static func digest(of data: Data) -> Int {
+        return SHA256.hash(data: data).withUnsafeBytes { $0.loadUnaligned(as: Int.self) }
+    }
+
+    static func pixelDigest(of image: NSImage) -> Int? {
+        let bitmap = image.representations.lazy.compactMap { $0 as? NSBitmapImageRep }.first
+        guard let cgImage = bitmap?.cgImage ?? image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let sRGB = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        let width = cgImage.width, height = cgImage.height
+        var pixels = Data(count: width * height * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: sRGB,
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        var hasher = SHA256()
+        hasher.update(data: Data("\(width)x\(height)".utf8))
+        hasher.update(data: pixels)
+        return hasher.finalize().withUnsafeBytes { $0.loadUnaligned(as: Int.self) }
+    }
+
     var primaryType: NSPasteboard.PasteboardType? {
         return types.first
     }
