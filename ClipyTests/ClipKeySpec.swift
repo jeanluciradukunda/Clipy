@@ -28,6 +28,13 @@ class ClipKeySpec: QuickSpec {
                 expect(CPYClipData(image: image(red: 0.5)).hash) == CPYClipData(image: image(red: 0.5)).hash
             }
 
+            it("survives a round trip through the history file, as when a clip is pasted back") {
+                let original = CPYClipData(image: image(red: 0.5))
+                let archive = NSKeyedArchiver.archivedData(withRootObject: original)
+                let restored = NSKeyedUnarchiver.unarchiveObject(with: archive) as? CPYClipData
+                expect(restored?.hash) == original.hash
+            }
+
             it("still knows the size-based key earlier releases used") {
                 let data = CPYClipData(image: image(red: 0.5))
                 let byteCount = image(red: 0.5).tiffRepresentation!.count
