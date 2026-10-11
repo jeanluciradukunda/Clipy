@@ -47,6 +47,32 @@ enum PreferenceTab: String, Identifiable {
     }
 }
 
+struct PreferenceSidebarRow: View {
+    let tab: PreferenceTab
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 13))
+                    .foregroundStyle(isSelected ? .white : tab == .developer ? .orange : .secondary)
+                    .frame(width: 22)
+                Text(tab.rawValue)
+                    .font(.system(size: 12, weight: isSelected ? .medium : .regular))
+                    .foregroundStyle(isSelected ? .white : .primary)
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(isSelected ? SwiftUI.Color.accentColor : SwiftUI.Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Main Preferences View
 struct ModernPreferencesView: View {
     @State private var selectedTab: PreferenceTab = .general
@@ -57,25 +83,9 @@ struct ModernPreferencesView: View {
             // Sidebar
             VStack(spacing: 2) {
                 ForEach(PreferenceTab.visibleTabs) { tab in
-                    Button {
+                    PreferenceSidebarRow(tab: tab, isSelected: selectedTab == tab) {
                         selectedTab = tab
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 13))
-                                .foregroundStyle(selectedTab == tab ? .white : tab == .developer ? .orange : .secondary)
-                                .frame(width: 22)
-                            Text(tab.rawValue)
-                                .font(.system(size: 12, weight: selectedTab == tab ? .medium : .regular))
-                                .foregroundStyle(selectedTab == tab ? .white : .primary)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(selectedTab == tab ? SwiftUI.Color.accentColor : SwiftUI.Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     }
-                    .buttonStyle(.plain)
                 }
                 Spacer()
 

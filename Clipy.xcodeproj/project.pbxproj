@@ -69,6 +69,7 @@
 		FA431F021E6718CE00ACFF56 /* Collection+Safe.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */; };
 		FA610702C1F0DE0000000107 /* ClipFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */; };
 		FA610702C1F0DE0000000105 /* ClipHistoryOrderSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */; };
+		FA610702C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */; };
 		FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167911D3ABEB10049FA14 /* FolderSpec.swift */; };
 		FA6167941D3ACCB90049FA14 /* DraggedDataSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */; };
 		FA6167961D3ACDD80049FA14 /* SnippetSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */; };
@@ -219,6 +220,7 @@
 		FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Safe.swift"; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipFilterSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipHistoryOrderSpec.swift; sourceTree = "<group>"; };
+		FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreferenceSidebarRowSpec.swift; sourceTree = "<group>"; };
 		FA6167911D3ABEB10049FA14 /* FolderSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FolderSpec.swift; sourceTree = "<group>"; };
 		FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DraggedDataSpec.swift; sourceTree = "<group>"; };
 		FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SnippetSpec.swift; sourceTree = "<group>"; };
@@ -628,6 +630,7 @@
 				FA08EDF71D1FED7D000D1D13 /* HotKeyServiceSpec.swift */,
 				FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */,
 				FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */,
+				FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */,
 				FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */,
 				FA6167911D3ABEB10049FA14 /* FolderSpec.swift */,
 				FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */,
@@ -991,6 +994,7 @@
 			files = (
 				FA610702C1F0DE0000000107 /* ClipFilterSpec.swift in Sources */,
 				FA610702C1F0DE0000000105 /* ClipHistoryOrderSpec.swift in Sources */,
+				FA610702C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift in Sources */,
 				FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */,
 				FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */,
 				FA6167961D3ACDD80049FA14 /* SnippetSpec.swift in Sources */,
