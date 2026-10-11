@@ -20,6 +20,10 @@ class TestIsolationSpec: QuickSpec {
                 expect(hostDomain?[key]).to(beNil())
             }
 
+            it("never posts a real Cmd-V, so a pasting spec cannot type into the app in front") {
+                expect(AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.inputPasteCommand)) == false
+            }
+
             it("never uses a real app domain as the test suite") {
                 expect(TestIsolation.suiteName) != "com.clipy-app.Clipy"
                 expect(TestIsolation.suiteName) != "com.clipy-app.Clipy-Dev.debug"

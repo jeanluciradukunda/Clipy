@@ -71,6 +71,7 @@
 		D1A0DE022E5A4B6C00A1B2C3 /* TestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0DE012E5A4B6C00A1B2C3 /* TestIsolation.swift */; };
 		FA431F021E6718CE00ACFF56 /* Collection+Safe.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */; };
 		FA610702C1F0DE0000000107 /* ClipFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */; };
+		FA610702C1F0DE0000000129 /* RadarActionMetricsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000129 /* RadarActionMetricsSpec.swift */; };
 		FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167911D3ABEB10049FA14 /* FolderSpec.swift */; };
 		FA6167941D3ACCB90049FA14 /* DraggedDataSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */; };
 		FA6167961D3ACDD80049FA14 /* SnippetSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */; };
@@ -221,6 +222,7 @@
 		D1A0DE012E5A4B6C00A1B2C3 /* TestIsolation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolation.swift; sourceTree = "<group>"; };
 		FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Safe.swift"; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipFilterSpec.swift; sourceTree = "<group>"; };
+		FA610701C1F0DE0000000129 /* RadarActionMetricsSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RadarActionMetricsSpec.swift; sourceTree = "<group>"; };
 		FA6167911D3ABEB10049FA14 /* FolderSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FolderSpec.swift; sourceTree = "<group>"; };
 		D1A0DE052E5A4B6C00A1B2C3 /* TestIsolationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolationSpec.swift; sourceTree = "<group>"; };
 		D1A0DE032E5A4B6C00A1B2C3 /* TestIsolationConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolationConfiguration.swift; sourceTree = "<group>"; };
@@ -632,6 +634,7 @@
 			children = (
 				FA08EDF71D1FED7D000D1D13 /* HotKeyServiceSpec.swift */,
 				FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */,
+				FA610701C1F0DE0000000129 /* RadarActionMetricsSpec.swift */,
 				FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */,
 				FA6167911D3ABEB10049FA14 /* FolderSpec.swift */,
 				D1A0DE052E5A4B6C00A1B2C3 /* TestIsolationSpec.swift */,
@@ -997,6 +1000,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA610702C1F0DE0000000107 /* ClipFilterSpec.swift in Sources */,
+				FA610702C1F0DE0000000129 /* RadarActionMetricsSpec.swift in Sources */,
 				FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */,
 				FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */,
 				D1A0DE062E5A4B6C00A1B2C3 /* TestIsolationSpec.swift in Sources */,

@@ -15,5 +15,7 @@ final class TestIsolationConfiguration: QuickConfiguration {
                      "Specs would open the real Realm at \(Realm.Configuration.defaultConfiguration.fileURL?.path ?? "?")")
         // The app's launch is skipped under tests, so register the defaults it would have registered.
         CPYUtilities.registerUserDefaultKeys()
+        // Specs that paste must never post a real Cmd-V into whatever app is in front.
+        AppEnvironment.current.defaults.set(false, forKey: Constants.UserDefaults.inputPasteCommand)
     }
 }

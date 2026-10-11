@@ -339,12 +339,19 @@ class ClipSearchViewModel: ObservableObject {
         ClipSearchWindowController.shared.dismissAndPaste()
     }
 
-    func copyTransformed(_ transform: (String) -> String) {
+    func copyTransformed(as event: MetricEvent = .textTransformed, _ transform: (String) -> String) {
         guard let clip = selectedClip() else { return }
         let text = clip.fullText.isEmpty ? clip.displayTitle : clip.fullText
         let transformed = transform(text)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(transformed, forType: .string)
+        UsageMetricsService.shared.track(event)
+    }
+
+    func copyCleanedURL(from text: String) {
+        guard LinkSanitizer.hasTrackingParams(text), let cleaned = LinkSanitizer.sanitize(text) else { return }
+        copyString(cleaned)
+        UsageMetricsService.shared.track(.urlCleaned)
     }
 
     func togglePin() {
@@ -404,6 +411,7 @@ class ClipSearchViewModel: ObservableObject {
               let image = data.image else { return }
         let picker = NSSharingServicePicker(items: [image])
         picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+        UsageMetricsService.shared.track(.shareUsed)
     }
 
     func shareSelectedImage() {
@@ -415,6 +423,7 @@ class ClipSearchViewModel: ObservableObject {
         guard let view = ClipSearchWindowController.shared.window?.contentView else { return }
         let picker = NSSharingServicePicker(items: [image])
         picker.show(relativeTo: CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1), of: view, preferredEdge: .minY)
+        UsageMetricsService.shared.track(.shareUsed)
     }
 
     func copyString(_ string: String) {
@@ -943,10 +952,10 @@ struct ClipSearchPanelView: View {
                 if LanguageDetector.isValidJSON(clip.fullText.trimmingCharacters(in: .whitespacesAndNewlines)) {
                     Divider().frame(height: 16).opacity(0.3)
                     ActionButton(label: "Format", icon: "curlybraces") {
-                        viewModel.copyTransformed { JSONFormatter.prettyPrint($0) ?? $0 }
+                        viewModel.copyTransformed(as: .jsonFormatted) { JSONFormatter.prettyPrint($0) ?? $0 }
                     }
                     ActionButton(label: "Minify", icon: "arrow.down.right.and.arrow.up.left") {
-                        viewModel.copyTransformed { JSONFormatter.minify($0) ?? $0 }
+                        viewModel.copyTransformed(as: .jsonFormatted) { JSONFormatter.minify($0) ?? $0 }
                     }
                 }
 
@@ -954,9 +963,7 @@ struct ClipSearchPanelView: View {
                 if LinkSanitizer.hasTrackingParams(text) {
                     Divider().frame(height: 16).opacity(0.3)
                     ActionButton(label: "Clean URL", icon: "link.badge.plus") {
-                        if let cleaned = LinkSanitizer.sanitize(text) {
-                            viewModel.copyString(cleaned)
-                        }
+                        viewModel.copyCleanedURL(from: text)
                     }
                 }
 
