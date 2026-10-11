@@ -68,6 +68,7 @@ struct PreferenceSidebarRow: View {
             .padding(.vertical, 6)
             .background(isSelected ? SwiftUI.Color.accentColor : SwiftUI.Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
     }
