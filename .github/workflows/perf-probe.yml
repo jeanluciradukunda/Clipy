@@ -1,0 +1,50 @@
+name: Perf probe
+
+on:
+  push:
+    branches: ['perf/**']
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+          pod install
+
+      - name: Build Release
+        run: |
+          set -o pipefail
+          xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
+            -destination 'platform=macOS,arch=arm64' -derivedDataPath dd \
+            CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO build | tail -5
+          du -sk dd/Build/Products/Release/Clipy.app
+
+      - name: Prepare preferences
+        run: |
+          defaults write com.clipy-app.Clipy suppressAlertForLoginItem -bool true
+          defaults write com.clipy-app.Clipy kCPYEnableAutomaticCheckKey -bool false
+          defaults write com.clipy-app.Clipy SUEnableAutomaticChecks -bool false
+          defaults write com.clipy-app.Clipy kCPYPrefMaxHistorySizeKey -int 1000
+
+      - name: Probe
+        run: python3 .github/perf/probe.py "$PWD/dd/Build/Products/Release/Clipy.app"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-results
+          path: perf-results.json
