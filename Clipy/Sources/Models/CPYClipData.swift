@@ -34,8 +34,9 @@ final class CPYClipData: NSObject {
 
     private var cachedKeys: (hash: Int, legacyHash: Int?)?
 
-    /// The clip's primary key. Images are keyed by a digest of their TIFF bytes; the TIFF encode
-    /// is expensive, so call `prepareKeys()` off the main thread before the first read.
+    /// The clip's primary key. Images are keyed by a digest of their pixels, so a re-encoded copy
+    /// (pasting a clip back from history) keeps its key. Rendering is expensive, so call
+    /// `prepareKeys()` off the main thread before the first read.
     override var hash: Int {
         return prepareKeys().hash
     }
@@ -52,7 +53,7 @@ final class CPYClipData: NSObject {
         var hash = types.map { $0.rawValue }.joined().hash
         var imageKeyParts: (digest: Int, byteCount: Int)?
         if let image = self.image, let imageData = image.tiffRepresentation {
-            let digest = Self.digest(of: imageData)
+            let digest = Self.pixelDigest(of: image) ?? Self.digest(of: imageData)
             imageKeyParts = (digest, imageData.count)
             hash ^= digest
         } else if let image = self.image {
@@ -77,6 +78,23 @@ final class CPYClipData: NSObject {
 
     static func digest(of data: Data) -> Int {
         return SHA256.hash(data: data).withUnsafeBytes { $0.loadUnaligned(as: Int.self) }
+    }
+
+    static func pixelDigest(of image: NSImage) -> Int? {
+        let bitmap = image.representations.lazy.compactMap { $0 as? NSBitmapImageRep }.first
+        guard let cgImage = bitmap?.cgImage ?? image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let sRGB = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        let width = cgImage.width, height = cgImage.height
+        var pixels = Data(count: width * height * 4)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: sRGB,
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        return digest(of: Data("\(width)x\(height)".utf8) + pixels)
     }
 
     var primaryType: NSPasteboard.PasteboardType? {
