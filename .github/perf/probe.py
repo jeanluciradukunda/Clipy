@@ -41,7 +41,11 @@ def launch(label):
     deadline = t0 + 60
     while time.time() < deadline:
         line = stream.stdout.readline()
-        if "launched successfully" in line:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if "launched successfully" in event.get("eventMessage", ""):
             launched = time.time()
             break
     stream.terminate()
@@ -96,6 +100,9 @@ sh(f"sips -s format png '{APP}/Contents/Resources/AppIcon.icns' --out {base}")
 
 proc = launch("empty")
 OUT["empty_search_panel"] = try_search_panel(proc)
+sh("osascript -e 'tell application \"System Events\" to key code 53'")
+time.sleep(2)
+OUT["empty_search_panel_second_open"] = try_search_panel(proc)
 sh("osascript -e 'tell application \"System Events\" to key code 53'")
 OUT["seed_first_100"] = seed(proc, 0, 100, base)
 OUT["seed_middle_800"] = seed(proc, 100, 900, base)
