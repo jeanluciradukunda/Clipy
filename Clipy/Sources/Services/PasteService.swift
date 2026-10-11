@@ -135,9 +135,9 @@ extension PasteService {
     /// but ClipService will NOT store it in history. Optionally auto-clears the
     /// pasteboard after a delay.
     func pasteEphemeral(with string: String) {
-        // Tell ClipService to skip the next clipboard capture
-        AppEnvironment.current.clipService.skipNextCapture()
         copyToPasteboard(with: string)
+        // After the write: writing bumps the change count the skip token must match
+        AppEnvironment.current.clipService.skipNextCapture()
         let ephemeralChangeCount = NSPasteboard.general.changeCount
         paste()
 
@@ -147,8 +147,8 @@ extension PasteService {
             DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(clearDelay)) {
                 // Only clear if the pasteboard has not changed since we wrote the ephemeral content
                 if NSPasteboard.general.changeCount == ephemeralChangeCount {
-                    AppEnvironment.current.clipService.skipNextCapture()
                     NSPasteboard.general.clearContents()
+                    AppEnvironment.current.clipService.skipNextCapture()
                 }
             }
         }

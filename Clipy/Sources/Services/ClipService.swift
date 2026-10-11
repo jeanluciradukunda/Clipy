@@ -32,7 +32,7 @@ final class ClipService {
     private var skippedChangeCounts = Set<Int>()
     private let skipLock = NSLock()
 
-    /// Tell ClipService to skip the next clipboard change (ephemeral paste).
+    /// Skip the clipboard change already on the pasteboard (ephemeral paste): call it after writing.
     func skipNextCapture() {
         let nextChangeCount = NSPasteboard.general.changeCount
         skipLock.lock()
@@ -41,7 +41,7 @@ final class ClipService {
     }
 
     /// Check and consume a skip token. Returns true if this capture should be skipped.
-    private func shouldSkipCapture() -> Bool {
+    func shouldSkipCapture() -> Bool {
         let current = NSPasteboard.general.changeCount
         skipLock.lock()
         defer { skipLock.unlock() }
