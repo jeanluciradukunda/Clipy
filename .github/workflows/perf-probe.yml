@@ -40,6 +40,9 @@ jobs:
           defaults write com.clipy-app.Clipy SUEnableAutomaticChecks -bool false
           defaults write com.clipy-app.Clipy kCPYPrefMaxHistorySizeKey -int 1000
 
+      - name: Build window helper
+        run: swiftc -O .github/perf/waitwindow.swift -o /tmp/waitwindow
+
       - name: Probe
         run: python3 .github/perf/probe.py "$PWD/rel/Clipy.xcarchive/Products/Applications/Clipy.app"
 

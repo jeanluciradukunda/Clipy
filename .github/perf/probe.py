@@ -1,4 +1,4 @@
-import json, os, re, subprocess, sys, time
+import json, os, plistlib, re, subprocess, sys, time
 
 APP = sys.argv[1]
 BIN = os.path.join(APP, "Contents/MacOS/Clipy")
@@ -29,33 +29,42 @@ def memory(pid):
     return {"footprint_mb": footprint, "rss_mb": round(rss, 1)}
 
 
+def wait_window(pid, t0, min_w, min_h, timeout=30):
+    out = sh(f"/tmp/waitwindow {pid} {t0} {min_w} {min_h} {timeout}")
+    try:
+        return float(out)
+    except ValueError:
+        return None
+
+
+def saved_counts():
+    raw = subprocess.run(["defaults", "export", "com.clipy-app.Clipy", "-"], capture_output=True).stdout
+    copied = None
+    try:
+        prefs = plistlib.loads(raw)
+        copied = json.loads(prefs["kCPYUsageMetrics"])["counters"].get("clipsCopied", 0)
+    except Exception:
+        pass
+    files = [f for f in os.listdir(SUPPORT)] if os.path.isdir(SUPPORT) else []
+    images = int(sh(f"cd '{SUPPORT}' 2>/dev/null && grep -l NSImage *.data 2>/dev/null | wc -l") or 0)
+    return {"clips_copied_metric": copied, "data_files": len(files), "image_files": images}
+
+
+def save_results():
+    json.dump(OUT, open("perf-results.json", "w"), indent=2)
+
+
 def launch(label):
-    stream = subprocess.Popen(
-        ["log", "stream", "--level", "info", "--style", "ndjson",
-         "--predicate", 'subsystem == "com.clipy-app.Clipy" AND eventMessage CONTAINS "launched successfully"'],
-        stdout=subprocess.PIPE, text=True)
-    time.sleep(2)
     t0 = time.time()
     proc = subprocess.Popen([BIN], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    launched = None
-    deadline = t0 + 60
-    while time.time() < deadline:
-        line = stream.stdout.readline()
-        try:
-            event = json.loads(line)
-        except ValueError:
-            continue
-        if "launched successfully" in event.get("eventMessage", ""):
-            launched = time.time()
-            break
-    stream.terminate()
-    OUT[f"{label}_launch_s"] = round(launched - t0, 3) if launched else None
+    OUT[f"{label}_first_window_s"] = wait_window(proc.pid, t0, 1, 1)
     time.sleep(10)
     OUT[f"{label}_mem_after_10s"] = memory(proc.pid)
     c0 = cpu_seconds(proc.pid)
     time.sleep(30)
     c1 = cpu_seconds(proc.pid)
     OUT[f"{label}_idle_cpu_pct_30s"] = round((c1 - c0) / 30 * 100, 2) if c0 is not None and c1 is not None else None
+    save_results()
     return proc
 
 
@@ -71,6 +80,7 @@ def copy_image(i, base):
 
 
 def seed(proc, start, end, base):
+    before = saved_counts()
     c0 = cpu_seconds(proc.pid)
     t0 = time.time()
     for i in range(start, end):
@@ -81,18 +91,31 @@ def seed(proc, start, end, base):
         time.sleep(0.6)
     time.sleep(2)
     c1 = cpu_seconds(proc.pid)
-    n = end - start
-    return {"clips": n, "cpu_ms_per_capture": round((c1 - c0) / n * 1000, 2), "wall_s": round(time.time() - t0, 1)}
+    after = saved_counts()
+    saved = (after["clips_copied_metric"] or 0) - (before["clips_copied_metric"] or 0)
+    result = {"attempted": end - start, "saved": saved, "counts_after": after,
+              "cpu_ms_per_attempt": round((c1 - c0) / (end - start) * 1000, 2),
+              "cpu_ms_per_saved_capture": round((c1 - c0) / saved * 1000, 2) if saved else None,
+              "wall_s": round(time.time() - t0, 1)}
+    OUT.setdefault("seed_log", []).append(result)
+    save_results()
+    return result
 
 
 def try_search_panel(proc):
     c0 = cpu_seconds(proc.pid)
+    t0 = time.time()
     r = subprocess.run(["osascript", "-e", 'tell application "System Events" to keystroke "v" using {command down, shift down}'],
                        capture_output=True, text=True)
+    t_sent = time.time()
+    visible = wait_window(proc.pid, t_sent, 700, 500, 10)
     time.sleep(3)
     c1 = cpu_seconds(proc.pid)
-    return {"osascript_ok": r.returncode == 0, "stderr": r.stderr.strip()[:200],
-            "cpu_ms_3s_after_hotkey": round((c1 - c0) * 1000, 1), "mem": memory(proc.pid)}
+    result = {"osascript_ok": r.returncode == 0, "stderr": r.stderr.strip()[:200],
+              "keystroke_s": round(t_sent - t0, 3), "panel_visible_after_keystroke_s": visible,
+              "cpu_ms_until_3s_after_visible": round((c1 - c0) * 1000, 1), "mem": memory(proc.pid)}
+    save_results()
+    return result
 
 
 base = "/tmp/probe-base.png"
@@ -123,5 +146,6 @@ proc = launch("full")
 OUT["full_relaunch_search_panel"] = try_search_panel(proc)
 proc.terminate()
 
+OUT["final_counts"] = saved_counts()
+save_results()
 print(json.dumps(OUT, indent=2))
-json.dump(OUT, open("perf-results.json", "w"), indent=2)
