@@ -239,7 +239,8 @@ extension ClipService {
         let savedHash = (isOverwriteHistory) ? data.hash : Int(arc4random() % 1000000)
 
         let replacedLegacyKey = isOverwriteHistory ? legacyKey : nil
-        let legacyIsPinned = replacedLegacyKey.flatMap { realm.object(ofType: CPYClip.self, forPrimaryKey: $0) }?.isPinned ?? false
+        let legacyClip = replacedLegacyKey.flatMap { realm.object(ofType: CPYClip.self, forPrimaryKey: $0) }
+        let legacyIsPinned = legacyClip?.isPinned ?? false
 
         // Preserve pinned state from existing clip being overwritten
         let existingClip = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")
@@ -254,7 +255,7 @@ extension ClipService {
         clip.dataPath = savedPath
         clip.title = data.stringValue[0...10000]
         clip.dataHash = "\(savedHash)"
-        clip.updateTime = CPYClip.updateTime(existing: existingClip?.updateTime, now: unixTime, reorderAfterPasting: reorderAfterPasting)
+        clip.updateTime = CPYClip.updateTime(existing: (existingClip ?? legacyClip)?.updateTime, now: unixTime, reorderAfterPasting: reorderAfterPasting)
         clip.primaryType = data.primaryType?.rawValue ?? ""
         clip.isPinned = existingIsPinned
 
