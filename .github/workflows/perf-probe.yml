@@ -29,9 +29,9 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Release \
-            -destination 'platform=macOS,arch=arm64' -derivedDataPath dd \
-            CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO build | tail -5
-          du -sk dd/Build/Products/Release/Clipy.app
+            -archivePath "$PWD/rel/Clipy.xcarchive" -derivedDataPath dd \
+            CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO archive | tail -5
+          du -sk rel/Clipy.xcarchive/Products/Applications/Clipy.app
 
       - name: Prepare preferences
         run: |
@@ -41,7 +41,7 @@ jobs:
           defaults write com.clipy-app.Clipy kCPYPrefMaxHistorySizeKey -int 1000
 
       - name: Probe
-        run: python3 .github/perf/probe.py "$PWD/dd/Build/Products/Release/Clipy.app"
+        run: python3 .github/perf/probe.py "$PWD/rel/Clipy.xcarchive/Products/Applications/Clipy.app"
 
       - uses: actions/upload-artifact@v4
         if: always()
