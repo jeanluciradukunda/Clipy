@@ -214,6 +214,13 @@ extension ClipService {
         return legacyClip.dataHash
     }
 
+    /// `transaction` swallows a failed commit, so the old clip's files go only once its record is gone.
+    static func removeReplacedLegacyFiles(_ files: (dataPath: String, thumbnailPath: String), key: String, in realm: Realm) {
+        guard realm.object(ofType: CPYClip.self, forPrimaryKey: key) == nil else { return }
+        CPYUtilities.deleteData(at: files.dataPath)
+        if !files.thumbnailPath.isEmpty { removeCachedThumbnail(forKey: files.thumbnailPath) }
+    }
+
     fileprivate func save(with data: CPYClipData, replacingLegacyKey legacyKey: String? = nil) {
         guard let realm = Realm.safeInstance() else { return }
 
@@ -272,9 +279,8 @@ extension ClipService {
                         }
                         dispatchRealm.add(clip, update: .all)
                     }
-                    if let files = replacedLegacyFiles {
-                        CPYUtilities.deleteData(at: files.dataPath)
-                        if !files.thumbnailPath.isEmpty { ClipService.removeCachedThumbnail(forKey: files.thumbnailPath) }
+                    if let files = replacedLegacyFiles, let key = replacedLegacyKey {
+                        ClipService.removeReplacedLegacyFiles(files, key: key, in: dispatchRealm)
                     }
                     UsageMetricsService.shared.track(.clipsCopied)
                     // Run auto-trigger plugins on string content (short-circuits when none registered)

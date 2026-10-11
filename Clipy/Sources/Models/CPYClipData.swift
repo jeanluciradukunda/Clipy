@@ -94,7 +94,10 @@ final class CPYClipData: NSObject {
             return true
         }
         guard drawn else { return nil }
-        return digest(of: Data("\(width)x\(height)".utf8) + pixels)
+        var hasher = SHA256()
+        hasher.update(data: Data("\(width)x\(height)".utf8))
+        hasher.update(data: pixels)
+        return hasher.finalize().withUnsafeBytes { $0.loadUnaligned(as: Int.self) }
     }
 
     var primaryType: NSPasteboard.PasteboardType? {

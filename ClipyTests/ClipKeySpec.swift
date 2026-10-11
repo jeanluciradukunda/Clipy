@@ -75,6 +75,21 @@ class ClipKeySpec: QuickSpec {
                 expect(ClipService.legacyDuplicateKey(for: copied, in: realm)) == nil
             }
 
+            it("keeps the old clip's file while its record still exists, as after a failed commit") {
+                let copied = CPYClipData(image: image(red: 0.3))
+                saveLegacyClip(holding: copied, key: copied.legacyHash!)
+                ClipService.removeReplacedLegacyFiles((archivePath, ""), key: "\(copied.legacyHash!)", in: realm)
+                expect(FileManager.default.fileExists(atPath: archivePath)) == true
+            }
+
+            it("deletes the old clip's file once its record is gone") {
+                let copied = CPYClipData(image: image(red: 0.3))
+                saveLegacyClip(holding: copied, key: copied.legacyHash!)
+                realm.transaction { realm.delete(realm.objects(CPYClip.self)) }
+                ClipService.removeReplacedLegacyFiles((archivePath, ""), key: "\(copied.legacyHash!)", in: realm)
+                expect(FileManager.default.fileExists(atPath: archivePath)) == false
+            }
+
             it("ignores clips without an image") {
                 let text = CPYClipData(image: image(red: 0.3))
                 text.image = nil
