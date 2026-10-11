@@ -34,15 +34,16 @@ final class CPYClipData: NSObject {
 
     private var cachedKeys: (hash: Int, legacyHash: Int?)?
 
-    /// The clip's primary key. Images are keyed by a digest of their pixels, so a re-encoded copy
-    /// (pasting a clip back from history) keeps its key. Rendering is expensive, so call
+    /// The clip's primary key: a digest of everything the clip holds, so two clips share a key only
+    /// when their content matches. Images contribute a digest of their pixels, so a re-encoded copy
+    /// (a clip pasted back from history) keeps its key. Rendering is expensive, so call
     /// `prepareKeys()` off the main thread before the first read.
     override var hash: Int {
         return prepareKeys().hash
     }
 
-    /// The key earlier releases gave an image clip, built from its TIFF byte count, so every
-    /// image of the same size shared one key. Nil for clips without an image.
+    /// The key earlier releases gave this clip, built from sampled string hashes and byte counts,
+    /// so different clips could share it. Used to find a clip saved before upgrading.
     var legacyHash: Int? {
         return prepareKeys().legacyHash
     }
@@ -50,12 +51,36 @@ final class CPYClipData: NSObject {
     @discardableResult
     func prepareKeys() -> (hash: Int, legacyHash: Int?) {
         if let cachedKeys = cachedKeys { return cachedKeys }
+        let imageData = image?.tiffRepresentation
+        let keys = (hash: contentDigest(imageData: imageData), legacyHash: legacyKey(imageByteCount: imageData?.count) as Int?)
+        cachedKeys = keys
+        return keys
+    }
+
+    private func contentDigest(imageData: Data?) -> Int {
+        var hasher = SHA256()
+        func add(_ part: String, _ data: Data?) {
+            guard let data = data else { return }
+            hasher.update(data: Data("\(part):\(data.count):".utf8))
+            hasher.update(data: data)
+        }
+        add("types", Data(types.map { $0.rawValue }.joined(separator: "\n").utf8))
+        if let image = image {
+            let pixels = Self.pixelDigest(of: image) ?? imageData.map { Self.digest(of: $0) } ?? 0
+            add("image", withUnsafeBytes(of: pixels) { Data($0) })
+        }
+        add("files", fileNames.isEmpty ? nil : Data(fileNames.joined(separator: "\n").utf8))
+        add("urls", URLs.isEmpty ? nil : Data(URLs.joined(separator: "\n").utf8))
+        add("pdf", PDF)
+        add("string", stringValue.isEmpty ? nil : Data(stringValue.utf8))
+        add("rtf", RTFData)
+        return hasher.finalize().withUnsafeBytes { $0.loadUnaligned(as: Int.self) }
+    }
+
+    private func legacyKey(imageByteCount: Int?) -> Int {
         var hash = types.map { $0.rawValue }.joined().hash
-        var imageKeyParts: (digest: Int, byteCount: Int)?
-        if let image = self.image, let imageData = image.tiffRepresentation {
-            let digest = Self.pixelDigest(of: image) ?? Self.digest(of: imageData)
-            imageKeyParts = (digest, imageData.count)
-            hash ^= digest
+        if let byteCount = imageByteCount {
+            hash ^= byteCount
         } else if let image = self.image {
             hash ^= image.hash
         }
@@ -71,9 +96,7 @@ final class CPYClipData: NSObject {
         if let data = RTFData {
             hash ^= data.count
         }
-        let keys = (hash: hash, legacyHash: imageKeyParts.map { hash ^ $0.digest ^ $0.byteCount })
-        cachedKeys = keys
-        return keys
+        return hash
     }
 
     static func digest(of data: Data) -> Int {

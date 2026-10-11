@@ -4,6 +4,7 @@ import RealmSwift
 @testable import Clipy
 
 class ClipKeySpec: QuickSpec {
+    // swiftlint:disable:next function_body_length
     override class func spec() {
 
         func image(red: CGFloat) -> NSImage {
@@ -39,6 +40,43 @@ class ClipKeySpec: QuickSpec {
                 let data = CPYClipData(image: image(red: 0.5))
                 let byteCount = image(red: 0.5).tiffRepresentation!.count
                 expect(data.legacyHash) == NSPasteboard.PasteboardType.clipyTIFF.rawValue.hash ^ byteCount
+            }
+        }
+
+        // Two texts NSString.hash cannot tell apart: it samples long strings rather than reading them whole.
+        func collidingTexts() -> (String, String) {
+            let first = "line one\nline two\nline three\nline four: password=hunter2\n" + String(repeating: "x", count: 200) + "\nend"
+            return (first, first.replacingOccurrences(of: "hunter2", with: "secret7"))
+        }
+
+        func text(_ string: String) -> CPYClipData {
+            let data = CPYClipData(image: NSImage())
+            data.image = nil
+            data.types = [.string]
+            data.stringValue = string
+            return data
+        }
+
+        describe("CPYClipData.hash for text and documents") {
+            it("differs for two different long texts that share an NSString hash") {
+                let (first, second) = collidingTexts()
+                expect((first as NSString).hash) == (second as NSString).hash
+                expect(text(first).hash) != text(second).hash
+            }
+
+            it("matches for the same text copied twice") {
+                let (first, _) = collidingTexts()
+                expect(text(first).hash) == text(first).hash
+            }
+
+            it("differs for two different PDFs of the same size") {
+                let pdfA = CPYClipData(image: NSImage()), pdfB = CPYClipData(image: NSImage())
+                for (data, byte) in [(pdfA, UInt8(1)), (pdfB, UInt8(2))] {
+                    data.image = nil
+                    data.types = [.pdf]
+                    data.PDF = Data(repeating: byte, count: 512)
+                }
+                expect(pdfA.hash) != pdfB.hash
             }
         }
 
@@ -90,11 +128,19 @@ class ClipKeySpec: QuickSpec {
                 expect(FileManager.default.fileExists(atPath: archivePath)) == false
             }
 
-            it("ignores clips without an image") {
-                let text = CPYClipData(image: image(red: 0.3))
-                text.image = nil
-                text.stringValue = "hello"
-                expect(ClipService.legacyDuplicateKey(for: text, in: realm)) == nil
+            it("finds the same text saved under its old key") {
+                let (first, _) = collidingTexts()
+                let copied = text(first)
+                saveLegacyClip(holding: text(first), key: copied.legacyHash!)
+                expect(ClipService.legacyDuplicateKey(for: copied, in: realm)) == "\(copied.legacyHash!)"
+            }
+
+            it("leaves a different text that shared the old key alone") {
+                let (first, second) = collidingTexts()
+                let copied = text(second)
+                expect(copied.legacyHash) == text(first).legacyHash
+                saveLegacyClip(holding: text(first), key: copied.legacyHash!)
+                expect(ClipService.legacyDuplicateKey(for: copied, in: realm)) == nil
             }
         }
     }

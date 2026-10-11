@@ -204,8 +204,8 @@ extension ClipService {
         }
     }
 
-    /// The key of a clip an earlier release saved for this same image under its old size-based key,
-    /// so upgrading does not list the image twice. A different image under that key is left alone.
+    /// The key of a clip an earlier release saved with this same content under its old, collision-prone
+    /// key, so upgrading does not list it twice. A different clip that shared the old key is left alone.
     static func legacyDuplicateKey(for data: CPYClipData, in realm: Realm?) -> String? {
         guard let legacyHash = data.legacyHash, legacyHash != data.hash,
               let legacyClip = realm?.object(ofType: CPYClip.self, forPrimaryKey: "\(legacyHash)"),
