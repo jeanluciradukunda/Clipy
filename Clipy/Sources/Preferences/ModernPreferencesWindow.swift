@@ -156,6 +156,9 @@ struct GeneralPreferencesView: View {
     @AppStorage(Constants.Snippets.useModernPicker)
     private var useModernSnippetPicker = true
 
+    @AppStorage(Constants.UserDefaults.closeSearchPanelOnFocusLoss)
+    private var closeSearchPanelOnFocusLoss = false
+
     @AppStorage(Constants.UserDefaults.ephemeralAutoClearSeconds)
     private var ephemeralAutoClear = 30
 
@@ -171,6 +174,7 @@ struct GeneralPreferencesView: View {
                 Toggle("Input \u{2318}V after selecting a clip", isOn: $inputPasteCommand)
                 Toggle("Send crash reports & error logs", isOn: $collectCrashReport)
                 Toggle("Use modern snippet picker", isOn: $useModernSnippetPicker)
+                Toggle("Close the search panel when clicking elsewhere", isOn: $closeSearchPanelOnFocusLoss)
             } header: {
                 Label("Behavior", systemImage: "switch.2")
             }

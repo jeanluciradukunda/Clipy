@@ -1614,4 +1614,13 @@ class ClipSearchWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         window?.contentView = nil
     }
+
+    func windowDidResignKey(_ notification: Notification) {
+        dismissOnFocusLoss(enabled: AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.closeSearchPanelOnFocusLoss))
+    }
+
+    func dismissOnFocusLoss(enabled: Bool) {
+        guard enabled, window?.isVisible == true else { return }
+        dismiss()
+    }
 }
