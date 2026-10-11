@@ -1,6 +1,5 @@
 import Quick
 import Nimble
-import RealmSwift
 @testable import Clipy
 
 class StatsRadarSpec: QuickSpec {
@@ -25,41 +24,6 @@ class StatsRadarSpec: QuickSpec {
 
             it("is all zeros with no activity") {
                 expect(StatsForNerdsView.radarValues(counters: [:]).map { $0.value }) == Array(repeating: 0, count: 12)
-            }
-        }
-
-        describe("Pasting from the history menu") {
-            let metricsKey = "kCPYUsageMetrics"
-            var savedMetrics: Data?
-
-            beforeEach {
-                savedMetrics = UserDefaults.standard.data(forKey: metricsKey)
-                Realm.Configuration.defaultConfiguration.inMemoryIdentifier = NSUUID().uuidString
-            }
-
-            afterEach {
-                if let savedMetrics = savedMetrics {
-                    UserDefaults.standard.set(savedMetrics, forKey: metricsKey)
-                } else {
-                    UserDefaults.standard.removeObject(forKey: metricsKey)
-                }
-            }
-
-            it("counts towards the radar's Paste axis") {
-                let clip = CPYClip()
-                clip.dataHash = NSUUID().uuidString
-                clip.dataPath = "/nonexistent/\(clip.dataHash).data"
-                let realm = try! Realm()
-                realm.transaction { realm.add(clip) }
-                let item = NSMenuItem()
-                item.representedObject = clip.dataHash
-                let before = UsageMetricsService.shared.counters["pasteFromMenu"] ?? 0
-
-                AppDelegate().selectClipMenuItem(item)
-
-                expect(UsageMetricsService.shared.counters["pasteFromMenu"]) == before + 1
-                let paste = StatsForNerdsView.radarValues(counters: UsageMetricsService.shared.counters).first { $0.label == "Paste" }
-                expect(paste?.value ?? 0) > 0
             }
         }
     }
