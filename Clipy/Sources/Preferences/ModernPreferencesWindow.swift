@@ -836,22 +836,29 @@ struct StatsForNerdsView: View {
     }
 
     private var radarData: [(label: String, value: Double)] {
-        let features: [(String, String)] = [
-            ("Paste", "pasteFromPanel"),
-            ("Search", "searchPerformed"),
-            ("OCR", "ocrUsed"),
-            ("Pin", "pinToggled"),
-            ("Share", "shareUsed"),
-            ("Queue", "queueUsed"),
-            ("Vault", "vaultUnlocked"),
-            ("Snippets", "snippetPasted"),
-            ("Plain Text", "pastePlainText"),
-            ("URL Clean", "urlCleaned"),
-            ("JSON", "jsonFormatted"),
-            ("Transform", "textTransformed"),
+        Self.radarValues(counters: metrics.counters)
+    }
+
+    /// Scaled against the busiest radar axis, not every counter: `clipsCopied` is not on the
+    /// radar and usually dwarfs the rest, which flattened the chart to a dot (#98).
+    static func radarValues(counters: [String: Int]) -> [(label: String, value: Double)] {
+        let features: [(String, [String])] = [
+            ("Paste", ["pasteFromPanel", "pasteFromMenu", "pasteFromHotkey"]),
+            ("Search", ["searchPerformed"]),
+            ("OCR", ["ocrUsed"]),
+            ("Pin", ["pinToggled"]),
+            ("Share", ["shareUsed"]),
+            ("Queue", ["queueUsed"]),
+            ("Vault", ["vaultUnlocked"]),
+            ("Snippets", ["snippetPasted"]),
+            ("Plain Text", ["pastePlainText"]),
+            ("URL Clean", ["urlCleaned"]),
+            ("JSON", ["jsonFormatted"]),
+            ("Transform", ["textTransformed"])
         ]
-        let maxVal = max(1.0, Double(metrics.counters.values.max() ?? 1))
-        return features.map { (label: $0.0, value: Double(metrics.counters[$0.1] ?? 0) / maxVal) }
+        let totals = features.map { feature in feature.1.reduce(0) { $0 + (counters[$1] ?? 0) } }
+        let maxVal = Double(max(1, totals.max() ?? 1))
+        return zip(features, totals).map { (label: $0.0, value: Double($1) / maxVal) }
     }
 
     private var recentDailyData: [(day: String, count: Int)] {
