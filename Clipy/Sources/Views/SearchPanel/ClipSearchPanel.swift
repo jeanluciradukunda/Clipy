@@ -84,6 +84,8 @@ struct ClipItemViewModel: Identifiable, Hashable {
     let isColorCode: Bool
     let thumbnailKey: String
     let dataHash: String
+    let name: String?
+    let expiresAt: Date?
 
     // Cached computed properties — calculated once at init
     let pasteboardType: NSPasteboard.PasteboardType
@@ -97,8 +99,11 @@ struct ClipItemViewModel: Identifiable, Hashable {
 
     init(id: String, title: String, fullText: String, primaryType: String,
          updateTime: Date, isPinned: Bool, isColorCode: Bool,
-         thumbnailKey: String, dataHash: String) {
+         thumbnailKey: String, dataHash: String,
+         name: String? = nil, expiresAt: Date? = nil) {
         self.id = id
+        self.name = (name ?? "").isEmpty ? nil : name
+        self.expiresAt = expiresAt
         self.title = title
         self.fullText = fullText
         self.primaryType = primaryType
@@ -150,7 +155,17 @@ struct ClipItemViewModel: Identifiable, Hashable {
         else { typeIconName = "doc.plaintext"; typeColor = .gray }
 
         // Pre-compute lowercased searchable text
-        self.searchableText = (fullText + " " + self.displayTitle).lowercased()
+        self.searchableText = (fullText + " " + self.displayTitle + " " + (self.name ?? "")).lowercased()
+    }
+
+    /// "expires in 3h" style caption, or nil when the clip never expires.
+    var expiryCaption: String? {
+        guard let expiresAt else { return nil }
+        let secs = expiresAt.timeIntervalSinceNow
+        if secs <= 0 { return "expired" }
+        if secs < 3600 { return "expires in \(max(1, Int(secs / 60)))m" }
+        if secs < 86400 { return "expires in \(Int(secs / 3600))h" }
+        return "expires in \(Int(secs / 86400))d"
     }
 
     var timeAgo: String {
@@ -233,7 +248,10 @@ class ClipSearchViewModel: ObservableObject {
         let results = realm.objects(CPYClip.self)
             .sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: false)
 
+        let now = Date()
         allClips = results.compactMap { clip in
+            // Expired clips vanish at once; the cleanup sweep deletes them later
+            if clip.isExpired(at: now) { return nil }
             var searchableText = clip.title
             if searchableText.isEmpty {
                 let path = clip.dataPath
@@ -252,7 +270,9 @@ class ClipSearchViewModel: ObservableObject {
                 isPinned: clip.isPinned,
                 isColorCode: clip.isColorCode,
                 thumbnailKey: clip.thumbnailPath,
-                dataHash: clip.dataHash
+                dataHash: clip.dataHash,
+                name: clip.name,
+                expiresAt: clip.expiresAt
             )
         }
 
@@ -355,6 +375,10 @@ class ClipSearchViewModel: ObservableObject {
         AppEnvironment.current.clipService.togglePin(for: realmClip)
         loadClips()
     }
+
+    /// The clip whose name is being edited; non-nil while the naming overlay is open.
+    /// The naming actions live in ClipNamingView.swift.
+    @Published var namingClip: ClipItemViewModel?
 
     func deleteSelected() {
         guard let realm = Realm.safeInstance() else { return }
@@ -498,9 +522,18 @@ struct ClipSearchPanelView: View {
             if press.modifiers.contains(.shift) { viewModel.extendSelection(by: 1); return .handled }
             viewModel.moveSelection(by: 1); return .handled
         }
-        .onKeyPress(.escape) { onDismiss(); return .handled }
+        .onKeyPress(.escape) {
+            if viewModel.namingClip != nil { viewModel.cancelNaming(); return .handled }
+            onDismiss(); return .handled
+        }
         // Customizable panel shortcuts
         .onKeyPress(phases: .down) { press in
+            // The naming overlay owns the keyboard while it is open
+            if viewModel.namingClip != nil { return .ignored }
+            if shortcuts.matches(press, shortcut: shortcuts.name) {
+                viewModel.beginNaming()
+                return .handled
+            }
             if shortcuts.matches(press, shortcut: shortcuts.pastePlain) {
                 viewModel.pasteAsPlainText()
                 return .handled
@@ -535,11 +568,32 @@ struct ClipSearchPanelView: View {
         }
         // Number keys for quick paste — type one digit or two digits quickly (e.g. "15" for item 15)
         .onKeyPress(characters: .init(charactersIn: "1234567890"), phases: .down) { press in
+            if viewModel.namingClip != nil { return .ignored }
             if press.modifiers.isEmpty, let digit = press.characters.first {
                 viewModel.handleDigitPress(digit)
                 return .handled
             }
             return .ignored
+        }
+        // Added after the key handlers so the overlay's own keys never reach them
+        .overlay {
+            if let clip = viewModel.namingClip {
+                ZStack {
+                    SwiftUI.Color.black.opacity(0.25)
+                        .onTapGesture { viewModel.cancelNaming() }
+                    ClipNamingView(
+                        clip: clip,
+                        onSave: { name, expiresAt in viewModel.saveName(name, expiresAt: expiresAt) },
+                        onCancel: { viewModel.cancelNaming() }
+                    )
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .transition(.opacity)
+            }
+        }
+        .onChange(of: viewModel.namingClip == nil) { _, isClosed in
+            // Hand the keyboard back to the search field when naming ends
+            if isClosed { isSearchFocused = true }
         }
     }
 
@@ -684,6 +738,9 @@ struct ClipSearchPanelView: View {
                                 .clipShape(Capsule())
                                 .foregroundStyle(.secondary)
                             }
+                        }
+                        if let name = clip.name {
+                            ClipNameBadge(name: name, expiryCaption: clip.expiryCaption)
                         }
                         Text(clip.timeAgo)
                             .font(.system(size: 10))
@@ -912,6 +969,9 @@ struct ClipSearchPanelView: View {
                 ActionButton(label: "Plain Text", icon: "textformat", shortcut: shortcuts.pastePlain.label) {
                     viewModel.pasteAsPlainText()
                 }
+                ActionButton(label: clip.name == nil ? "Name" : "Rename", icon: "tag", shortcut: shortcuts.name.label) {
+                    viewModel.beginNaming()
+                }
 
                 // OCR + Share for images
                 if clip.pasteboardType.isTIFFType() {
@@ -1002,6 +1062,7 @@ struct ClipSearchPanelView: View {
             kbHint(shortcuts.paste.label, "paste")
             kbHint(shortcuts.pastePlain.label, "plain")
             kbHint(shortcuts.pin.label, "pin")
+            kbHint(shortcuts.name.label, "name")
             kbHint(shortcuts.delete.label, "delete")
             kbHint(shortcuts.ocr.label, "ocr")
             kbHint(shortcuts.share.label, "share")
@@ -1472,6 +1533,17 @@ struct ClipRowView: View {
                         Image(systemName: "pin.fill")
                             .font(.system(size: 7))
                             .foregroundStyle(isSelected ? .white.opacity(0.8) : .orange)
+                    }
+                    if let name = clip.name {
+                        HStack(spacing: 2) {
+                            Image(systemName: "tag.fill")
+                                .font(.system(size: 7))
+                            Text(name)
+                                .font(.system(size: 10, weight: .semibold))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(isSelected ? .white.opacity(0.9) : .teal)
+                        .help(clip.expiryCaption ?? "Named clip")
                     }
                     Text(clip.displayTitle)
                         .font(.system(size: 12, weight: isSelected ? .medium : .regular))

@@ -44,6 +44,7 @@ final class DataCleanService {
             logger.error("Cannot open Realm for data cleanup")
             return
         }
+        AppEnvironment.current.clipService.purgeExpired()
         let flowHistories = overflowingClips(with: realm)
         flowHistories
             .filter { !$0.isInvalidated && !$0.thumbnailPath.isEmpty }
@@ -53,7 +54,8 @@ final class DataCleanService {
         cleanFiles(with: realm)
     }
 
-    private func overflowingClips(with realm: Realm) -> Results<CPYClip> {
+    /// Clips past the history limit. Internal rather than private so specs can check what is kept.
+    func overflowingClips(with realm: Realm) -> Results<CPYClip> {
         let clips = realm.objects(CPYClip.self).sorted(byKeyPath: #keyPath(CPYClip.updateTime), ascending: false)
         let maxHistorySize = max(1, AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.maxHistorySize))
 
@@ -62,7 +64,9 @@ final class DataCleanService {
         if lastClip.isInvalidated { return realm.objects(CPYClip.self).filter("FALSEPREDICATE") }
 
         let updateTime = lastClip.updateTime
-        let targetClips = realm.objects(CPYClip.self).filter("updateTime < %d AND isPinned == false", updateTime)
+        // Pinned and named clips are never evicted for space; named ones leave by expiry or by hand
+        let targetClips = realm.objects(CPYClip.self)
+            .filter("updateTime < %d AND isPinned == false AND (name == nil OR name == '')", updateTime)
 
         return targetClips
     }

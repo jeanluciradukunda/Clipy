@@ -218,6 +218,8 @@ struct GeneralPreferencesView: View {
                 Label("Appearance", systemImage: "paintbrush")
             }
 
+            CommandLineToolSection()
+
             Section {
                 HStack(spacing: 10) {
                     Image(systemName: "hammer.fill")
@@ -1672,6 +1674,7 @@ struct PanelShortcutsList: View {
         ShortcutRow(name: "Paste clip", shortcut: service.paste, onRecord: { service.save($0) })
         ShortcutRow(name: "Paste as plain text", shortcut: service.pastePlain, onRecord: { service.save($0) })
         ShortcutRow(name: "Toggle pin", shortcut: service.pin, onRecord: { service.save($0) })
+        ShortcutRow(name: "Name clip", shortcut: service.name, onRecord: { service.save($0) })
         ShortcutRow(name: "Delete clip", shortcut: service.delete, onRecord: { service.save($0) })
         ShortcutRow(name: "OCR (image clips)", shortcut: service.ocr, onRecord: { service.save($0) })
         ShortcutRow(name: "Share (image clips)", shortcut: service.share, onRecord: { service.save($0) })

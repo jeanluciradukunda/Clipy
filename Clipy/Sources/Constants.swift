@@ -133,6 +133,7 @@ struct Constants {
         static let ocr = "kCPYPanelShortcutOCR"
         static let share = "kCPYPanelShortcutShare"
         static let cycleFilter = "kCPYPanelShortcutCycleFilter"
+        static let name = "kCPYPanelShortcutName"
     }
 
 }

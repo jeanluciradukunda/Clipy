@@ -102,6 +102,27 @@
 		CC07B9E30B37FA1B00778899 /* Plugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC07B9E20B37FA1B00778899 /* Plugin.swift */; };
 		CC08CAF20C48FB2C00889900 /* PluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC08CAF10C48FB2C00889900 /* PluginManager.swift */; };
 		CC09DB040D59FC3D00990011 /* SnippetTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC09DB030D59FC3D00990011 /* SnippetTemplates.swift */; };
+		C11200000000000000000101 /* CLIProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000001 /* CLIProtocol.swift */; };
+		C11200000000000000000102 /* CLICommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000002 /* CLICommands.swift */; };
+		C11200000000000000000103 /* CLIAccessGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000003 /* CLIAccessGate.swift */; };
+		C11200000000000000000104 /* CLISocketServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000004 /* CLISocketServer.swift */; };
+		C11200000000000000000105 /* CLIAccessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000005 /* CLIAccessService.swift */; };
+		C11200000000000000000106 /* GetClipHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000006 /* GetClipHandler.swift */; };
+		C11200000000000000000107 /* ListClipsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000007 /* ListClipsHandler.swift */; };
+		C11200000000000000000108 /* AccessHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000008 /* AccessHandlers.swift */; };
+		C11200000000000000000109 /* ClipNamingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000009 /* ClipNamingView.swift */; };
+		C1120000000000000000010A /* CommandLineToolSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1120000000000000000000A /* CommandLineToolSection.swift */; };
+		C11200000000000000000201 /* CLIProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000001 /* CLIProtocol.swift */; };
+		C11200000000000000000202 /* CLICommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000002 /* CLICommands.swift */; };
+		C11200000000000000000211 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000011 /* main.swift */; };
+		C11200000000000000000212 /* Subcommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000012 /* Subcommand.swift */; };
+		C11200000000000000000213 /* SocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000013 /* SocketClient.swift */; };
+		C11200000000000000000214 /* ClipSubcommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000014 /* ClipSubcommands.swift */; };
+		C11200000000000000000215 /* AccessSubcommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000015 /* AccessSubcommands.swift */; };
+		C11200000000000000000321 /* ClipNameSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000021 /* ClipNameSpec.swift */; };
+		C11200000000000000000322 /* CLIProtocolSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000022 /* CLIProtocolSpec.swift */; };
+		C11200000000000000000323 /* CLIAccessServiceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11200000000000000000023 /* CLIAccessServiceSpec.swift */; };
+		C11200000000000000000430 /* clipy in Embed Command Line Tool */ = {isa = PBXBuildFile; fileRef = C11200000000000000000030 /* clipy */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,6 +132,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = FAC43DC51B35D8B100C06102;
 			remoteInfo = Clipy;
+		};
+		C11200000000000000000061 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FAC43DBE1B35D8B100C06102 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C11200000000000000000050;
+			remoteInfo = "clipy-cli";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -123,6 +151,17 @@
 			files = (
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C11200000000000000000060 /* Embed Command Line Tool */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				C11200000000000000000430 /* clipy in Embed Command Line Tool */,
+			);
+			name = "Embed Command Line Tool";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -270,6 +309,25 @@
 		CC07B9E20B37FA1B00778899 /* Plugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plugin.swift; sourceTree = "<group>"; };
 		CC08CAF10C48FB2C00889900 /* PluginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManager.swift; sourceTree = "<group>"; };
 		CC09DB030D59FC3D00990011 /* SnippetTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetTemplates.swift; sourceTree = "<group>"; };
+		C11200000000000000000001 /* CLIProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIProtocol.swift; sourceTree = "<group>"; };
+		C11200000000000000000002 /* CLICommands.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLICommands.swift; sourceTree = "<group>"; };
+		C11200000000000000000003 /* CLIAccessGate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIAccessGate.swift; sourceTree = "<group>"; };
+		C11200000000000000000004 /* CLISocketServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLISocketServer.swift; sourceTree = "<group>"; };
+		C11200000000000000000005 /* CLIAccessService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIAccessService.swift; sourceTree = "<group>"; };
+		C11200000000000000000006 /* GetClipHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GetClipHandler.swift; sourceTree = "<group>"; };
+		C11200000000000000000007 /* ListClipsHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListClipsHandler.swift; sourceTree = "<group>"; };
+		C11200000000000000000008 /* AccessHandlers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccessHandlers.swift; sourceTree = "<group>"; };
+		C11200000000000000000009 /* ClipNamingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipNamingView.swift; sourceTree = "<group>"; };
+		C1120000000000000000000A /* CommandLineToolSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandLineToolSection.swift; sourceTree = "<group>"; };
+		C11200000000000000000011 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		C11200000000000000000012 /* Subcommand.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Subcommand.swift; sourceTree = "<group>"; };
+		C11200000000000000000013 /* SocketClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketClient.swift; sourceTree = "<group>"; };
+		C11200000000000000000014 /* ClipSubcommands.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipSubcommands.swift; sourceTree = "<group>"; };
+		C11200000000000000000015 /* AccessSubcommands.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccessSubcommands.swift; sourceTree = "<group>"; };
+		C11200000000000000000021 /* ClipNameSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipNameSpec.swift; sourceTree = "<group>"; };
+		C11200000000000000000022 /* CLIProtocolSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIProtocolSpec.swift; sourceTree = "<group>"; };
+		C11200000000000000000023 /* CLIAccessServiceSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CLIAccessServiceSpec.swift; sourceTree = "<group>"; };
+		C11200000000000000000030 /* clipy */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = clipy; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -291,6 +349,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				242EC2327861D35B7C3AE84E /* Pods_ClipyTests.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C11200000000000000000052 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -355,8 +420,59 @@
 				CB05E7E5FB15E9FF00556699 /* UsageMetricsService.swift */,
 				CB05E7DBFB15E8FD00556699 /* VaultAuthService.swift */,
 				CC06A8D10A26E90A00667788 /* ScriptExecutionService.swift */,
+				C11200000000000000000005 /* CLIAccessService.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		C11200000000000000000040 /* CLI */ = {
+			isa = PBXGroup;
+			children = (
+				C11200000000000000000001 /* CLIProtocol.swift */,
+				C11200000000000000000002 /* CLICommands.swift */,
+				C11200000000000000000003 /* CLIAccessGate.swift */,
+				C11200000000000000000004 /* CLISocketServer.swift */,
+				C11200000000000000000041 /* Handlers */,
+			);
+			path = CLI;
+			sourceTree = "<group>";
+		};
+		C11200000000000000000041 /* Handlers */ = {
+			isa = PBXGroup;
+			children = (
+				C11200000000000000000006 /* GetClipHandler.swift */,
+				C11200000000000000000007 /* ListClipsHandler.swift */,
+				C11200000000000000000008 /* AccessHandlers.swift */,
+			);
+			path = Handlers;
+			sourceTree = "<group>";
+		};
+		C11200000000000000000042 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				C11200000000000000000043 /* clipy-cli */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		C11200000000000000000043 /* clipy-cli */ = {
+			isa = PBXGroup;
+			children = (
+				C11200000000000000000011 /* main.swift */,
+				C11200000000000000000012 /* Subcommand.swift */,
+				C11200000000000000000013 /* SocketClient.swift */,
+				C11200000000000000000044 /* Subcommands */,
+			);
+			path = "clipy-cli";
+			sourceTree = "<group>";
+		};
+		C11200000000000000000044 /* Subcommands */ = {
+			isa = PBXGroup;
+			children = (
+				C11200000000000000000014 /* ClipSubcommands.swift */,
+				C11200000000000000000015 /* AccessSubcommands.swift */,
+			);
+			path = Subcommands;
 			sourceTree = "<group>";
 		};
 		CC07B9E00B37FA1B00778800 /* Plugins */ = {
@@ -392,6 +508,7 @@
 			children = (
 				FA3778911F3B690D003B5BAB /* Environments */,
 				FA0D5CE61DDCC5D000AC9052 /* Services */,
+				C11200000000000000000040 /* CLI */,
 				CC07B9E00B37FA1B00778800 /* Plugins */,
 				CB05E7E2FB15E8FE00556699 /* Onboarding */,
 				FA1DB4EC1DDCB4C0007F95C8 /* Preferences */,
@@ -533,6 +650,7 @@
 			children = (
 				FA1DB4ED1DDCB4C0007F95C8 /* CPYPreferencesWindowController.swift */,
 				A044A1796091D65A380A2CBB /* ModernPreferencesWindow.swift */,
+				C1120000000000000000000A /* CommandLineToolSection.swift */,
 				FA1DB4EE1DDCB4C0007F95C8 /* CPYPreferencesWindowController.xib */,
 				FA1DB4F11DDCB4C0007F95C8 /* Panels */,
 			);
@@ -582,6 +700,7 @@
 			isa = PBXGroup;
 			children = (
 				FA9B2C011DDCB49C007F95C8 /* ClipSearchPanel.swift */,
+				C11200000000000000000009 /* ClipNamingView.swift */,
 				CB01A3F6E7D1A4B900112255 /* SyntaxHighlighter.swift */,
 				CB02B4A8F8E2B5CA00223366 /* ClipIntelligence.swift */,
 			);
@@ -601,6 +720,7 @@
 			children = (
 				FAC43DC81B35D8B100C06102 /* Clipy */,
 				FAC43DDB1B35D8B100C06102 /* ClipyTests */,
+				C11200000000000000000042 /* Tools */,
 				FAC43DC71B35D8B100C06102 /* Products */,
 				2CB0F71AAC48A392535FD3B0 /* Frameworks */,
 				D308B3D847EEAF20B17182CE /* Pods */,
@@ -612,6 +732,7 @@
 			children = (
 				FAC43DC61B35D8B100C06102 /* Clipy.app */,
 				FAC43DD81B35D8B100C06102 /* ClipyTests.xctest */,
+				C11200000000000000000030 /* clipy */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -640,6 +761,9 @@
 				FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */,
 				FA6167911D3ABEB10049FA14 /* FolderSpec.swift */,
 				FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */,
+				C11200000000000000000021 /* ClipNameSpec.swift */,
+				C11200000000000000000022 /* CLIProtocolSpec.swift */,
+				C11200000000000000000023 /* CLIAccessServiceSpec.swift */,
 				FAC43DDC1B35D8B100C06102 /* Supporting Files */,
 			);
 			path = ClipyTests;
@@ -665,6 +789,7 @@
 				FAC43DC31B35D8B100C06102 /* Frameworks */,
 				FAC43DC41B35D8B100C06102 /* Resources */,
 				FAC43E1D1B35DF4A00C06102 /* Embed Frameworks */,
+				C11200000000000000000060 /* Embed Command Line Tool */,
 				FAAD02201CA98E20007C6EEE /* SwiftLint */,
 				07B47785AE0AC2185B570C28 /* [CP] Embed Pods Frameworks */,
 				FAAA88991E686CED0088FB34 /* BartyCrouch */,
@@ -673,6 +798,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				C11200000000000000000062 /* PBXTargetDependency */,
 			);
 			name = Clipy;
 			productName = Clipy;
@@ -699,6 +825,22 @@
 			productReference = FAC43DD81B35D8B100C06102 /* ClipyTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		C11200000000000000000050 /* clipy-cli */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C11200000000000000000053 /* Build configuration list for PBXNativeTarget "clipy-cli" */;
+			buildPhases = (
+				C11200000000000000000051 /* Sources */,
+				C11200000000000000000052 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "clipy-cli";
+			productName = clipy;
+			productReference = C11200000000000000000030 /* clipy */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -722,6 +864,10 @@
 						ProvisioningStyle = Manual;
 						TestTargetID = FAC43DC51B35D8B100C06102;
 					};
+					C11200000000000000000050 = {
+						CreatedOnToolsVersion = 16.2;
+						ProvisioningStyle = Manual;
+					};
 				};
 			};
 			buildConfigurationList = FAC43DC11B35D8B100C06102 /* Build configuration list for PBXProject "Clipy" */;
@@ -743,6 +889,7 @@
 			targets = (
 				FAC43DC51B35D8B100C06102 /* Clipy */,
 				FAC43DD71B35D8B100C06102 /* ClipyTests */,
+				C11200000000000000000050 /* clipy-cli */,
 			);
 		};
 /* End PBXProject section */
@@ -991,6 +1138,16 @@
 				CC07B9E30B37FA1B00778899 /* Plugin.swift in Sources */,
 				CC08CAF20C48FB2C00889900 /* PluginManager.swift in Sources */,
 				CC09DB040D59FC3D00990011 /* SnippetTemplates.swift in Sources */,
+				C11200000000000000000101 /* CLIProtocol.swift in Sources */,
+				C11200000000000000000102 /* CLICommands.swift in Sources */,
+				C11200000000000000000103 /* CLIAccessGate.swift in Sources */,
+				C11200000000000000000104 /* CLISocketServer.swift in Sources */,
+				C11200000000000000000105 /* CLIAccessService.swift in Sources */,
+				C11200000000000000000106 /* GetClipHandler.swift in Sources */,
+				C11200000000000000000107 /* ListClipsHandler.swift in Sources */,
+				C11200000000000000000108 /* AccessHandlers.swift in Sources */,
+				C11200000000000000000109 /* ClipNamingView.swift in Sources */,
+				C1120000000000000000010A /* CommandLineToolSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1007,6 +1164,23 @@
 				FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */,
 				FA6167961D3ACDD80049FA14 /* SnippetSpec.swift in Sources */,
 				FA6167941D3ACCB90049FA14 /* DraggedDataSpec.swift in Sources */,
+				C11200000000000000000321 /* ClipNameSpec.swift in Sources */,
+				C11200000000000000000322 /* CLIProtocolSpec.swift in Sources */,
+				C11200000000000000000323 /* CLIAccessServiceSpec.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C11200000000000000000051 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C11200000000000000000201 /* CLIProtocol.swift in Sources */,
+				C11200000000000000000202 /* CLICommands.swift in Sources */,
+				C11200000000000000000211 /* main.swift in Sources */,
+				C11200000000000000000212 /* Subcommand.swift in Sources */,
+				C11200000000000000000213 /* SocketClient.swift in Sources */,
+				C11200000000000000000214 /* ClipSubcommands.swift in Sources */,
+				C11200000000000000000215 /* AccessSubcommands.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1017,6 +1191,11 @@
 			isa = PBXTargetDependency;
 			target = FAC43DC51B35D8B100C06102 /* Clipy */;
 			targetProxy = FAC43DD91B35D8B100C06102 /* PBXContainerItemProxy */;
+		};
+		C11200000000000000000062 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C11200000000000000000050 /* clipy-cli */;
+			targetProxy = C11200000000000000000061 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1354,6 +1533,31 @@
 			};
 			name = Release;
 		};
+		C11200000000000000000054 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = clipy;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		C11200000000000000000055 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = clipy;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1380,6 +1584,15 @@
 			buildConfigurations = (
 				FAC43DE61B35D8B100C06102 /* Debug */,
 				FAC43DE71B35D8B100C06102 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C11200000000000000000053 /* Build configuration list for PBXNativeTarget "clipy-cli" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C11200000000000000000054 /* Debug */,
+				C11200000000000000000055 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

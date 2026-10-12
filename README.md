@@ -139,6 +139,21 @@ Dynamic variables that expand at paste time:
 
 Protect sensitive snippets with Touch ID or password authentication. Vault folders stay locked until you authenticate — hidden from search and the snippet picker until unlocked.
 
+### Named Clips and the `clipy` Command Line Tool
+
+Give a clip a name in the search panel (`Cmd+N`, or the **Name** button), optionally with an expiry. Named clips are never pruned from history, survive Clear History unless it includes pinned clips, and are deleted when they expire.
+
+Read them back in a terminal without touching the clipboard, for example to hand a token to a script or an AI agent without it ever seeing the value:
+
+```sh
+export GITHUB_TOKEN=$(clipy get github-token)
+clipy list      # names and expiry, never content
+clipy status    # is Clipy running, is access unlocked
+clipy lock      # close access until the next Touch ID approval
+```
+
+The tool talks to the running app over a private socket in Application Support. Reading a clip needs Touch ID (or your login password) the first time, after which access stays open for an hour, until `clipy lock`, or until Clipy quits. Install it from Settings → General → Command Line, which links `/usr/local/bin/clipy` to the copy inside the app. Run `clipy help` for exit codes.
+
 ### Clipboard Queue (Collect Mode)
 
 Collect multiple clips and paste them all at once — merged with a configurable separator (newline, comma, tab, space) or pasted one-by-one sequentially.
@@ -175,6 +190,7 @@ Default global hotkeys (configurable in Settings → Shortcuts):
 | `Shift+Return` | Paste as plain text |
 | `1`-`30` (type rapidly) | Quick select by number |
 | `Cmd+D` | Pin/unpin clip |
+| `Cmd+N` | Name the clip, with an optional expiry |
 | `Cmd+Backspace` | Delete selected clip(s) |
 | `Cmd+O` | OCR — extract text from image |
 | `Cmd+S` | Share image via system share sheet |

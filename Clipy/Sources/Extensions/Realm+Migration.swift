@@ -15,7 +15,7 @@ private let logger = Logger(subsystem: "com.clipy-app.Clipy", category: "Migrati
 
 extension Realm {
     static func migration() {
-        let config = Realm.Configuration(schemaVersion: 12, migrationBlock: { migration, oldSchemaVersion in
+        let config = Realm.Configuration(schemaVersion: 13, migrationBlock: { migration, oldSchemaVersion in
             if oldSchemaVersion <= 2 {
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
                     newObject?["identifier"] = NSUUID().uuidString
@@ -83,6 +83,13 @@ extension Realm {
                 // Schema 12: Added isEphemeral field to CPYSnippet
                 migration.enumerateObjects(ofType: CPYSnippet.className()) { _, newObject in
                     newObject?["isEphemeral"] = true
+                }
+            }
+            if oldSchemaVersion <= 12 {
+                // Schema 13: Added name and expiresAt fields to CPYClip
+                migration.enumerateObjects(ofType: CPYClip.className()) { _, newObject in
+                    newObject?["name"] = nil
+                    newObject?["expiresAt"] = nil
                 }
             }
         })

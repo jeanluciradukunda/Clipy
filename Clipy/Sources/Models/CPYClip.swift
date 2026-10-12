@@ -24,6 +24,15 @@ final class CPYClip: Object {
     @objc dynamic var isColorCode = false
     @objc dynamic var isPinned = false
     @objc dynamic var ocrText: String?
+    /// A user-given name, so the clip can be fetched later, e.g. by the `clipy` command line tool.
+    @objc dynamic var name: String?
+    /// When set, the clip is deleted once this moment passes.
+    @objc dynamic var expiresAt: Date?
+
+    func isExpired(at now: Date = Date()) -> Bool {
+        guard let expiresAt = expiresAt else { return false }
+        return expiresAt <= now
+    }
 
     // MARK: Primary Key
     override static func primaryKey() -> String? {
@@ -37,6 +46,28 @@ final class CPYClip: Object {
             SortDescriptor(keyPath: #keyPath(CPYClip.isPinned), ascending: false),
             SortDescriptor(keyPath: #keyPath(CPYClip.updateTime), ascending: false)
         ])
+    }
+
+    /// The unexpired clip with this name, matched case-insensitively.
+    static func named(_ name: String, in realm: Realm, now: Date = Date()) -> CPYClip? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return realm.objects(CPYClip.self)
+            .filter("name ==[c] %@", trimmed)
+            .first { !$0.isExpired(at: now) }
+    }
+
+    /// Unexpired named clips, sorted by name.
+    static func namedClips(in realm: Realm, now: Date = Date()) -> [CPYClip] {
+        return realm.objects(CPYClip.self)
+            .filter("name != nil AND name != ''")
+            .filter { !$0.isExpired(at: now) }
+            .sorted { ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending }
+    }
+
+    /// Clips whose expiry has passed.
+    static func expiredClips(in realm: Realm, now: Date = Date()) -> Results<CPYClip> {
+        return realm.objects(CPYClip.self).filter("expiresAt != nil AND expiresAt <= %@", now)
     }
 
     static func updateTime(existing: Int?, now: Int, reorderAfterPasting: Bool) -> Int {

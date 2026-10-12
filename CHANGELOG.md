@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Cycle the search panel's type filter from the keyboard** ([#107](https://github.com/jeanluciradukunda/Clipy/issues/107)) — `Tab` advances the active filter chip (All → Text → Images → Links → Files → Pinned → Queue, then back to All) and scrolls it into view, so narrowing by type no longer needs the trackpad. Rebindable in Settings → Shortcuts as "Cycle type filter", alongside the other panel shortcuts.
+- **Named clips with expiry** ([#112](https://github.com/jeanluciradukunda/Clipy/issues/112)) — `Cmd+N` in the search panel names the selected clip and can set it to expire after an hour, a day, a week or on a chosen date. Named clips are kept when history overflows and through Clear History (unless it includes pinned clips), and are deleted once they expire. Copying the same text again keeps its name.
+- **`clipy` command line tool** ([#112](https://github.com/jeanluciradukunda/Clipy/issues/112)) — `clipy get <name>` prints a named clip's text, so a command can use `$(clipy get github-token)` while the clipboard holds something else. Also `list`, `status`, `unlock` and `lock`. Access needs Touch ID approval in Clipy and lasts an hour. The tool ships inside the app and is linked into `/usr/local/bin` from Settings → General → Command Line. It speaks a small versioned JSON protocol over a socket in Application Support, built so new commands can be added without changing existing ones.
 
 ## [2.2.2] - 2026-07-03
 

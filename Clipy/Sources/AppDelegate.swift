@@ -249,6 +249,8 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.current.dataCleanService.startMonitoring()
         AppEnvironment.current.excludeAppService.startMonitoring()
         AppEnvironment.current.hotKeyService.setupDefaultHotKeys()
+        // Socket for the `clipy` command line tool
+        CLIAccessService.shared.start()
 
         // Managers
         AppEnvironment.current.menuManager.setup()
@@ -264,6 +266,11 @@ extension AppDelegate: NSApplicationDelegate {
         #else
         logger.info("Clipy launched successfully")
         #endif
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Removes the socket file and closes command line access
+        CLIAccessService.shared.stop()
     }
 
 }

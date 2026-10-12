@@ -113,7 +113,8 @@ final class ClipService {
         if includePinned {
             clips = realm.objects(CPYClip.self)
         } else {
-            clips = realm.objects(CPYClip.self).filter("isPinned == false")
+            // Named clips are kept alongside pinned ones: the user asked to keep them by naming them
+            clips = realm.objects(CPYClip.self).filter("isPinned == false AND (name == nil OR name == '')")
         }
 
         // Delete cached thumbnails
@@ -146,6 +147,45 @@ final class ClipService {
         realm.transaction {
             managedClip.isPinned = !managedClip.isPinned
         }
+    }
+
+    /// Names a clip, or clears its name and expiry when `name` is blank.
+    /// A name already held by another clip moves to this one, so names stay unique.
+    func setName(_ name: String?, expiresAt: Date?, for clip: CPYClip) {
+        guard let realm = Realm.safeInstance() else { return }
+        guard let managedClip = realm.object(ofType: CPYClip.self, forPrimaryKey: clip.dataHash) else { return }
+        let trimmed = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        realm.transaction {
+            if trimmed.isEmpty {
+                managedClip.name = nil
+                managedClip.expiresAt = nil
+                return
+            }
+            realm.objects(CPYClip.self)
+                .filter("name ==[c] %@ AND dataHash != %@", trimmed, managedClip.dataHash)
+                .forEach {
+                    $0.name = nil
+                    $0.expiresAt = nil
+                }
+            managedClip.name = trimmed
+            managedClip.expiresAt = expiresAt
+        }
+    }
+
+    /// Deletes every clip whose expiry has passed, with its data file and thumbnail.
+    func purgeExpired(now: Date = Date()) {
+        guard let realm = Realm.safeInstance() else { return }
+        let expired = CPYClip.expiredClips(in: realm, now: now)
+        guard !expired.isEmpty else { return }
+        expired
+            .filter { !$0.thumbnailPath.isEmpty }
+            .map { $0.thumbnailPath }
+            .forEach { ClipService.removeCachedThumbnail(forKey: $0) }
+        let dataPaths = expired.map { $0.dataPath }.filter { !$0.isEmpty }
+        let count = expired.count
+        realm.transaction { realm.delete(expired) }
+        dataPaths.forEach { CPYUtilities.deleteData(at: $0) }
+        logger.info("Deleted \(count) expired clip(s)")
     }
 
     func incrementChangeCount() {
@@ -204,9 +244,11 @@ extension ClipService {
         let isOverwriteHistory = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.overwriteSameHistory)
         let savedHash = (isOverwriteHistory) ? data.hash : Int(arc4random() % 1000000)
 
-        // Preserve pinned state from existing clip being overwritten
+        // Preserve pinned state, name and expiry from existing clip being overwritten
         let existingClip = realm.object(ofType: CPYClip.self, forPrimaryKey: "\(savedHash)")
         let existingIsPinned = existingClip?.isPinned ?? false
+        let existingName = existingClip?.name
+        let existingExpiresAt = existingClip?.expiresAt
         let reorderAfterPasting = AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.reorderClipsAfterPasting)
 
         // Saved time and path
@@ -220,6 +262,8 @@ extension ClipService {
         clip.updateTime = CPYClip.updateTime(existing: existingClip?.updateTime, now: unixTime, reorderAfterPasting: reorderAfterPasting)
         clip.primaryType = data.primaryType?.rawValue ?? ""
         clip.isPinned = existingIsPinned
+        clip.name = existingName
+        clip.expiresAt = existingExpiresAt
 
         DispatchQueue.main.async {
             // Save thumbnail image
