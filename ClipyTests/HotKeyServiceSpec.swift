@@ -33,15 +33,11 @@ class HotKeyServiceSpec: QuickSpec {
                 service.setupDefaultHotKeys()
                 expect(defaults.bool(forKey: Constants.HotKey.migrateNewKeyCombo)) == true
 
-                expect(service.mainKeyCombo).toNot(beNil())
-                expect(service.mainKeyCombo?.QWERTYKeyCode) == 9
-                expect(service.mainKeyCombo?.modifiers) == 768
-                expect(service.mainKeyCombo?.doubledModifiers) == false
-                expect(service.mainKeyCombo?.keyEquivalent.uppercased()) == "V"
+                expect(service.mainKeyCombo).to(beNil())
 
                 expect(service.historyKeyCombo).toNot(beNil())
                 expect(service.historyKeyCombo?.QWERTYKeyCode) == 9
-                expect(service.historyKeyCombo?.modifiers) == 4352
+                expect(service.historyKeyCombo?.modifiers) == 768
                 expect(service.historyKeyCombo?.doubledModifiers) == false
                 expect(service.historyKeyCombo?.keyEquivalent.uppercased()) == "V"
 
@@ -215,11 +211,10 @@ class HotKeyServiceSpec: QuickSpec {
                 let historyCombos = keyCombos[Constants.Menu.history] as? [String: Int]
                 let snippetCombos = keyCombos[Constants.Menu.snippet] as? [String: Int]
 
-                expect(mainCombos?["keyCode"]) == 9
-                expect(mainCombos?["modifiers"]) == 768
+                expect(mainCombos).to(beNil())
 
                 expect(historyCombos?["keyCode"]) == 9
-                expect(historyCombos?["modifiers"]) == 4352
+                expect(historyCombos?["modifiers"]) == 768
 
                 expect(snippetCombos?["keyCode"]) == 11
                 expect(snippetCombos?["modifiers"]) == 768
