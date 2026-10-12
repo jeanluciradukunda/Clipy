@@ -140,9 +140,9 @@ final class CLISocketServer {
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 4096)
         while data.count <= CLIProtocol.maxRequestBytes {
-            let count = read(fd, &buffer, buffer.count)
-            if count <= 0 { break }
-            data.append(buffer, count: count)
+            let bytesRead = read(fd, &buffer, buffer.count)
+            if bytesRead <= 0 { break }
+            data.append(buffer, count: bytesRead)
             if let newline = data.firstIndex(of: 0x0A) {
                 return data.prefix(upTo: newline)
             }
