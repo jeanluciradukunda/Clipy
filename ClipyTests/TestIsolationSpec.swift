@@ -25,6 +25,13 @@ class TestIsolationSpec: QuickSpec {
                 expect(TestIsolation.suiteName) != "com.clipy-app.Clipy-Dev.debug"
                 expect(TestIsolation.suiteName) != Bundle.main.bundleIdentifier
             }
+
+            it("keeps clip files out of the host app's Application Support folder") {
+                let realFolder = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true).first ?? ""
+
+                expect(CPYUtilities.applicationSupportFolder()).to(beginWith(NSTemporaryDirectory()))
+                expect(CPYUtilities.applicationSupportFolder()).toNot(beginWith(realFolder))
+            }
         }
     }
 }
