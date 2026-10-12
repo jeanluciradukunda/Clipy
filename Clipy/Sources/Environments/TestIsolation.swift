@@ -26,4 +26,12 @@ enum TestIsolation {
         }
         return defaults
     }()
+
+    /// Stands in for Application Support/Clipy: the data clean-up sweeps that folder against the Realm,
+    /// so specs pointed at the real one would delete the real app's clip files.
+    static let supportFolder: String = {
+        let path = (NSTemporaryDirectory() as NSString).appendingPathComponent("\(suiteName).support")
+        try? FileManager.default.removeItem(atPath: path)
+        return path
+    }()
 }
