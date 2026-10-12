@@ -141,5 +141,29 @@ class ClipNameSpec: QuickSpec {
                 expect(Array(evicted)) == ["oldest"]
             }
         }
+
+        describe("copying the content of an expired named clip again") {
+            it("keeps the new copy instead of inheriting the old expiry") {
+                let defaults = UserDefaults(suiteName: "ClipNameSpec-\(UUID().uuidString)")!
+                defaults.set(true, forKey: Constants.UserDefaults.copySameHistory)
+                defaults.set(true, forKey: Constants.UserDefaults.overwriteSameHistory)
+                defaults.set(100, forKey: Constants.UserDefaults.maxHistorySize)
+                AppEnvironment.push(defaults: defaults)
+                defer { AppEnvironment.popLast() }
+
+                let image = NSImage(size: NSSize(width: 4, height: 4))
+                image.lockFocus()
+                NSColor.red.setFill()
+                NSRect(x: 0, y: 0, width: 4, height: 4).fill()
+                image.unlockFocus()
+                let hash = "\(CPYClipData(image: image).hash)"
+                realm.transaction { realm.add(makeClip(hash, name: "token", expiresAt: past)) }
+
+                service.create(with: image)
+
+                expect { realm.refresh(); return realm.object(ofType: CPYClip.self, forPrimaryKey: hash)?.isExpired() }
+                    .toEventually(equal(false), timeout: .seconds(3))
+            }
+        }
     }
 }
