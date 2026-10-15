@@ -147,7 +147,7 @@ class PluginManager: ObservableObject {
     }
 
     private func enabledPluginIDs() -> [String: Bool] {
-        UserDefaults.standard.dictionary(forKey: kPluginEnabledStates) as? [String: Bool] ?? [:]
+        AppEnvironment.current.defaults.dictionary(forKey: kPluginEnabledStates) as? [String: Bool] ?? [:]
     }
 
     private func saveEnabledPluginIDs() {
@@ -155,7 +155,7 @@ class PluginManager: ObservableObject {
         for plugin in plugins {
             states[plugin.id] = plugin.isEnabled
         }
-        UserDefaults.standard.set(states, forKey: kPluginEnabledStates)
+        AppEnvironment.current.defaults.set(states, forKey: kPluginEnabledStates)
     }
 
     // MARK: - File Watching

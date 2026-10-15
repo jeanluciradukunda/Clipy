@@ -121,12 +121,12 @@ final class UsageMetricsService: ObservableObject {
             filterUsage: filterUsage
         )
         if let data = try? JSONEncoder().encode(metrics) {
-            UserDefaults.standard.set(data, forKey: Self.defaultsKey)
+            AppEnvironment.current.defaults.set(data, forKey: Self.defaultsKey)
         }
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: Self.defaultsKey),
+        guard let data = AppEnvironment.current.defaults.data(forKey: Self.defaultsKey),
               let metrics = try? JSONDecoder().decode(UsageMetrics.self, from: data) else {
             return
         }
