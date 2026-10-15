@@ -1,0 +1,25 @@
+name: Proof rebased 133
+on:
+  push:
+    branches: [proof/rb-133]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+      - uses: actions/cache@v4
+        with:
+          path: Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-pods-
+      - run: gem install cocoapods && pod install
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild -workspace Clipy.xcworkspace -scheme Clipy -configuration Debug \
+            -destination 'platform=macOS,arch=arm64' CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO \
+            test 2>&1 | tee test.log | grep -E "Test Case|error:|Executed|\*\* " || true
+          grep -q "\*\* TEST SUCCEEDED \*\*" test.log
