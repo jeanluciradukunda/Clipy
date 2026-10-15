@@ -1309,7 +1309,7 @@ class ModernSnippetsWindowController: NSWindowController {
 
         let hostView = NSHostingView(rootView: ModernSnippetsEditorView(onClose: { [weak self] in
             self?.close()
-        }))
+        }).defaultAppStorage(AppEnvironment.current.defaults))
         window.contentView = hostView
         window.delegate = self
         DispatchQueue.main.async {
@@ -1326,7 +1326,7 @@ class ModernSnippetsWindowController: NSWindowController {
     override func showWindow(_ sender: Any?) {
         let hostView = NSHostingView(rootView: ModernSnippetsEditorView(onClose: { [weak self] in
             self?.close()
-        }))
+        }).defaultAppStorage(AppEnvironment.current.defaults))
         window?.contentView = hostView
         DispatchQueue.main.async {
             hostView.wantsLayer = true

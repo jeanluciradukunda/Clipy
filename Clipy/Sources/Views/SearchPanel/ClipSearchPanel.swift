@@ -1573,7 +1573,7 @@ class ClipSearchWindowController: NSWindowController, NSWindowDelegate {
         // Fresh SwiftUI view each time
         let hostView = NSHostingView(rootView: ClipSearchPanelView(onDismiss: { [weak self] in
             self?.dismiss()
-        }))
+        }).defaultAppStorage(AppEnvironment.current.defaults))
         hostView.frame = NSRect(x: 0, y: 0, width: 720, height: 520)
         panel.contentView = hostView
         panel.setContentSize(NSSize(width: 720, height: 520))
