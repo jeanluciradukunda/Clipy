@@ -1357,6 +1357,15 @@ struct PluginsPreferencesView: View {
     }
 }
 
+/// Clipy Dev must never download a release and install it over /Applications/Clipy.app
+enum SelfUpdate {
+    #if DEBUG
+    static let isAvailable = false
+    #else
+    static let isAvailable = true
+    #endif
+}
+
 struct UpdatesPreferencesView: View {
     @State private var state: UpdateState = .idle
     @State private var latestVersion: String?
@@ -1376,11 +1385,18 @@ struct UpdatesPreferencesView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                // Status row
-                statusView
+                if SelfUpdate.isAvailable {
+                    // Status row
+                    statusView
 
-                // Action buttons
-                actionButtons
+                    // Action buttons
+                    actionButtons
+                } else {
+                    Label("Clipy Dev doesn't update itself. Rebuild from source, or install a release separately.",
+                          systemImage: "hammer")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
             } header: {
                 Label("Software Updates", systemImage: "arrow.triangle.2.circlepath")
             } footer: {
@@ -1391,7 +1407,7 @@ struct UpdatesPreferencesView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .onAppear { checkForUpdates() }
+        .onAppear { if SelfUpdate.isAvailable { checkForUpdates() } }
     }
 
     // MARK: - Status View
@@ -1489,6 +1505,7 @@ struct UpdatesPreferencesView: View {
     // MARK: - Check
 
     private func checkForUpdates() {
+        guard SelfUpdate.isAvailable else { return }
         state = .checking
         Task {
             do {
@@ -1527,6 +1544,7 @@ struct UpdatesPreferencesView: View {
     // MARK: - Download & Install
 
     private func downloadAndInstall(from urlString: String) {
+        guard SelfUpdate.isAvailable else { return }
         guard let url = URL(string: urlString) else { return }
         state = .downloading(progress: 0)
 

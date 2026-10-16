@@ -68,6 +68,7 @@
 		FA3778951F3B6920003B5BAB /* Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3778941F3B6920003B5BAB /* Environment.swift */; };
 		FA431F021E6718CE00ACFF56 /* Collection+Safe.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */; };
 		FA610702C1F0DE0000000107 /* ClipFilterSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */; };
+		FA610702C1F0DE0000000153 /* SelfUpdateSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000153 /* SelfUpdateSpec.swift */; };
 		FA610702C1F0DE0000000105 /* ClipHistoryOrderSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */; };
 		FA610702C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */; };
 		FA610702C1F0DE0000000098 /* StatsRadarSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000098 /* StatsRadarSpec.swift */; };
@@ -221,6 +222,7 @@
 		FA3778941F3B6920003B5BAB /* Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Environment.swift; sourceTree = "<group>"; };
 		FA431F011E6718CE00ACFF56 /* Collection+Safe.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Collection+Safe.swift"; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipFilterSpec.swift; sourceTree = "<group>"; };
+		FA610701C1F0DE0000000153 /* SelfUpdateSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SelfUpdateSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipHistoryOrderSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreferenceSidebarRowSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000098 /* StatsRadarSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatsRadarSpec.swift; sourceTree = "<group>"; };
@@ -633,6 +635,7 @@
 			children = (
 				FA08EDF71D1FED7D000D1D13 /* HotKeyServiceSpec.swift */,
 				FA610701C1F0DE0000000107 /* ClipFilterSpec.swift */,
+				FA610701C1F0DE0000000153 /* SelfUpdateSpec.swift */,
 				FA610701C1F0DE0000000105 /* ClipHistoryOrderSpec.swift */,
 				FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */,
 				FA610701C1F0DE0000000098 /* StatsRadarSpec.swift */,
@@ -999,6 +1002,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA610702C1F0DE0000000107 /* ClipFilterSpec.swift in Sources */,
+				FA610702C1F0DE0000000153 /* SelfUpdateSpec.swift in Sources */,
 				FA610702C1F0DE0000000105 /* ClipHistoryOrderSpec.swift in Sources */,
 				FA610702C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift in Sources */,
 				FA610702C1F0DE0000000098 /* StatsRadarSpec.swift in Sources */,
