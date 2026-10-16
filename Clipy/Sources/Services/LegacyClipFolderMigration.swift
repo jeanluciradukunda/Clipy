@@ -60,12 +60,19 @@ enum LegacyClipFolderMigration {
             }
         }
 
-        realm.transaction {
-            for move in moves {
-                realm.object(ofType: CPYClip.self, forPrimaryKey: move.hash)?.dataPath = move.destination.path
+        // Not `transaction`: it swallows a failed commit, and the originals must survive one
+        do {
+            try realm.write {
+                for move in moves {
+                    realm.object(ofType: CPYClip.self, forPrimaryKey: move.hash)?.dataPath = move.destination.path
+                }
             }
+        } catch {
+            if realm.isInWriteTransaction { realm.cancelWrite() }
+            logger.error("Could not record moved clip files: \(error.localizedDescription)")
+            return result
         }
-        for move in moves where realm.object(ofType: CPYClip.self, forPrimaryKey: move.hash)?.dataPath == move.destination.path {
+        for move in moves {
             try? fileManager.removeItem(at: move.source)
             result.moved += 1
         }
