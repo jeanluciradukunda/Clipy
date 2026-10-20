@@ -44,12 +44,12 @@ touching your history.
 2. Drag Clipy from Applications to Trash
 3. Remove your history, snippets and settings (optional):
    ```bash
-   rm -rf ~/Library/Application\ Support/com.clipy-app.Clipy ~/Library/Application\ Support/Clipy
+   rm -rf ~/Library/Application\ Support/com.clipy-app.Clipy ~/Library/Application\ Support/Clipy ~/.clipy
    defaults delete com.clipy-app.Clipy
    ```
    Clipy 2.2.0 and earlier also kept clip files in `~/Library/Application Support/ClipyDev`. Delete that folder too,
    unless you build Clipy Dev from source.
-4. Remove from System Settings → Privacy & Security → Accessibility
+4. Remove Clipy from System Settings → Privacy & Security → Accessibility, and from General → Login Items
 
 ---
 
@@ -65,6 +65,7 @@ touching your history.
 - **Vault folders** stay hidden until you unlock them with Touch ID or your password.
 - **Collect mode** queues several clips and pastes them together or one by one.
 - **Exclude apps** such as password managers from your history.
+- **Global hotkeys** for history, snippets and snippet folders, and **launch at login**.
 - **Updates** from Settings → Updates.
 
 ### Snippet variables
