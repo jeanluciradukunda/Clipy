@@ -186,6 +186,16 @@ class AppDelegate: NSObject, NSMenuItemValidation {
     }
 
     // MARK: - Login Item Methods
+    /// Clipy Dev runs from a build folder: it never asks to launch at login, and it changes the login
+    /// item only when the setting is toggled, so launching a build never replaces an existing one.
+    static var appliesLoginItemAtLaunch: Bool {
+        #if DEBUG
+            return false
+        #else
+            return true
+        #endif
+    }
+
     private func promptToAddLoginItems() {
         let alert = NSAlert()
         alert.messageText = L10n.launchClipyOnSystemStartup
@@ -241,7 +251,7 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: true)
 
         // Show Login Item
-        if !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.loginItem) && !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.suppressAlertForLoginItem) {
+        if Self.appliesLoginItemAtLaunch && !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.loginItem) && !AppEnvironment.current.defaults.bool(forKey: Constants.UserDefaults.suppressAlertForLoginItem) {
             promptToAddLoginItems()
         }
 
@@ -278,6 +288,7 @@ private extension AppDelegate {
         // Login Item
         AppEnvironment.current.defaults
             .publisher(for: \.clipyLoginItem)
+            .dropFirst(Self.appliesLoginItemAtLaunch ? 0 : 1)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.reflectLoginItemState()
