@@ -12,7 +12,7 @@ class HotKeyServiceSpec: QuickSpec {
         describe("Migrate HotKey") {
 
             beforeEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.removeObject(forKey: Constants.UserDefaults.hotKeys)
                 defaults.removeObject(forKey: Constants.HotKey.migrateNewKeyCombo)
                 defaults.removeObject(forKey: Constants.HotKey.mainKeyCombo)
@@ -27,7 +27,7 @@ class HotKeyServiceSpec: QuickSpec {
                 expect(service.historyKeyCombo).to(beNil())
                 expect(service.snippetKeyCombo).to(beNil())
 
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
 
                 expect(defaults.bool(forKey: Constants.HotKey.migrateNewKeyCombo)) == false
                 service.setupDefaultHotKeys()
@@ -58,7 +58,7 @@ class HotKeyServiceSpec: QuickSpec {
                 expect(service.historyKeyCombo).to(beNil())
                 expect(service.snippetKeyCombo).to(beNil())
 
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 let defaultKeyCombos: [String: Any] = [Constants.Menu.clip: ["keyCode": 0, "modifiers": 4352],
                                                        Constants.Menu.history: ["keyCode": 9, "modifiers": 768],
                                                        Constants.Menu.snippet: ["keyCode": 11, "modifiers": 4352]]
@@ -89,7 +89,7 @@ class HotKeyServiceSpec: QuickSpec {
             }
 
             afterEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.removeObject(forKey: Constants.UserDefaults.hotKeys)
                 defaults.removeObject(forKey: Constants.HotKey.migrateNewKeyCombo)
                 defaults.removeObject(forKey: Constants.HotKey.mainKeyCombo)
@@ -102,7 +102,7 @@ class HotKeyServiceSpec: QuickSpec {
         describe("Save HotKey") {
 
             beforeEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.set(true, forKey: Constants.HotKey.migrateNewKeyCombo)
                 defaults.removeObject(forKey: Constants.HotKey.mainKeyCombo)
                 defaults.removeObject(forKey: Constants.HotKey.historyKeyCombo)
@@ -116,7 +116,7 @@ class HotKeyServiceSpec: QuickSpec {
                 expect(service.historyKeyCombo).to(beNil())
                 expect(service.snippetKeyCombo).to(beNil())
 
-                let defautls = UserDefaults.standard
+                let defautls = AppEnvironment.current.defaults
                 expect(defautls.archiveDataForKey(KeyCombo.self, key: Constants.HotKey.mainKeyCombo)).to(beNil())
                 expect(defautls.archiveDataForKey(KeyCombo.self, key: Constants.HotKey.historyKeyCombo)).to(beNil())
                 expect(defautls.archiveDataForKey(KeyCombo.self, key: Constants.HotKey.snippetKeyCombo)).to(beNil())
@@ -166,7 +166,7 @@ class HotKeyServiceSpec: QuickSpec {
                 let historyKeyCombo = KeyCombo(doubledCocoaModifiers: .command)
                 let snippetKeyCombo = KeyCombo(QWERTYKeyCode: 0, cocoaModifiers: .shift)
 
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.setArchiveData(mainKeyCombo!, forKey: Constants.HotKey.mainKeyCombo)
                 defaults.setArchiveData(historyKeyCombo!, forKey: Constants.HotKey.historyKeyCombo)
                 defaults.setArchiveData(snippetKeyCombo!, forKey: Constants.HotKey.snippetKeyCombo)
@@ -198,7 +198,7 @@ class HotKeyServiceSpec: QuickSpec {
             }
 
             afterEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.removeObject(forKey: Constants.UserDefaults.hotKeys)
                 defaults.removeObject(forKey: Constants.HotKey.migrateNewKeyCombo)
                 defaults.removeObject(forKey: Constants.HotKey.mainKeyCombo)
@@ -228,7 +228,7 @@ class HotKeyServiceSpec: QuickSpec {
 
         describe("Clear History HotKey") {
             beforeEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.removeObject(forKey: Constants.HotKey.clearHistoryKeyCombo)
                 defaults.synchronize()
             }
@@ -244,7 +244,7 @@ class HotKeyServiceSpec: QuickSpec {
                 expect(service.clearHistoryKeyCombo).toNot(beNil())
                 expect(service.clearHistoryKeyCombo) == keyCombo
 
-                let savedData = UserDefaults.standard.object(forKey: Constants.HotKey.clearHistoryKeyCombo) as? Data
+                let savedData = AppEnvironment.current.defaults.object(forKey: Constants.HotKey.clearHistoryKeyCombo) as? Data
                 let savedKeyCombo = NSKeyedUnarchiver.unarchiveObject(with: savedData!) as? KeyCombo
                 expect(savedKeyCombo) == keyCombo
 
@@ -253,7 +253,7 @@ class HotKeyServiceSpec: QuickSpec {
             }
 
             afterEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.removeObject(forKey: Constants.HotKey.clearHistoryKeyCombo)
                 defaults.synchronize()
             }
@@ -261,7 +261,7 @@ class HotKeyServiceSpec: QuickSpec {
 
         describe("Folder HotKey") {
             beforeEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.removeObject(forKey: Constants.HotKey.folderKeyCombos)
                 defaults.synchronize()
             }
@@ -289,7 +289,7 @@ class HotKeyServiceSpec: QuickSpec {
             }
 
             afterEach {
-                let defaults = UserDefaults.standard
+                let defaults = AppEnvironment.current.defaults
                 defaults.removeObject(forKey: Constants.HotKey.folderKeyCombos)
                 defaults.synchronize()
             }
