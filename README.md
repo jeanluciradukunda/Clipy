@@ -13,9 +13,6 @@
 
 > *Forked from [Clipy/Clipy](https://github.com/Clipy/Clipy) — the original clipboard manager for macOS by [@naotaka](https://github.com/naotaka) and the Clipy Project.*
 
-<!-- TODO: Add demo GIF or video recorded with Screen Studio -->
-<!-- <p align="center"><img src="./Resources/demo.gif" width="700"></p> -->
-
 ---
 
 ## Install
@@ -45,75 +42,32 @@ touching your history.
 
 1. Quit Clipy (click the menu bar icon → Quit, or `Cmd+Q`)
 2. Drag Clipy from Applications to Trash
-3. Remove app data (optional):
+3. Remove your history, snippets and settings (optional):
    ```bash
-   rm -rf ~/Library/Application\ Support/com.clipy-app.Clipy/
+   rm -rf ~/Library/Application\ Support/com.clipy-app.Clipy ~/Library/Application\ Support/Clipy
    defaults delete com.clipy-app.Clipy
    ```
+   Clipy 2.2.0 and earlier also kept clip files in `~/Library/Application Support/ClipyDev`. Delete that folder too,
+   unless you build Clipy Dev from source.
 4. Remove from System Settings → Privacy & Security → Accessibility
 
 ---
 
 ## Features
 
-### Search Panel
+- **Search panel** (`Shift+Cmd+V`): fuzzy search across your history, filters (All, Text, Images, Links, Files, Pinned,
+  Queue), a preview pane, pinning and multi-select.
+- **Syntax highlighting** for 16 languages, with automatic detection.
+- **Smart actions** that fit the clip: case changes, JSON format and minify, tracking-free URLs, OCR and Share for
+  images, colour swatches, and one-click links for URLs, emails and phone numbers.
+- **Snippets**: a picker (`Shift+Cmd+B`), an editor with folders and XML import and export, and variables that expand
+  when pasted (below).
+- **Vault folders** stay hidden until you unlock them with Touch ID or your password.
+- **Collect mode** queues several clips and pastes them together or one by one.
+- **Exclude apps** such as password managers from your history.
+- **Updates** from Settings → Updates.
 
-A Spotlight-style search panel with split-pane layout: filterable clip list on the left, rich preview + action bar on the right.
-
-- **Fuzzy search** across all clipboard history
-- **Content filters**: All, Text, Images, Links, Files, Pinned, Queue
-- **Keyboard-driven**: arrow keys to navigate, `Return` to paste, `Shift+Return` for plain text
-- **Quick select**: type a number to paste instantly — single digits or two digits rapidly (e.g. `1` `5` for item 15, up to 30)
-- **Multi-select**: `Shift+Up/Down` to select multiple clips, `Cmd+Backspace` to bulk delete
-- **Pin clips** to keep them at the top (`Cmd+D`)
-
-### Syntax Highlighting
-
-Automatic language detection and syntax highlighting for 16+ languages:
-JSON, JavaScript, TypeScript, Python, Swift, Java, HTML, CSS, SQL, Shell, Ruby, Go, Rust, C#, C++, YAML
-
-### OCR
-
-Extract text from image clips using the macOS Vision framework. Click **OCR** when previewing an image — extracted text can be copied directly.
-
-### Smart Actions
-
-The action bar adapts to the selected clip's content type:
-
-**Text clips:**
-- **UPPER / lower / Title** — case transforms, copied to clipboard
-- **Detected content** — clickable badges for URLs (open browser), emails (compose), phone numbers (call), IP addresses (copy)
-
-**JSON clips:**
-- **Format** — pretty-print with indentation for readability
-- **Minify** — compress to single line for storage/transport
-
-**URL clips:**
-- **Clean URL** — strips tracking parameters (UTM, fbclid, gclid, msclkid, and 50+ others)
-- **Clickable preview** — blue underlined URL opens in default browser
-
-**Image clips:**
-- **OCR** — extract text from the image using macOS Vision framework
-- **Share** — native macOS share sheet (AirDrop, Messages, Mail, other apps)
-
-**Color codes:**
-- **Visual swatch** — hex color codes show a color preview in the clip list
-
-### Snippet Picker
-
-Spotlight-style snippet browser with folder navigation, search, and keyboard shortcuts. Type a number to quick-paste by position.
-
-### Snippet Editor
-
-Full-featured SwiftUI snippet editor with:
-- Sidebar folder/snippet navigation (arrow keys, expand/collapse)
-- Inline rename (double-click)
-- Variable insertion toolbar
-- Import/export as XML
-
-### Snippet Variables
-
-Dynamic variables that expand at paste time:
+### Snippet variables
 
 | Variable | Output |
 |---|---|
@@ -127,24 +81,6 @@ Dynamic variables that expand at paste time:
 | `%CLIPBOARD%` | Current clipboard text |
 | `%UUID%` | Random UUID |
 | `%RANDOM%` | Random 4-digit number |
-
-### Vault Folders
-
-Protect sensitive snippets with Touch ID or password authentication. Vault folders stay locked until you authenticate — hidden from search and the snippet picker until unlocked.
-
-### Clipboard Queue (Collect Mode)
-
-Collect multiple clips and paste them all at once — merged with a configurable separator (newline, comma, tab, space) or pasted one-by-one sequentially.
-
-### Other Features
-
-- **Auto-update** — checks GitHub Releases, downloads `.dmg`, installs, and relaunches automatically
-- **Color code detection** with visual swatch preview
-- **Exclude apps** from clipboard monitoring
-- **Hotkey support** for history, snippets, and snippet folders
-- **Auto-launch** on system startup
-- **Developer Mode** — toggle in Settings → General unlocking Stats for Nerds (radar chart, hourly/daily activity, feature counters with JSON export), TipKit management, database info, hotkey disable for side-by-side testing, and a vibing Clippy Easter egg
-- **TipKit onboarding** — contextual tips in Preferences for feature discovery
 
 ---
 
@@ -202,9 +138,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## Roadmap
+## Contributing
 
-See [Issues](https://github.com/jeanluciradukunda/Clipy/issues) for the full feature roadmap. Look for `good first issue` labels if you'd like to contribute.
+Ideas and bugs go in [Issues](https://github.com/jeanluciradukunda/Clipy/issues); `good first issue` marks a place to
+start. To build Clipy, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
