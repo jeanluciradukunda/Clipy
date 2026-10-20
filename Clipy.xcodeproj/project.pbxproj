@@ -75,6 +75,7 @@
 		FA610702C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */; };
 		FA610702C1F0DE0000000098 /* StatsRadarSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000098 /* StatsRadarSpec.swift */; };
 		FA610702C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */; };
+		FA610702C1F0DE0000000127 /* ClipKeySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000127 /* ClipKeySpec.swift */; };
 		FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167911D3ABEB10049FA14 /* FolderSpec.swift */; };
 		FA6167941D3ACCB90049FA14 /* DraggedDataSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */; };
 		FA6167961D3ACDD80049FA14 /* SnippetSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6167951D3ACDD80049FA14 /* SnippetSpec.swift */; };
@@ -229,6 +230,7 @@
 		FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreferenceSidebarRowSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000098 /* StatsRadarSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StatsRadarSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchPanelFocusLossSpec.swift; sourceTree = "<group>"; };
+		FA610701C1F0DE0000000127 /* ClipKeySpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipKeySpec.swift; sourceTree = "<group>"; };
 		FA6167911D3ABEB10049FA14 /* FolderSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FolderSpec.swift; sourceTree = "<group>"; };
 		D1A0DE052E5A4B6C00A1B2C3 /* TestIsolationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolationSpec.swift; sourceTree = "<group>"; };
 		D1A0DE032E5A4B6C00A1B2C3 /* TestIsolationConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestIsolationConfiguration.swift; sourceTree = "<group>"; };
@@ -644,6 +646,7 @@
 				FA610701C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift */,
 				FA610701C1F0DE0000000098 /* StatsRadarSpec.swift */,
 				FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */,
+				FA610701C1F0DE0000000127 /* ClipKeySpec.swift */,
 				FA6167931D3ACCB90049FA14 /* DraggedDataSpec.swift */,
 				FA6167911D3ABEB10049FA14 /* FolderSpec.swift */,
 				D1A0DE052E5A4B6C00A1B2C3 /* TestIsolationSpec.swift */,
@@ -1013,6 +1016,7 @@
 				FA610702C1F0DE0000000106 /* PreferenceSidebarRowSpec.swift in Sources */,
 				FA610702C1F0DE0000000098 /* StatsRadarSpec.swift in Sources */,
 				FA610702C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift in Sources */,
+				FA610702C1F0DE0000000127 /* ClipKeySpec.swift in Sources */,
 				FA6167921D3ABEB10049FA14 /* FolderSpec.swift in Sources */,
 				FA08EDF81D1FED7D000D1D13 /* HotKeyServiceSpec.swift in Sources */,
 				D1A0DE062E5A4B6C00A1B2C3 /* TestIsolationSpec.swift in Sources */,
