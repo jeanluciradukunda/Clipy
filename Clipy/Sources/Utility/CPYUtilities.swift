@@ -80,6 +80,7 @@ final class CPYUtilities {
     }
 
     static func applicationSupportFolder() -> String {
+        if TestIsolation.isRunningTests { return TestIsolation.supportFolder }
         let paths = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true)
         let basePath: String = paths.first ?? NSTemporaryDirectory()
         return (basePath as NSString).appendingPathComponent(Constants.Application.supportDirectoryName)
