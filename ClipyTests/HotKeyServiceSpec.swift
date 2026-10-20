@@ -9,6 +9,26 @@ import Carbon
 class HotKeyServiceSpec: QuickSpec {
     override class func spec() {
 
+        beforeEach {
+            UserDefaults.standard.set(false, forKey: Constants.Developer.hotkeysDisabled)
+        }
+
+        afterEach {
+            UserDefaults.standard.removeObject(forKey: Constants.Developer.hotkeysDisabled)
+        }
+
+        describe("Debug defaults") {
+            it("starts Clipy Dev with its global hotkeys off") {
+                let defaults = UserDefaults(suiteName: "HotKeyServiceSpec.debugDefaults")!
+                AppEnvironment.push(defaults: defaults)
+                defer { AppEnvironment.popLast() }
+
+                CPYUtilities.registerUserDefaultKeys()
+
+                expect(defaults.bool(forKey: Constants.Developer.hotkeysDisabled)) == true
+            }
+        }
+
         describe("Migrate HotKey") {
 
             beforeEach {
