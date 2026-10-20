@@ -42,7 +42,7 @@ touching your history.
 
 1. Quit Clipy (click the menu bar icon → Quit, or `Cmd+Q`)
 2. Drag Clipy from Applications to Trash
-3. Remove your history, snippets and settings (optional):
+3. Remove your history, snippets and settings (optional; this also deletes any plugins you wrote in `~/.clipy/plugins`):
    ```bash
    rm -rf ~/Library/Application\ Support/com.clipy-app.Clipy ~/Library/Application\ Support/Clipy ~/.clipy
    defaults delete com.clipy-app.Clipy
