@@ -28,7 +28,12 @@ class PluginManager: ObservableObject {
 
     /// Base directory for user plugins.
     static var pluginsDirectoryURL: URL {
-        URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".clipy/plugins", isDirectory: true)
+        #if DEBUG
+            let folder = ".clipy-dev/plugins"
+        #else
+            let folder = ".clipy/plugins"
+        #endif
+        return URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(folder, isDirectory: true)
     }
 
     private var fileWatcher: DispatchSourceFileSystemObject?
