@@ -12,7 +12,8 @@ pod install
 open Clipy.xcworkspace   # the workspace, not the .xcodeproj
 ```
 
-Pick the **Clipy** scheme and press `Cmd+R`. The Debug build is **Clipy Dev**, with an orange DEV badge in the menu bar.
+**If you use Clipy every day, read the next section before your first build.** Then pick the **Clipy** scheme and press
+`Cmd+R`. The Debug build is **Clipy Dev**, with an orange DEV badge in the menu bar.
 
 ## Run Clipy Dev beside your everyday Clipy
 
@@ -33,7 +34,8 @@ A few things are still shared or can reach the other app, so before you start:
 3. **Answer "Don't Launch"** if Clipy Dev asks to launch at login. A yes registers your build folder as a login item.
 4. **Don't press Update Now in Clipy Dev's Updates tab.** It replaces `/Applications/Clipy.app`.
 5. **Don't run the tests locally** (`Cmd+U`) yet. They run inside Clipy Dev and change its real settings and clip
-   folder. Push your branch, and CI runs them.
+   folder. CI builds every pull request but doesn't run the tests yet, so list the specs you added and a maintainer
+   runs them.
 
 Clips saved by Clipy 2.2.0 or earlier keep their files in `ClipyDev/`, and Clipy Dev's clean-up deletes them once Clipy
 Dev has its own history. The backup covers them.
@@ -55,11 +57,12 @@ Keep the backup off cloud-synced folders: your clipboard history can hold passwo
 
 ### Restore
 
-Quit both apps, set `B` to your backup folder, then:
+This replaces the live folders with the backup's, so anything newer is lost. Quit both apps, set `B` to your backup
+folder (for example `B=~/ClipyBackup-20261020-1457`), then:
 
 ```bash
-cd ~/Library/Application\ Support
-for d in com.clipy-app.Clipy Clipy com.clipy-app.Clipy-Dev.debug ClipyDev; do [ -d "$B/$d" ] && rm -rf "$d" && ditto "$B/$d" "$d"; done
+A=~/Library/Application\ Support && [ -d "${B:?set B to your backup folder}" ]
+for d in com.clipy-app.Clipy Clipy com.clipy-app.Clipy-Dev.debug ClipyDev; do [ -d "$B/$d" ] && rm -rf "$A/$d" && ditto "$B/$d" "$A/$d"; done
 defaults import com.clipy-app.Clipy "$B/com.clipy-app.Clipy.plist"
 defaults import com.clipy-app.Clipy-Dev.debug "$B/com.clipy-app.Clipy-Dev.debug.plist"
 ```
