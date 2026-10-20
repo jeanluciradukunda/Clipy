@@ -10,11 +10,11 @@ class HotKeyServiceSpec: QuickSpec {
     override class func spec() {
 
         beforeEach {
-            UserDefaults.standard.set(false, forKey: Constants.Developer.hotkeysDisabled)
+            AppEnvironment.current.defaults.set(false, forKey: Constants.Developer.hotkeysDisabled)
         }
 
         afterEach {
-            UserDefaults.standard.removeObject(forKey: Constants.Developer.hotkeysDisabled)
+            AppEnvironment.current.defaults.removeObject(forKey: Constants.Developer.hotkeysDisabled)
         }
 
         describe("Debug defaults") {
