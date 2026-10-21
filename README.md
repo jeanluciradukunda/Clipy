@@ -30,15 +30,8 @@
 
 ### Build from Source
 
-```bash
-git clone https://github.com/jeanluciradukunda/Clipy.git && cd Clipy
-bundle install --path=vendor/bundle
-bundle exec pod install
-open Clipy.xcworkspace
-# Build (Cmd+B) and Run (Cmd+R) the "Clipy" scheme
-```
-
-**Requires**: macOS 14.0 Sonoma+ and Xcode 15.0+
+See [CONTRIBUTING.md](CONTRIBUTING.md). It covers setup and running a Debug build beside the release app without
+touching your history.
 
 ### Updating
 
@@ -205,49 +198,7 @@ Default global hotkeys (configurable in Settings → Shortcuts):
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup instructions.
-
-```bash
-bundle install --path=vendor/bundle
-bundle exec pod install
-open Clipy.xcworkspace
-```
-
-### Dev Build vs Release
-
-Both can coexist on the same Mac with separate data. To run both simultaneously, enable Developer Mode in the dev build's settings and toggle **"Disable Global Hotkeys"** — this prevents hotkey conflicts.
-
-| | **Clipy** (Release) | **Clipy Dev** (Debug) |
-|---|---|---|
-| Bundle ID | `com.clipy-app.Clipy` | `com.clipy-app.Clipy-Dev.debug` |
-| Data directory | `~/Library/Application Support/com.clipy-app.Clipy/` | `~/Library/Application Support/com.clipy-app.Clipy-Dev.debug/` |
-| Menu bar | Standard icon | Icon with orange **DEV** badge |
-| Settings title | "Clipy Settings" | "Clipy Dev Settings" |
-| Install | DMG from Releases | `Cmd+R` in Xcode |
-| Accessibility | Persists across updates (Developer ID-signed) | Persists across rebuilds (same local signing identity) |
-
-> **Note for developers:** Both debug builds (local Xcode signing) and release DMGs (Developer ID signing) use a consistent identity, so Accessibility permission persists across updates and rebuilds.
-
-### Debugging
-
-```bash
-log stream --process Clipy --predicate 'subsystem == "com.clipy-app.Clipy"' --level debug
-```
-
-### Project Structure
-
-```
-Clipy/Sources/
-├── Models/          # Realm models (CPYClip, CPYFolder, CPYSnippet)
-├── Services/        # ClipService, PasteService, HotKeyService, VaultAuthService
-├── Views/
-│   ├── SearchPanel/       # Search UI, syntax highlighter, content detection
-│   └── SnippetPicker/     # Snippet browser panel
-├── Snippets/        # Snippet editor
-├── Preferences/     # Settings window
-├── Extensions/      # Type helpers, NSImage resize
-└── Managers/        # Status bar menu
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
