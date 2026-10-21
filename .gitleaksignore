@@ -1,0 +1,23 @@
+# Reviewed false positives (git-bundle-backup), one gitleaks fingerprint per line: CocoaPods checksums in Podfile.lock and Manifest.lock, Xcode object ids in project.pbxproj, Realm source code
+14d94c2de7c66d503ea9c933c17dd79f03e6d326:Pods/Pods.xcodeproj/project.pbxproj:square-access-token:558
+342fb1487b6caf6a144a1f2b1874454221ac7118:Podfile.lock:generic-api-key:48
+3f2fbd4f89375039e149fdef8973404d6e09fbfb:Podfile.lock:generic-api-key:48
+447ace6cde7ebe1fa4dbf1dfe79ad8c2fefdd214:Podfile.lock:generic-api-key:100
+447ace6cde7ebe1fa4dbf1dfe79ad8c2fefdd214:Pods/Manifest.lock:generic-api-key:100
+7df3596f2a9f58d4e23eb42449cd3bb37a17e8b9:Podfile.lock:generic-api-key:74
+837f5c028c986305e9c68b9ff30164fb3320f81a:Pods/Pods.xcodeproj/project.pbxproj:square-access-token:558
+923cdfc87de17eebb061409aae5be700c72e53ed:Pods/Pods.xcodeproj/project.pbxproj:square-access-token:558
+9b2f68f777a5b3bf75ed0f12d507409cfc657be2:Podfile.lock:generic-api-key:63
+9b2f68f777a5b3bf75ed0f12d507409cfc657be2:Pods/Manifest.lock:generic-api-key:63
+9f52fe3738297106caa3cf78fef9a3f6842a72f7:Pods/Pods.xcodeproj/project.pbxproj:square-access-token:3584
+9f52fe3738297106caa3cf78fef9a3f6842a72f7:Pods/Pods.xcodeproj/project.pbxproj:square-access-token:549
+a7f927672e1542f0ec75cc6ee12428c0331e70e8:Podfile.lock:generic-api-key:86
+a7f927672e1542f0ec75cc6ee12428c0331e70e8:Pods/Manifest.lock:generic-api-key:86
+ae51f28ed150709d6557245dc5ff41d6f9ea7d63:Podfile.lock:generic-api-key:62
+ae51f28ed150709d6557245dc5ff41d6f9ea7d63:Pods/Manifest.lock:generic-api-key:62
+c68cb4307d388a6f1f0d70cf27ee6049b3ba2aa1:Podfile.lock:generic-api-key:48
+ea6ab2318810b10f970f751575e89f864c33b516:Pods/Realm/include/core/realm/table.hpp:generic-api-key:917
+f508e0bd6ebcbd4bdda1a947f6ca796603b00813:Podfile.lock:generic-api-key:65
+f508e0bd6ebcbd4bdda1a947f6ca796603b00813:Pods/Manifest.lock:generic-api-key:65
+f508e0bd6ebcbd4bdda1a947f6ca796603b00813:Pods/Pods.xcodeproj/project.pbxproj:square-access-token:557
+fc733fd70175ccd3ca7ba994784eecfdc4b593fa:Pods/Manifest.lock:generic-api-key:66
