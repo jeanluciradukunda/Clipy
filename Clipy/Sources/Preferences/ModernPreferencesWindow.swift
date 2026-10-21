@@ -1510,7 +1510,7 @@ struct UpdatesPreferencesView: View {
 
                 await MainActor.run {
                     latestVersion = version
-                    if version == currentVersion {
+                    if !UpdateVerifier.isNewer(version, than: currentVersion) {
                         state = .upToDate
                     } else if let dmgURL {
                         state = .available(version: version, downloadURL: dmgURL)
@@ -1543,18 +1543,14 @@ struct UpdatesPreferencesView: View {
                 // Mount DMG
                 let mountProcess = Process()
                 mountProcess.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
-                mountProcess.arguments = ["attach", dmgPath.path, "-nobrowse", "-quiet"]
+                mountProcess.arguments = ["attach", dmgPath.path, "-nobrowse", "-plist"]
                 let mountPipe = Pipe()
                 mountProcess.standardOutput = mountPipe
                 try mountProcess.run()
+                let attachOutput = mountPipe.fileHandleForReading.readDataToEndOfFile()
                 mountProcess.waitUntilExit()
 
-                // Find mounted volume
-                let volumePath = try FileManager.default.contentsOfDirectory(atPath: "/Volumes")
-                    .first(where: { $0.hasPrefix("Clipy") })
-                    .map { "/Volumes/\($0)" }
-
-                guard let volume = volumePath else {
+                guard let volume = UpdateVerifier.mountPoint(fromAttachPlist: attachOutput) else {
                     await MainActor.run { state = .failed(message: "Could not mount DMG") }
                     return
                 }
@@ -1579,6 +1575,20 @@ struct UpdatesPreferencesView: View {
                 try FileManager.default.createDirectory(at: stagingDir, withIntermediateDirectories: true)
                 let stagedURL = stagingDir.appendingPathComponent(appName)
                 try FileManager.default.copyItem(at: URL(fileURLWithPath: sourceApp), to: stagedURL)
+
+                do {
+                    try UpdateVerifier.verify(appAt: stagedURL)
+                    try UpdateVerifier.verifyNewer(appAt: stagedURL, than: currentVersion)
+                } catch {
+                    try? FileManager.default.removeItem(at: stagingDir)
+                    let detach = Process()
+                    detach.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+                    detach.arguments = ["detach", volume, "-quiet"]
+                    try? detach.run()
+                    detach.waitUntilExit()
+                    await MainActor.run { state = .failed(message: "The update could not be verified as a newer, signed Clipy, so it was not installed") }
+                    return
+                }
 
                 // Unmount DMG before the swap so a failure cannot leak a mounted volume
                 let detachProcess = Process()
