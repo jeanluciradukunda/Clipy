@@ -122,8 +122,8 @@ final class ClipService {
             .filter { !$0.thumbnailPath.isEmpty }
             .map { $0.thumbnailPath }
             .forEach { ClipService.removeCachedThumbnail(forKey: $0) }
-        // Capture data file paths before the Realm records are deleted
-        let dataPaths = clips.map { $0.dataPath }.filter { !$0.isEmpty }
+        // Results is lazy: copy the paths out before the delete empties it
+        let dataPaths = Array(clips.map { $0.dataPath }.filter { !$0.isEmpty })
         // Delete Realm
         realm.transaction { realm.delete(clips) }
         // Delete stored data files directly: cleanFiles refuses to sweep when the
