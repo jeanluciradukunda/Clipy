@@ -151,6 +151,7 @@ final class ClipboardQueueService: ObservableObject {
 
         // Increment ClipService's change count so it doesn't re-record our paste
         AppEnvironment.current.clipService.incrementChangeCount()
+        MainActor.assumeIsolated { UsageMetricsService.shared.track(.queueUsed) }
 
         stopCollecting()
 
@@ -173,6 +174,7 @@ final class ClipboardQueueService: ObservableObject {
         pasteboard.clearContents()
         pasteboard.setString(item.content, forType: .string)
         sequentialIndex += 1
+        MainActor.assumeIsolated { UsageMetricsService.shared.track(.queueUsed) }
 
         // Increment ClipService's change count so it doesn't re-record our paste
         AppEnvironment.current.clipService.incrementChangeCount()
