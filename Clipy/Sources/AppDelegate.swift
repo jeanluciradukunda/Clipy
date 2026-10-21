@@ -231,6 +231,12 @@ extension AppDelegate: NSApplicationDelegate {
         AppEnvironment.replaceCurrent(environment: AppEnvironment.fromStorage())
         // UserDefaults
         CPYUtilities.registerUserDefaultKeys()
+        // Before the clean-up starts, so it never sees the moved files as orphans
+        if let realm = Realm.safeInstance() {
+            let legacyFolder = (CPYUtilities.applicationSupportFolder() as NSString).deletingLastPathComponent
+                + "/" + LegacyClipFolderMigration.legacyFolderName
+            LegacyClipFolderMigration.relocate(in: realm, legacyFolder: legacyFolder, folder: CPYUtilities.applicationSupportFolder())
+        }
         // Check Accessibility Permission
         AppEnvironment.current.accessibilityService.isAccessibilityEnabled(isPrompt: true)
 
