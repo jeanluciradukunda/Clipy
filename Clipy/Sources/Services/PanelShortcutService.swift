@@ -85,7 +85,7 @@ class PanelShortcutService: ObservableObject {
         default: return
         }
         if let data = try? JSONEncoder().encode(shortcut) {
-            UserDefaults.standard.set(data, forKey: key)
+            AppEnvironment.current.defaults.set(data, forKey: key)
         }
     }
 
@@ -100,7 +100,7 @@ class PanelShortcutService: ObservableObject {
     }
 
     private static func load(key: String, fallback: PanelShortcutDef) -> PanelShortcutDef {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        guard let data = AppEnvironment.current.defaults.data(forKey: key),
               let shortcut = try? JSONDecoder().decode(PanelShortcutDef.self, from: data) else {
             return fallback
         }
