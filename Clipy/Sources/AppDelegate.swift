@@ -149,13 +149,14 @@ class AppDelegate: NSObject, NSMenuItemValidation {
         switch snippet.type {
         case .plainText:
             let processed = SnippetVariableProcessor.process(snippet.content)
-            AppEnvironment.current.pasteService.copyToPasteboard(with: processed, concealed: snippet.folder?.isVault == true)
+            AppEnvironment.current.pasteService.copyToPasteboard(with: processed, concealed: snippet.isInVault)
             AppEnvironment.current.pasteService.paste()
         case .script:
             let script = snippet.content
             let shell = snippet.scriptShell
             let timeout = TimeInterval(snippet.scriptTimeout)
             let ephemeral = snippet.isEphemeral
+            let concealed = snippet.isInVault
             ScriptExecutionService.execute(script: script, shell: shell, timeout: timeout) { result in
                 if result.timedOut {
                     Self.showScriptError("Script timed out after \(Int(timeout))s")
@@ -165,7 +166,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
                 } else if ephemeral {
                     AppEnvironment.current.pasteService.pasteEphemeral(with: result.output)
                 } else {
-                    AppEnvironment.current.pasteService.copyToPasteboard(with: result.output)
+                    AppEnvironment.current.pasteService.copyToPasteboard(with: result.output, concealed: concealed)
                     AppEnvironment.current.pasteService.paste()
                 }
             }

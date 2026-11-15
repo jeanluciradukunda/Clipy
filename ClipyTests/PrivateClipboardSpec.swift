@@ -1,5 +1,6 @@
 import Quick
 import Nimble
+import RealmSwift
 @testable import Clipy
 
 class PrivateClipboardSpec: QuickSpec {
@@ -36,6 +37,21 @@ class PrivateClipboardSpec: QuickSpec {
 
             it("marks a vault snippet so history skips it") {
                 expect(ClipService.isMarkedPrivate(pastedTypes(concealed: true))) == true
+            }
+
+            it("treats a snippet in a vault folder as concealed") {
+                let vault = CPYFolder()
+                vault.isVault = true
+                let inVault = CPYSnippet()
+                vault.snippets.append(inVault)
+                let plain = CPYFolder()
+                let outside = CPYSnippet()
+                plain.snippets.append(outside)
+                Realm.Configuration.defaultConfiguration.inMemoryIdentifier = NSUUID().uuidString
+                let realm = try! Realm()
+                realm.transaction { realm.add([vault, plain]) }
+                expect(inVault.isInVault) == true
+                expect(outside.isInVault) == false
             }
 
             it("leaves an ordinary snippet capturable") {

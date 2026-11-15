@@ -40,6 +40,11 @@ final class CPYSnippet: Object {
         return folders.first
     }
 
+    /// Pastes of a vault snippet, and of its script output, carry the Concealed marker so history skips them.
+    var isInVault: Bool {
+        return folder?.isVault == true
+    }
+
     var type: SnippetType {
         get { SnippetType(rawValue: snippetType) ?? .plainText }
         set { snippetType = newValue.rawValue }
