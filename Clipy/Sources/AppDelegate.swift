@@ -149,7 +149,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
         switch snippet.type {
         case .plainText:
             let processed = SnippetVariableProcessor.process(snippet.content)
-            AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
+            AppEnvironment.current.pasteService.copyToPasteboard(with: processed, concealed: snippet.folder?.isVault == true)
             AppEnvironment.current.pasteService.paste()
         case .script:
             let script = snippet.content

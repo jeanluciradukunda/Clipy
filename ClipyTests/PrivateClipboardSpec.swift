@@ -24,5 +24,23 @@ class PrivateClipboardSpec: QuickSpec {
                 expect(ClipService.isMarkedPrivate(pasteboard.types ?? [])) == true
             }
         }
+
+        describe("Pasting a snippet") {
+            func pastedTypes(concealed: Bool) -> [NSPasteboard.PasteboardType] {
+                let pasteboard = NSPasteboard(name: NSPasteboard.Name("com.clipy-app.Clipy.tests.\(UUID().uuidString)"))
+                defer { pasteboard.releaseGlobally() }
+                AppEnvironment.current.pasteService.copyToPasteboard(with: "vault text", concealed: concealed, on: pasteboard)
+                expect(pasteboard.string(forType: .string)) == "vault text"
+                return pasteboard.types ?? []
+            }
+
+            it("marks a vault snippet so history skips it") {
+                expect(ClipService.isMarkedPrivate(pastedTypes(concealed: true))) == true
+            }
+
+            it("leaves an ordinary snippet capturable") {
+                expect(ClipService.isMarkedPrivate(pastedTypes(concealed: false))) == false
+            }
+        }
     }
 }

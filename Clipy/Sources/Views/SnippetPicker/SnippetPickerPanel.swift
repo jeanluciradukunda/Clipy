@@ -290,7 +290,7 @@ class SnippetPickerViewModel: ObservableObject {
                     }
                 } else {
                     let processed = SnippetVariableProcessor.process(snippet.content)
-                    AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
+                    AppEnvironment.current.pasteService.copyToPasteboard(with: processed, concealed: folder.isVault)
                     SnippetPickerWindowController.shared.dismissAndPaste()
                 }
                 return

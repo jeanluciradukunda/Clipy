@@ -82,13 +82,17 @@ extension PasteService {
         }
     }
 
-    func copyToPasteboard(with string: String) {
+    /// `concealed` adds the nspasteboard.org Concealed marker, so Clipy's own history and other clipboard managers
+    /// that honour it skip the write (used for vault snippets).
+    func copyToPasteboard(with string: String, concealed: Bool = false, on pasteboard: NSPasteboard = .general) {
         lock.lock(); defer { lock.unlock() }
 
-        let pasteboard = NSPasteboard.general
-        pasteboard.declareTypes([.clipyString], owner: nil)
+        let types: [NSPasteboard.PasteboardType] = concealed ? [.clipyString, Self.concealedType] : [.clipyString]
+        pasteboard.declareTypes(types, owner: nil)
         pasteboard.setString(string, forType: .clipyString)
     }
+
+    static let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
 
     func copyToPasteboard(with clip: CPYClip) {
         lock.lock(); defer { lock.unlock() }
