@@ -45,6 +45,12 @@ final class VaultAuthService {
         unlockedFolderIDs.contains(folderID)
     }
 
+    /// Whether a snippet may be shown or pasted now: always outside a vault, only while its vault is unlocked.
+    func allows(_ snippet: CPYSnippet) -> Bool {
+        guard let folder = snippet.folder, folder.isVault else { return true }
+        return isUnlocked(folder.identifier)
+    }
+
     func lockAll() {
         unlockedFolderIDs.removeAll()
         didChangeLocks()

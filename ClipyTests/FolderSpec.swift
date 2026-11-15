@@ -474,9 +474,17 @@ class FolderSpec: QuickSpec {
                     model.load()
                     model.selectedFolderID = vaultID
                     model.installTemplate(SnippetTemplateLibrary.templates[0])
-                    return model.expandedFolderIDs.contains(vaultID)
+                    return model.expandedFolderIDs.contains(vaultID) || model.selectedSnippetID != nil
                 }
                 expect(expanded) == false
+            }
+
+            it("cannot be pasted from a menu item while locked") {
+                let realm = try! Realm()
+                let snippet = realm.object(ofType: CPYFolder.self, forPrimaryKey: vaultID)!.snippets[0]
+                let allowed = MainActor.assumeIsolated { VaultAuthService.shared.allows(snippet) }
+                expect(allowed) == false
+                expect(MainActor.assumeIsolated { VaultAuthService.shared.allows(CPYSnippet()) }) == true
             }
         }
     }

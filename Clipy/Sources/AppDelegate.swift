@@ -141,7 +141,8 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             NSSound.beep()
             return
         }
-        guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey) else {
+        guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey),
+              MainActor.assumeIsolated({ VaultAuthService.shared.allows(snippet) }) else {
             NSSound.beep()
             return
         }

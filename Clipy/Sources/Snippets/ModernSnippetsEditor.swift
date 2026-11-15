@@ -191,8 +191,8 @@ class SnippetsEditorViewModel: ObservableObject {
         // Select the new snippet
         if let folderItem = folders.first(where: { $0.id == folderID }),
            let newSnippet = folderItem.snippets.last {
-            selectSnippet(newSnippet)
             if !folderItem.isVault || VaultAuthService.shared.isUnlocked(folderID) {
+                selectSnippet(newSnippet)
                 expandedFolderIDs.insert(folderID)
             }
         }
