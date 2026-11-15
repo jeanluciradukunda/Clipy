@@ -432,5 +432,52 @@ class FolderSpec: QuickSpec {
                 expect(unlocked) == false
             }
         }
+        describe("Locked vault content") {
+            var vaultID = ""
+
+            beforeEach {
+                let folder = CPYFolder()
+                folder.title = "Vault"
+                folder.isVault = true
+                let snippet = CPYSnippet()
+                snippet.title = "token"
+                snippet.content = "zzz-vault-content"
+                folder.snippets.append(snippet)
+                let realm = try! Realm()
+                realm.transaction { realm.add(folder) }
+                vaultID = folder.identifier
+                MainActor.assumeIsolated { VaultAuthService.shared.lockAll() }
+            }
+
+            it("is not expanded when the picker opens on the vault folder") {
+                let expanded: Bool = MainActor.assumeIsolated {
+                    let model = SnippetPickerViewModel()
+                    model.load(filterFolderID: vaultID)
+                    return model.expandedFolderIDs.contains(vaultID)
+                }
+                expect(expanded) == false
+            }
+
+            it("does not match the editor's sidebar filter") {
+                let listed: Bool = MainActor.assumeIsolated {
+                    let model = SnippetsEditorViewModel()
+                    model.load()
+                    model.sidebarFilter = "zzz-vault"
+                    return model.filteredFolders.contains { $0.id == vaultID }
+                }
+                expect(listed) == false
+            }
+
+            it("is not expanded by installing a template into the vault folder") {
+                let expanded: Bool = MainActor.assumeIsolated {
+                    let model = SnippetsEditorViewModel()
+                    model.load()
+                    model.selectedFolderID = vaultID
+                    model.installTemplate(SnippetTemplateLibrary.templates[0])
+                    return model.expandedFolderIDs.contains(vaultID)
+                }
+                expect(expanded) == false
+            }
+        }
     }
 }

@@ -153,7 +153,9 @@ class SnippetPickerViewModel: ObservableObject {
         }
 
         // If opened for a specific folder, auto-expand it
-        if let filterID = filterFolderID {
+        if let filterID = filterFolderID,
+           let folder = allFolders.first(where: { $0.id == filterID }),
+           !folder.isVault || VaultAuthService.shared.isUnlocked(filterID) {
             expandedFolderIDs = [filterID]
         }
 
