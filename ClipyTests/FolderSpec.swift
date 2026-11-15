@@ -244,5 +244,55 @@ class FolderSpec: QuickSpec {
 
         }
 
+        describe("Removing vault protection") {
+            var original: ((String, @escaping (Bool) -> Void) -> Void)!
+
+            beforeEach {
+                MainActor.assumeIsolated {
+                    original = VaultAuthService.shared.evaluate
+                    VaultAuthService.shared.lockAll()
+                }
+            }
+
+            afterEach {
+                MainActor.assumeIsolated {
+                    VaultAuthService.shared.evaluate = original
+                    VaultAuthService.shared.lockAll()
+                }
+            }
+
+            func vaultFolder() -> CPYFolder {
+                let folder = CPYFolder()
+                folder.title = "Vault"
+                folder.isVault = true
+                let realm = try! Realm()
+                realm.transaction { realm.add(folder) }
+                return folder
+            }
+
+            it("keeps the folder a vault when authentication fails") {
+                let folder = vaultFolder()
+                MainActor.assumeIsolated {
+                    VaultAuthService.shared.evaluate = { _, done in done(false) }
+                    SnippetsEditorViewModel().toggleVault(folder.identifier)
+                }
+                expect(folder.isVault) == true
+            }
+
+            it("asks again even when the folder was unlocked earlier") {
+                let folder = vaultFolder()
+                var prompts = 0
+                MainActor.assumeIsolated {
+                    VaultAuthService.shared.evaluate = { _, done in
+                        prompts += 1
+                        done(true)
+                    }
+                    VaultAuthService.shared.authenticate(folderID: folder.identifier) { _ in }
+                    SnippetsEditorViewModel().toggleVault(folder.identifier)
+                }
+                expect(prompts) == 2
+                expect(folder.isVault) == false
+            }
+        }
     }
 }

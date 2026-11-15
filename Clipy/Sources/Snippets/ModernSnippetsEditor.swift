@@ -242,11 +242,20 @@ class SnippetsEditorViewModel: ObservableObject {
     func toggleVault(_ folderID: String) {
         guard let realm = Realm.safeInstance() else { return }
         guard let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folderID) else { return }
-        realm.transaction { folder.isVault = !folder.isVault }
-        if !folder.isVault {
+        guard folder.isVault else {
+            realm.transaction { folder.isVault = true }
             VaultAuthService.shared.lock(folderID)
+            load()
+            return
         }
-        load()
+        let reason = "Remove vault protection from \"\(folder.title)\""
+        VaultAuthService.shared.authenticate(folderID: folderID, reason: reason, force: true) { [weak self] success in
+            guard success, let realm = Realm.safeInstance(),
+                  let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folderID) else { return }
+            realm.transaction { folder.isVault = false }
+            VaultAuthService.shared.lock(folderID)
+            self?.load()
+        }
     }
 
     func renameFolder(_ folderID: String, to newTitle: String) {
