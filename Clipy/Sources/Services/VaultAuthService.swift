@@ -44,7 +44,7 @@ final class VaultAuthService {
             return
         }
         evaluate(reason) { [weak self] success in
-            if success {
+            if success && !force {
                 UsageMetricsService.shared.track(.vaultUnlocked)
                 self?.unlockedFolderIDs.insert(folderID)
                 logger.info("Vault folder unlocked: \(folderID)")

@@ -279,6 +279,17 @@ class FolderSpec: QuickSpec {
                 expect(folder.isVault) == true
             }
 
+            it("keeps protection when the fresh prompt is refused for an unlocked folder") {
+                let folder = vaultFolder()
+                MainActor.assumeIsolated {
+                    VaultAuthService.shared.evaluate = { _, done in done(true) }
+                    VaultAuthService.shared.authenticate(folderID: folder.identifier) { _ in }
+                    VaultAuthService.shared.evaluate = { _, done in done(false) }
+                    SnippetsEditorViewModel().toggleVault(folder.identifier)
+                }
+                expect(folder.isVault) == true
+            }
+
             it("asks again even when the folder was unlocked earlier") {
                 let folder = vaultFolder()
                 var prompts = 0
