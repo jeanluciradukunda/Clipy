@@ -1,3 +1,4 @@
+import AppKit
 import Quick
 import Nimble
 import RealmSwift
@@ -303,6 +304,53 @@ class FolderSpec: QuickSpec {
                 }
                 expect(prompts) == 2
                 expect(folder.isVault) == false
+            }
+        }
+        describe("Vault unlock lifetime") {
+            var original: ((String, @escaping (Bool) -> Void) -> Void)!
+
+            beforeEach {
+                MainActor.assumeIsolated {
+                    original = VaultAuthService.shared.evaluate
+                    VaultAuthService.shared.evaluate = { _, done in done(true) }
+                    VaultAuthService.shared.lockAll()
+                }
+            }
+
+            afterEach {
+                MainActor.assumeIsolated {
+                    VaultAuthService.shared.evaluate = original
+                    VaultAuthService.shared.lockAll()
+                }
+            }
+
+            it("locks every vault when the Mac goes to sleep") {
+                let unlocked = { MainActor.assumeIsolated { VaultAuthService.shared.isUnlocked("vault-1") } }
+                MainActor.assumeIsolated { VaultAuthService.shared.authenticate(folderID: "vault-1") { _ in } }
+                expect(unlocked()) == true
+
+                NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
+
+                expect(unlocked()).toEventually(beFalse())
+            }
+
+            it("locks a vault folder collapsed from the keyboard") {
+                let folder = CPYFolder()
+                folder.isVault = true
+                let realm = try! Realm()
+                realm.transaction { realm.add(folder) }
+
+                let stillUnlocked: Bool = MainActor.assumeIsolated {
+                    let model = SnippetsEditorViewModel()
+                    model.load()
+                    VaultAuthService.shared.authenticate(folderID: folder.identifier) { _ in }
+                    model.selectedFolderID = folder.identifier
+                    model.selectedSnippetID = nil
+                    model.expandedFolderIDs.insert(folder.identifier)
+                    model.collapseSelected()
+                    return VaultAuthService.shared.isUnlocked(folder.identifier)
+                }
+                expect(stillUnlocked) == false
             }
         }
     }

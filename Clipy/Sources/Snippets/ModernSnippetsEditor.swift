@@ -367,6 +367,9 @@ class SnippetsEditorViewModel: ObservableObject {
             }
         } else if let fid = selectedFolderID, expandedFolderIDs.contains(fid) {
             withAnimation(.easeOut(duration: 0.15)) { expandedFolderIDs.remove(fid) }
+            if folders.first(where: { $0.id == fid })?.isVault == true {
+                VaultAuthService.shared.lock(fid)
+            }
         }
     }
 
@@ -1366,6 +1369,7 @@ class ModernSnippetsWindowController: NSWindowController {
 
 extension ModernSnippetsWindowController: NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
+        VaultAuthService.shared.lockAll()
         NotificationCenter.default.post(name: Notification.Name(rawValue: Constants.Notification.closeSnippetEditor), object: nil)
         NSApp.deactivate()
     }

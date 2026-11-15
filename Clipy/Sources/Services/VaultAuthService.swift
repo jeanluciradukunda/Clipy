@@ -6,7 +6,7 @@
 //  Provides Touch ID / password authentication for vault snippet folders.
 //
 
-import Foundation
+import AppKit
 import LocalAuthentication
 import os.log
 
@@ -22,7 +22,19 @@ final class VaultAuthService {
     /// Asks the device owner to authenticate; tests replace it to avoid a real Touch ID prompt.
     var evaluate: (_ reason: String, _ completion: @escaping (Bool) -> Void) -> Void = VaultAuthService.evaluateDeviceOwner
 
-    private init() {}
+    private init() {
+        let workspace = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification,
+                     NSWorkspace.sessionDidResignActiveNotification] {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.lockAll() }
+            }
+        }
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.apple.screenIsLocked"), object: nil,
+                                                            queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.lockAll() }
+        }
+    }
 
     func isUnlocked(_ folderID: String) -> Bool {
         unlockedFolderIDs.contains(folderID)
