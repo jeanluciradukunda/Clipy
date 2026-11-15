@@ -275,7 +275,9 @@ struct SnippetTemplateLibrary {
             shell: "/bin/bash",
             content: """
             #!/bin/bash
-            TIMESTAMP=$(printf '%s' "$CLIPBOARD" | tr -d '[:space:]')
+            TIMESTAMP="$CLIPBOARD"
+            TIMESTAMP="${TIMESTAMP#"${TIMESTAMP%%[![:space:]]*}"}"
+            TIMESTAMP="${TIMESTAMP%"${TIMESTAMP##*[![:space:]]}"}"
             case "$TIMESTAMP" in
                 ''|*[!0-9]*) echo "[Invalid timestamp]"; exit 0 ;;
             esac

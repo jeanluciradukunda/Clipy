@@ -35,6 +35,7 @@ class SnippetSpec: QuickSpec {
 
                 expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("marker").path)) == false
                 expect(output) == "[Invalid timestamp]"
+                expect(run(clipboard: "17000 00000", in: dir)) == "[Invalid timestamp]"
             }
 
             it("still converts second and millisecond timestamps") {
