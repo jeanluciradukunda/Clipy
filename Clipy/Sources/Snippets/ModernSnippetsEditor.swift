@@ -34,6 +34,25 @@ class SnippetsEditorViewModel: ObservableObject {
     @Published var isRunningTest = false
     @Published var showingTemplates = false
 
+    private let vaultLockObserver = NotificationObserver(name: VaultAuthService.didLock)
+
+    init() {
+        vaultLockObserver.handler = { [weak self] in self?.closeLockedVaults() }
+    }
+
+    /// Collapses vault folders that are locked now and clears a selected snippet that sits in one.
+    func closeLockedVaults() {
+        let locked = Set(folders.filter { $0.isVault && !VaultAuthService.shared.isUnlocked($0.id) }.map(\.id))
+        expandedFolderIDs.subtract(locked)
+        guard let sid = selectedSnippetID,
+              folders.contains(where: { locked.contains($0.id) && $0.snippets.contains { $0.id == sid } }) else { return }
+        if hasUnsavedChanges { saveCurrentSnippet() }
+        selectedSnippetID = nil
+        editingTitle = ""
+        editingContent = ""
+        hasUnsavedChanges = false
+    }
+
     struct FolderItem: Identifiable, Hashable {
         let id: String
         var title: String
@@ -1057,7 +1076,7 @@ struct SnippetFolderRow: View {
     @State private var isEditing = false
     @State private var editedTitle = ""
     @State private var isHovered = false
-    @State private var isVaultUnlocked = false
+    private var isVaultUnlocked: Bool { VaultAuthService.shared.isUnlocked(folder.id) }
 
     var body: some View {
         VStack(spacing: 1) {
@@ -1068,7 +1087,6 @@ struct SnippetFolderRow: View {
                         VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { success in
                             DispatchQueue.main.async {
                                 if success {
-                                    isVaultUnlocked = true
                                     withAnimation(.easeOut(duration: 0.15)) { isExpanded = true }
                                 }
                                 NSApp.activate(ignoringOtherApps: true)
@@ -1081,7 +1099,6 @@ struct SnippetFolderRow: View {
                         withAnimation(.easeOut(duration: 0.15)) {
                             isExpanded.toggle()
                             if !isExpanded && folder.isVault {
-                                isVaultUnlocked = false
                                 VaultAuthService.shared.lock(folder.id)
                             }
                         }
@@ -1162,7 +1179,6 @@ struct SnippetFolderRow: View {
                     if !folder.isVault {
                         // Becoming vault — collapse and lock
                         isExpanded = false
-                        isVaultUnlocked = false
                     }
                 }
                 Divider()

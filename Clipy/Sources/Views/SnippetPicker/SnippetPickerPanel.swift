@@ -61,6 +61,16 @@ class SnippetPickerViewModel: ObservableObject {
     @Published var searchText = ""
     @Published var folders = [PickerFolder]()
     @Published var expandedFolderIDs = Set<String>()
+
+    private let vaultLockObserver = NotificationObserver(name: VaultAuthService.didLock)
+
+    init() {
+        vaultLockObserver.handler = { [weak self] in
+            guard let self else { return }
+            let lockedVaults = Set(self.allFolders.filter { $0.isVault && !VaultAuthService.shared.isUnlocked($0.id) }.map(\.id))
+            self.expandedFolderIDs.subtract(lockedVaults)
+        }
+    }
     @Published var selectedID: String = ""
 
     private var allFolders = [PickerFolder]()

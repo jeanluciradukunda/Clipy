@@ -352,6 +352,40 @@ class FolderSpec: QuickSpec {
                 }
                 expect(stillUnlocked) == false
             }
+
+            it("closes an open vault snippet in the editor when vaults lock") {
+                let folder = CPYFolder()
+                folder.isVault = true
+                let snippet = CPYSnippet()
+                snippet.content = "vault text"
+                folder.snippets.append(snippet)
+                let realm = try! Realm()
+                realm.transaction { realm.add(folder) }
+
+                let (expanded, selected): (Bool, String?) = MainActor.assumeIsolated {
+                    let model = SnippetsEditorViewModel()
+                    model.load()
+                    VaultAuthService.shared.authenticate(folderID: folder.identifier) { _ in }
+                    model.expandedFolderIDs.insert(folder.identifier)
+                    model.selectSnippet(model.folders.first { $0.id == folder.identifier }!.snippets[0])
+                    VaultAuthService.shared.lockAll()
+                    return (model.expandedFolderIDs.contains(folder.identifier), model.selectedSnippetID)
+                }
+                expect(expanded) == false
+                expect(selected).to(beNil())
+            }
+
+            it("ignores an authentication that finishes after a lock") {
+                var pending: ((Bool) -> Void)?
+                let unlocked: Bool = MainActor.assumeIsolated {
+                    VaultAuthService.shared.evaluate = { _, done in pending = done }
+                    VaultAuthService.shared.authenticate(folderID: "vault-2") { _ in }
+                    VaultAuthService.shared.lockAll()
+                    pending?(true)
+                    return VaultAuthService.shared.isUnlocked("vault-2")
+                }
+                expect(unlocked) == false
+            }
         }
     }
 }
