@@ -40,8 +40,9 @@ jobs:
             VERSION="${GITHUB_REF_NAME#v}"
           fi
           # Later steps expand VERSION into their scripts, so only a plain version may pass.
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.]+)?$ ]]; then
-            echo "::error::Version must look like 2.3.0 or 2.3.0-beta.1"
+          # CFBundleVersion takes numbers only, so a prerelease suffix is refused too.
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version must look like 2.3.0"
             exit 1
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
