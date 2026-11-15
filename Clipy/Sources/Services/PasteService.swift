@@ -138,8 +138,8 @@ extension PasteService {
     /// Paste a string ephemerally — it goes to the pasteboard and triggers ⌘V,
     /// but ClipService will NOT store it in history. Optionally auto-clears the
     /// pasteboard after a delay.
-    func pasteEphemeral(with string: String) {
-        copyToPasteboard(with: string)
+    func pasteEphemeral(with string: String, concealed: Bool = false) {
+        copyToPasteboard(with: string, concealed: concealed)
         // After the write: writing bumps the change count the skip token must match
         AppEnvironment.current.clipService.skipNextCapture()
         let ephemeralChangeCount = NSPasteboard.general.changeCount

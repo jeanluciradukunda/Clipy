@@ -164,7 +164,7 @@ class AppDelegate: NSObject, NSMenuItemValidation {
                     let detail = result.error ?? "No error output"
                     Self.showScriptError("Script failed (exit \(result.exitCode)): \(detail)")
                 } else if ephemeral {
-                    AppEnvironment.current.pasteService.pasteEphemeral(with: result.output)
+                    AppEnvironment.current.pasteService.pasteEphemeral(with: result.output, concealed: concealed)
                 } else {
                     AppEnvironment.current.pasteService.copyToPasteboard(with: result.output, concealed: concealed)
                     AppEnvironment.current.pasteService.paste()
