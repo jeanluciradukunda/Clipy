@@ -22,7 +22,7 @@ final class VaultAuthService {
     /// Folder IDs that have been unlocked this session
     private var unlockedFolderIDs = Set<String>()
     /// Bumped on every lock: an authentication that started before a lock must not unlock after it.
-    private var lockGeneration = 0
+    private(set) var lockGeneration = 0
 
     /// Asks the device owner to authenticate; tests replace it to avoid a real Touch ID prompt.
     var evaluate: (_ reason: String, _ completion: @escaping (Bool) -> Void) -> Void = VaultAuthService.evaluateDeviceOwner
@@ -49,6 +49,11 @@ final class VaultAuthService {
     func allows(_ snippet: CPYSnippet) -> Bool {
         guard let folder = snippet.folder, folder.isVault else { return true }
         return isUnlocked(folder.identifier)
+    }
+
+    /// Whether a vault that was open at `generation` is still open now, with no lock in between.
+    func isStillUnlocked(_ folderID: String, since generation: Int) -> Bool {
+        return lockGeneration == generation && isUnlocked(folderID)
     }
 
     func lockAll() {

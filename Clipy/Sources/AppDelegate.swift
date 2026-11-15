@@ -159,8 +159,10 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             let ephemeral = snippet.isEphemeral
             let concealed = snippet.isInVault
             let vaultFolderID = snippet.folder.flatMap { $0.isVault ? $0.identifier : nil }
+            let generation = MainActor.assumeIsolated { VaultAuthService.shared.lockGeneration }
             ScriptExecutionService.execute(script: script, shell: shell, timeout: timeout) { result in
-                if let vaultFolderID, !MainActor.assumeIsolated({ VaultAuthService.shared.isUnlocked(vaultFolderID) }) {
+                if let vaultFolderID,
+                   !MainActor.assumeIsolated({ VaultAuthService.shared.isStillUnlocked(vaultFolderID, since: generation) }) {
                     return
                 }
                 if result.timedOut {

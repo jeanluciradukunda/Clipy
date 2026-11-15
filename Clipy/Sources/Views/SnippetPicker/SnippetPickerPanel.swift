@@ -296,13 +296,14 @@ class SnippetPickerViewModel: ObservableObject {
                     let ephemeral = snippet.isEphemeral
                     let concealed = folder.isVault
                     let vaultFolderID = folder.isVault ? folder.id : nil
+                    let generation = VaultAuthService.shared.lockGeneration
                     SnippetPickerWindowController.shared.dismiss()
                     ScriptExecutionService.execute(
                         script: snippet.content,
                         shell: snippet.scriptShell,
                         timeout: TimeInterval(snippet.scriptTimeout)
                     ) { result in
-                        if let vaultFolderID, !VaultAuthService.shared.isUnlocked(vaultFolderID) {
+                        if let vaultFolderID, !VaultAuthService.shared.isStillUnlocked(vaultFolderID, since: generation) {
                             return
                         }
                         if result.timedOut {

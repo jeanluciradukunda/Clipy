@@ -479,6 +479,23 @@ class FolderSpec: QuickSpec {
                 expect(expanded) == false
             }
 
+            it("counts a lock and unlock in between as no longer unlocked") {
+                let (before, after): (Bool, Bool) = MainActor.assumeIsolated {
+                    let service = VaultAuthService.shared
+                    let original = service.evaluate
+                    defer { service.evaluate = original }
+                    service.evaluate = { _, done in done(true) }
+                    service.authenticate(folderID: vaultID) { _ in }
+                    let generation = service.lockGeneration
+                    let before = service.isStillUnlocked(vaultID, since: generation)
+                    service.lockAll()
+                    service.authenticate(folderID: vaultID) { _ in }
+                    return (before, service.isStillUnlocked(vaultID, since: generation))
+                }
+                expect(before) == true
+                expect(after) == false
+            }
+
             it("cannot be pasted from a menu item while locked") {
                 let realm = try! Realm()
                 let snippet = realm.object(ofType: CPYFolder.self, forPrimaryKey: vaultID)!.snippets[0]
