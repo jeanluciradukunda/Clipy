@@ -158,7 +158,11 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             let timeout = TimeInterval(snippet.scriptTimeout)
             let ephemeral = snippet.isEphemeral
             let concealed = snippet.isInVault
+            let vaultFolderID = snippet.folder.flatMap { $0.isVault ? $0.identifier : nil }
             ScriptExecutionService.execute(script: script, shell: shell, timeout: timeout) { result in
+                if let vaultFolderID, !MainActor.assumeIsolated({ VaultAuthService.shared.isUnlocked(vaultFolderID) }) {
+                    return
+                }
                 if result.timedOut {
                     Self.showScriptError("Script timed out after \(Int(timeout))s")
                 } else if result.exitCode != 0 {

@@ -295,12 +295,16 @@ class SnippetPickerViewModel: ObservableObject {
                     // Dismiss picker first, then run script async and paste output
                     let ephemeral = snippet.isEphemeral
                     let concealed = folder.isVault
+                    let vaultFolderID = folder.isVault ? folder.id : nil
                     SnippetPickerWindowController.shared.dismiss()
                     ScriptExecutionService.execute(
                         script: snippet.content,
                         shell: snippet.scriptShell,
                         timeout: TimeInterval(snippet.scriptTimeout)
                     ) { result in
+                        if let vaultFolderID, !VaultAuthService.shared.isUnlocked(vaultFolderID) {
+                            return
+                        }
                         if result.timedOut {
                             Self.showScriptError("Script timed out after \(snippet.scriptTimeout)s")
                         } else if result.exitCode != 0 {
