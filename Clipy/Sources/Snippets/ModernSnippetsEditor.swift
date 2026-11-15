@@ -352,7 +352,7 @@ class SnippetsEditorViewModel: ObservableObject {
                 // Vault folder — authenticate first
                 VaultAuthService.shared.authenticate(folderID: fid, reason: "Unlock \"\(folder.title)\" vault") { [weak self] success in
                     DispatchQueue.main.async {
-                        if success {
+                        if success && VaultAuthService.shared.isUnlocked(fid) {
                             withAnimation(.easeOut(duration: 0.15)) { _ = self?.expandedFolderIDs.insert(fid) }
                         }
                         // Force app activation and window focus after Touch ID
@@ -1086,7 +1086,7 @@ struct SnippetFolderRow: View {
                     if folder.isVault && !isVaultUnlocked && !isExpanded {
                         VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { success in
                             DispatchQueue.main.async {
-                                if success {
+                                if success && VaultAuthService.shared.isUnlocked(folder.id) {
                                     withAnimation(.easeOut(duration: 0.15)) { isExpanded = true }
                                 }
                                 NSApp.activate(ignoringOtherApps: true)

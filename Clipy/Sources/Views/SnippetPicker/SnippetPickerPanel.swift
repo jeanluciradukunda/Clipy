@@ -72,6 +72,7 @@ class SnippetPickerViewModel: ObservableObject {
             if lockedVaults.contains(where: { $0.snippets.contains { $0.id == self.selectedID } }) {
                 self.selectedID = ""
             }
+            self.applyFilter()
         }
     }
     @Published var selectedID: String = ""
