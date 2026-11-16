@@ -121,7 +121,11 @@ final class ClipboardQueueService: ObservableObject {
     }
 
     private func captureCurrentClipboard() {
-        let pasteboard = NSPasteboard.general
+        capture(from: NSPasteboard.general)
+    }
+
+    func capture(from pasteboard: NSPasteboard) {
+        if ClipService.isMarkedPrivate(pasteboard.types ?? []) { return }
         guard let string = pasteboard.string(forType: .string), !string.isEmpty else { return }
 
         // Don't add duplicates of the last item

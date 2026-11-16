@@ -86,5 +86,34 @@ class PrivateClipboardSpec: QuickSpec {
                 expect(ClipService.isMarkedPrivate(pasteboard.types ?? [])) == false
             }
         }
+
+        describe("Collect mode") {
+            func queued(after write: (NSPasteboard) -> Void) -> [String] {
+                let pasteboard = NSPasteboard(name: NSPasteboard.Name("com.clipy-app.Clipy.tests.\(UUID().uuidString)"))
+                defer { pasteboard.releaseGlobally() }
+                let queue = ClipboardQueueService.shared
+                queue.clearQueue()
+                defer { queue.clearQueue() }
+                write(pasteboard)
+                queue.capture(from: pasteboard)
+                return queue.queue.map { $0.content }
+            }
+
+            it("does not queue content a password manager marked concealed") {
+                let contents = queued { pasteboard in
+                    pasteboard.declareTypes([.string, NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")], owner: nil)
+                    pasteboard.setString("hunter2", forType: .string)
+                }
+                expect(contents).to(beEmpty())
+            }
+
+            it("queues ordinary text") {
+                let contents = queued { pasteboard in
+                    pasteboard.declareTypes([.string], owner: nil)
+                    pasteboard.setString("hello", forType: .string)
+                }
+                expect(contents) == ["hello"]
+            }
+        }
     }
 }

@@ -19,6 +19,9 @@ final class VaultAuthService {
     /// Folder IDs that have been unlocked this session
     private var unlockedFolderIDs = Set<String>()
 
+    /// Asks the device owner to authenticate; tests replace it to avoid a real Touch ID prompt.
+    var evaluate: (_ reason: String, _ completion: @escaping (Bool) -> Void) -> Void = VaultAuthService.evaluateDeviceOwner
+
     private init() {}
 
     func isUnlocked(_ folderID: String) -> Bool {
@@ -33,13 +36,24 @@ final class VaultAuthService {
         unlockedFolderIDs.remove(folderID)
     }
 
-    /// Authenticate to unlock a vault folder. Calls completion on main thread.
-    func authenticate(folderID: String, reason: String = "Unlock vault folder", completion: @escaping (Bool) -> Void) {
-        if unlockedFolderIDs.contains(folderID) {
+    /// Authenticate to unlock a vault folder. Calls completion on main thread. `force` asks again even when the
+    /// folder is already unlocked this session, for actions that remove protection.
+    func authenticate(folderID: String, reason: String = "Unlock vault folder", force: Bool = false, completion: @escaping (Bool) -> Void) {
+        if !force && unlockedFolderIDs.contains(folderID) {
             completion(true)
             return
         }
+        evaluate(reason) { [weak self] success in
+            if success && !force {
+                UsageMetricsService.shared.track(.vaultUnlocked)
+                self?.unlockedFolderIDs.insert(folderID)
+                logger.info("Vault folder unlocked: \(folderID)")
+            }
+            completion(success)
+        }
+    }
 
+    private static func evaluateDeviceOwner(reason: String, completion: @escaping (Bool) -> Void) {
         let context = LAContext()
         context.localizedCancelTitle = "Cancel"
 
@@ -50,17 +64,12 @@ final class VaultAuthService {
             return
         }
 
-        context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { [weak self] success, authError in
+        context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authError in
             DispatchQueue.main.async {
-                if success {
-                    UsageMetricsService.shared.track(.vaultUnlocked)
-                    self?.unlockedFolderIDs.insert(folderID)
-                    logger.info("Vault folder unlocked: \(folderID)")
-                    completion(true)
-                } else {
+                if !success {
                     logger.info("Vault auth failed: \(authError?.localizedDescription ?? "cancelled")")
-                    completion(false)
                 }
+                completion(success)
             }
         }
     }

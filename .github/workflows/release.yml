@@ -23,24 +23,36 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
 
       - name: Determine version
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "VERSION=${{ inputs.version }}" >> $GITHUB_OUTPUT
-            echo "TAG=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
           else
-            echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-            echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+            VERSION="${GITHUB_REF_NAME#v}"
           fi
+          # Later steps expand VERSION into their scripts, so only a plain version may pass.
+          # CFBundleVersion takes numbers only, so a prerelease suffix is refused too.
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version must look like 2.3.0"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "TAG=v$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Create tag (if manual dispatch)
         if: github.event_name == 'workflow_dispatch'
-        run: git tag "v${{ inputs.version }}"
+        env:
+          TAG: ${{ steps.version.outputs.TAG }}
+        run: git tag "$TAG"
         # Tag is created locally for the release action — NOT pushed
         # to avoid triggering a duplicate run via the push:tags trigger
 
