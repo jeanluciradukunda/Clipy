@@ -65,6 +65,7 @@
 		FA610702C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */; };
 		FA610702C1F0DE0000000127 /* ClipKeySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000127 /* ClipKeySpec.swift */; };
 		FA610702C1F0DE0000000132 /* PrivateClipboardSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000132 /* PrivateClipboardSpec.swift */; };
+		FA610702C1F0DE00000001A1 /* VaultContentSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE00000001A1 /* VaultContentSpec.swift */; };
 		FA610702C1F0DE0000000138 /* EphemeralPasteSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000138 /* EphemeralPasteSpec.swift */; };
 		FA610702C1F0DE0000000129 /* RadarActionMetricsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000129 /* RadarActionMetricsSpec.swift */; };
 		FA610702C1F0DE0000000140 /* FolderSweepSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA610701C1F0DE0000000140 /* FolderSweepSpec.swift */; };
@@ -196,6 +197,7 @@
 		FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchPanelFocusLossSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000127 /* ClipKeySpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipKeySpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000132 /* PrivateClipboardSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivateClipboardSpec.swift; sourceTree = "<group>"; };
+		FA610701C1F0DE00000001A1 /* VaultContentSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VaultContentSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000138 /* EphemeralPasteSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EphemeralPasteSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000129 /* RadarActionMetricsSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RadarActionMetricsSpec.swift; sourceTree = "<group>"; };
 		FA610701C1F0DE0000000140 /* FolderSweepSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FolderSweepSpec.swift; sourceTree = "<group>"; };
@@ -598,6 +600,7 @@
 				FA610701C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift */,
 				FA610701C1F0DE0000000127 /* ClipKeySpec.swift */,
 				FA610701C1F0DE0000000132 /* PrivateClipboardSpec.swift */,
+				FA610701C1F0DE00000001A1 /* VaultContentSpec.swift */,
 				FA610701C1F0DE0000000138 /* EphemeralPasteSpec.swift */,
 				FA610701C1F0DE0000000129 /* RadarActionMetricsSpec.swift */,
 				FA610701C1F0DE0000000140 /* FolderSweepSpec.swift */,
@@ -962,6 +965,7 @@
 				FA610702C1F0DE0000000104 /* SearchPanelFocusLossSpec.swift in Sources */,
 				FA610702C1F0DE0000000127 /* ClipKeySpec.swift in Sources */,
 				FA610702C1F0DE0000000132 /* PrivateClipboardSpec.swift in Sources */,
+				FA610702C1F0DE00000001A1 /* VaultContentSpec.swift in Sources */,
 				FA610702C1F0DE0000000138 /* EphemeralPasteSpec.swift in Sources */,
 				FA610702C1F0DE0000000129 /* RadarActionMetricsSpec.swift in Sources */,
 				FA610702C1F0DE0000000140 /* FolderSweepSpec.swift in Sources */,
