@@ -270,6 +270,7 @@ class SnippetPickerViewModel: ObservableObject {
                 if snippet.isScript {
                     // Dismiss picker first, then run script async and paste output
                     let ephemeral = snippet.isEphemeral
+                    let concealed = folder.isVault
                     SnippetPickerWindowController.shared.dismiss()
                     ScriptExecutionService.execute(
                         script: snippet.content,
@@ -282,15 +283,15 @@ class SnippetPickerViewModel: ObservableObject {
                             let detail = result.error ?? "No error output"
                             Self.showScriptError("Script failed (exit \(result.exitCode)): \(detail)")
                         } else if ephemeral {
-                            AppEnvironment.current.pasteService.pasteEphemeral(with: result.output)
+                            AppEnvironment.current.pasteService.pasteEphemeral(with: result.output, concealed: concealed)
                         } else {
-                            AppEnvironment.current.pasteService.copyToPasteboard(with: result.output)
+                            AppEnvironment.current.pasteService.copyToPasteboard(with: result.output, concealed: concealed)
                             AppEnvironment.current.pasteService.paste()
                         }
                     }
                 } else {
                     let processed = SnippetVariableProcessor.process(snippet.content)
-                    AppEnvironment.current.pasteService.copyToPasteboard(with: processed)
+                    AppEnvironment.current.pasteService.copyToPasteboard(with: processed, concealed: folder.isVault)
                     SnippetPickerWindowController.shared.dismissAndPaste()
                 }
                 return

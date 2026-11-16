@@ -17,6 +17,7 @@ final class PasteService {
 
     // MARK: - Properties
     fileprivate let lock = NSRecursiveLock(name: "com.clipy-app.Clipy.Pastable")
+    let pasteboard: NSPasteboard
     fileprivate var isPastePlainText: Bool {
         guard AppEnvironment.current.defaults.bool(forKey: Constants.Beta.pastePlainText) else { return false }
 
@@ -34,6 +35,10 @@ final class PasteService {
 
         let modifierSetting = AppEnvironment.current.defaults.integer(forKey: Constants.Beta.pasteAndDeleteHistoryModifier)
         return isPressedModifier(modifierSetting)
+    }
+
+    init(pasteboard: NSPasteboard = .general) {
+        self.pasteboard = pasteboard
     }
 
     // MARK: - Modifiers
@@ -82,13 +87,17 @@ extension PasteService {
         }
     }
 
-    func copyToPasteboard(with string: String) {
+    /// `concealed` adds the nspasteboard.org Concealed marker, so Clipy's own history and other clipboard managers
+    /// that honour it skip the write (used for vault snippets).
+    func copyToPasteboard(with string: String, concealed: Bool = false) {
         lock.lock(); defer { lock.unlock() }
 
-        let pasteboard = NSPasteboard.general
-        pasteboard.declareTypes([.clipyString], owner: nil)
+        let types: [NSPasteboard.PasteboardType] = concealed ? [.clipyString, Self.concealedType] : [.clipyString]
+        pasteboard.declareTypes(types, owner: nil)
         pasteboard.setString(string, forType: .clipyString)
     }
+
+    static let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
 
     func copyToPasteboard(with clip: CPYClip) {
         lock.lock(); defer { lock.unlock() }
@@ -100,7 +109,6 @@ extension PasteService {
             return
         }
 
-        let pasteboard = NSPasteboard.general
         let types = data.types
         pasteboard.declareTypes(types, owner: nil)
         types.forEach { type in
@@ -134,20 +142,20 @@ extension PasteService {
     /// Paste a string ephemerally — it goes to the pasteboard and triggers ⌘V,
     /// but ClipService will NOT store it in history. Optionally auto-clears the
     /// pasteboard after a delay.
-    func pasteEphemeral(with string: String) {
-        copyToPasteboard(with: string)
+    func pasteEphemeral(with string: String, concealed: Bool = false) {
+        copyToPasteboard(with: string, concealed: concealed)
         // After the write: writing bumps the change count the skip token must match
         AppEnvironment.current.clipService.skipNextCapture()
-        let ephemeralChangeCount = NSPasteboard.general.changeCount
+        let ephemeralChangeCount = pasteboard.changeCount
         paste()
 
         // Auto-clear pasteboard after configured delay
         let clearDelay = AppEnvironment.current.defaults.integer(forKey: Constants.UserDefaults.ephemeralAutoClearSeconds)
         if clearDelay > 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(clearDelay)) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(clearDelay)) { [pasteboard] in
                 // Only clear if the pasteboard has not changed since we wrote the ephemeral content
-                if NSPasteboard.general.changeCount == ephemeralChangeCount {
-                    NSPasteboard.general.clearContents()
+                if pasteboard.changeCount == ephemeralChangeCount {
+                    pasteboard.clearContents()
                     AppEnvironment.current.clipService.skipNextCapture()
                 }
             }

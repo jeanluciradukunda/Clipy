@@ -1,5 +1,6 @@
 import Quick
 import Nimble
+import RealmSwift
 @testable import Clipy
 
 class PrivateClipboardSpec: QuickSpec {
@@ -22,6 +23,67 @@ class PrivateClipboardSpec: QuickSpec {
                 pasteboard.declareTypes([.string, NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")], owner: nil)
                 pasteboard.setString("hunter2", forType: .string)
                 expect(ClipService.isMarkedPrivate(pasteboard.types ?? [])) == true
+            }
+        }
+
+        describe("Pasting a snippet") {
+            var pasteboard: NSPasteboard!
+
+            beforeEach {
+                Realm.Configuration.defaultConfiguration.inMemoryIdentifier = NSUUID().uuidString
+                AppEnvironment.current.defaults.set(0, forKey: Constants.UserDefaults.ephemeralAutoClearSeconds)
+                pasteboard = NSPasteboard(name: NSPasteboard.Name("com.clipy-app.Clipy.tests.\(UUID().uuidString)"))
+                AppEnvironment.push(pasteService: PasteService(pasteboard: pasteboard))
+            }
+
+            afterEach {
+                AppEnvironment.popLast()
+                pasteboard.releaseGlobally()
+            }
+
+            func snippet(in vault: Bool, type: CPYSnippet.SnippetType = .plainText, content: String, ephemeral: Bool = true) -> CPYSnippet {
+                let folder = CPYFolder()
+                folder.isVault = vault
+                let snippet = CPYSnippet()
+                snippet.type = type
+                snippet.content = content
+                snippet.isEphemeral = ephemeral
+                folder.snippets.append(snippet)
+                let realm = try! Realm()
+                realm.transaction { realm.add(folder) }
+                return snippet
+            }
+
+            func select(_ snippet: CPYSnippet) {
+                let item = NSMenuItem()
+                item.representedObject = snippet.identifier
+                AppDelegate().selectSnippetMenuItem(item)
+            }
+
+            it("marks a vault snippet so history skips it") {
+                select(snippet(in: true, content: "vault text"))
+                expect(pasteboard.string(forType: .string)) == "vault text"
+                expect(ClipService.isMarkedPrivate(pasteboard.types ?? [])) == true
+            }
+
+            it("leaves an ordinary snippet capturable") {
+                select(snippet(in: false, content: "plain text"))
+                expect(pasteboard.string(forType: .string)) == "plain text"
+                expect(ClipService.isMarkedPrivate(pasteboard.types ?? [])) == false
+            }
+
+            for ephemeral in [true, false] {
+                it("marks a vault script's output (ephemeral \(ephemeral))") {
+                    select(snippet(in: true, type: .script, content: "printf vault-output", ephemeral: ephemeral))
+                    expect(pasteboard.string(forType: .string)).toEventually(equal("vault-output"), timeout: .seconds(5))
+                    expect(ClipService.isMarkedPrivate(pasteboard.types ?? [])) == true
+                }
+            }
+
+            it("leaves an ordinary script's output capturable") {
+                select(snippet(in: false, type: .script, content: "printf plain-output", ephemeral: false))
+                expect(pasteboard.string(forType: .string)).toEventually(equal("plain-output"), timeout: .seconds(5))
+                expect(ClipService.isMarkedPrivate(pasteboard.types ?? [])) == false
             }
         }
 
