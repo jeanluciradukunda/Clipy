@@ -227,8 +227,20 @@ extension HotKeyService {
 
         if AppEnvironment.current.defaults.bool(forKey: Constants.Snippets.useModernPicker) {
             SnippetPickerWindowController.shared.toggle(filterFolderID: folder.identifier)
-        } else {
+            return
+        }
+        guard folder.isVault else {
             AppEnvironment.current.menuManager.popUpSnippetFolder(folder)
+            return
+        }
+        let folderID = folder.identifier
+        let reason = "Unlock \"\(folder.title)\" vault"
+        MainActor.assumeIsolated {
+            VaultAuthService.shared.authenticate(folderID: folderID, reason: reason) { success in
+                guard success, let realm = Realm.safeInstance(),
+                      let folder = realm.object(ofType: CPYFolder.self, forPrimaryKey: folderID) else { return }
+                AppEnvironment.current.menuManager.popUpSnippetFolder(folder)
+            }
         }
     }
 

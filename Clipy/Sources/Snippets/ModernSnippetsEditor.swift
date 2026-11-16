@@ -191,8 +191,10 @@ class SnippetsEditorViewModel: ObservableObject {
         // Select the new snippet
         if let folderItem = folders.first(where: { $0.id == folderID }),
            let newSnippet = folderItem.snippets.last {
-            selectSnippet(newSnippet)
-            expandedFolderIDs.insert(folderID)
+            if !folderItem.isVault || VaultAuthService.shared.isUnlocked(folderID) {
+                selectSnippet(newSnippet)
+                expandedFolderIDs.insert(folderID)
+            }
         }
         showingTemplates = false
     }
@@ -410,6 +412,9 @@ class SnippetsEditorViewModel: ObservableObject {
         guard !sidebarFilter.isEmpty else { return folders }
         let query = sidebarFilter.lowercased()
         return folders.compactMap { folder in
+            if folder.isVault && !VaultAuthService.shared.isUnlocked(folder.id) {
+                return folder.title.lowercased().contains(query) ? folder : nil
+            }
             let matchingSnippets = folder.snippets.filter {
                 $0.title.lowercased().contains(query) || $0.content.lowercased().contains(query)
             }

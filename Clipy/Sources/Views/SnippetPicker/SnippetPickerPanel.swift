@@ -153,7 +153,9 @@ class SnippetPickerViewModel: ObservableObject {
         }
 
         // If opened for a specific folder, auto-expand it
-        if let filterID = filterFolderID {
+        if let filterID = filterFolderID,
+           let folder = allFolders.first(where: { $0.id == filterID }),
+           !folder.isVault || VaultAuthService.shared.isUnlocked(filterID) {
             expandedFolderIDs = [filterID]
         }
 
@@ -293,12 +295,17 @@ class SnippetPickerViewModel: ObservableObject {
                     // Dismiss picker first, then run script async and paste output
                     let ephemeral = snippet.isEphemeral
                     let concealed = folder.isVault
+                    let vaultFolderID = folder.isVault ? folder.id : nil
+                    let generation = VaultAuthService.shared.lockGeneration
                     SnippetPickerWindowController.shared.dismiss()
                     ScriptExecutionService.execute(
                         script: snippet.content,
                         shell: snippet.scriptShell,
                         timeout: TimeInterval(snippet.scriptTimeout)
                     ) { result in
+                        if let vaultFolderID, !VaultAuthService.shared.isStillUnlocked(vaultFolderID, since: generation) {
+                            return
+                        }
                         if result.timedOut {
                             Self.showScriptError("Script timed out after \(snippet.scriptTimeout)s")
                         } else if result.exitCode != 0 {

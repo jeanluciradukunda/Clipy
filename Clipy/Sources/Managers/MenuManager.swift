@@ -487,7 +487,7 @@ private extension MenuManager {
         let firstIndex = firstIndexOfMenuItems()
 
         folderResults
-            .filter { $0.enable }
+            .filter { $0.enable && !$0.isVault }
             .forEach { folder in
                 let folderTitle = folder.title
                 let subMenuItem = makeSubmenuItem(folderTitle)

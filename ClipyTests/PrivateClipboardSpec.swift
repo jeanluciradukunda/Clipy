@@ -28,8 +28,13 @@ class PrivateClipboardSpec: QuickSpec {
 
         describe("Pasting a snippet") {
             var pasteboard: NSPasteboard!
+            var evaluate: ((String, @escaping (Bool) -> Void) -> Void)!
 
             beforeEach {
+                MainActor.assumeIsolated {
+                    evaluate = VaultAuthService.shared.evaluate
+                    VaultAuthService.shared.evaluate = { _, done in done(true) }
+                }
                 Realm.Configuration.defaultConfiguration.inMemoryIdentifier = NSUUID().uuidString
                 AppEnvironment.current.defaults.set(0, forKey: Constants.UserDefaults.ephemeralAutoClearSeconds)
                 pasteboard = NSPasteboard(name: NSPasteboard.Name("com.clipy-app.Clipy.tests.\(UUID().uuidString)"))
@@ -37,6 +42,10 @@ class PrivateClipboardSpec: QuickSpec {
             }
 
             afterEach {
+                MainActor.assumeIsolated {
+                    VaultAuthService.shared.lockAll()
+                    VaultAuthService.shared.evaluate = evaluate
+                }
                 AppEnvironment.popLast()
                 pasteboard.releaseGlobally()
             }
@@ -51,6 +60,9 @@ class PrivateClipboardSpec: QuickSpec {
                 folder.snippets.append(snippet)
                 let realm = try! Realm()
                 realm.transaction { realm.add(folder) }
+                if vault {
+                    MainActor.assumeIsolated { VaultAuthService.shared.authenticate(folderID: folder.identifier) { _ in } }
+                }
                 return snippet
             }
 

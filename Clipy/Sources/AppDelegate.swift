@@ -141,7 +141,8 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             NSSound.beep()
             return
         }
-        guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey) else {
+        guard let snippet = realm.object(ofType: CPYSnippet.self, forPrimaryKey: primaryKey),
+              MainActor.assumeIsolated({ VaultAuthService.shared.allows(snippet) }) else {
             NSSound.beep()
             return
         }
@@ -157,7 +158,13 @@ class AppDelegate: NSObject, NSMenuItemValidation {
             let timeout = TimeInterval(snippet.scriptTimeout)
             let ephemeral = snippet.isEphemeral
             let concealed = snippet.isInVault
+            let vaultFolderID = snippet.folder.flatMap { $0.isVault ? $0.identifier : nil }
+            let generation = MainActor.assumeIsolated { VaultAuthService.shared.lockGeneration }
             ScriptExecutionService.execute(script: script, shell: shell, timeout: timeout) { result in
+                if let vaultFolderID,
+                   !MainActor.assumeIsolated({ VaultAuthService.shared.isStillUnlocked(vaultFolderID, since: generation) }) {
+                    return
+                }
                 if result.timedOut {
                     Self.showScriptError("Script timed out after \(Int(timeout))s")
                 } else if result.exitCode != 0 {
