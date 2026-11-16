@@ -397,6 +397,29 @@ class FolderSpec: QuickSpec {
                 expect(selected) != snippet.identifier
             }
 
+            it("keeps the picker selection on a vault row that is still visible after it locks") {
+                let plain = CPYFolder()
+                plain.index = 0
+                plain.snippets.append(CPYSnippet())
+                let vault = CPYFolder()
+                vault.index = 1
+                vault.isVault = true
+                vault.snippets.append(CPYSnippet())
+                let realm = try! Realm()
+                realm.transaction { realm.add([plain, vault]) }
+
+                let selected: String = MainActor.assumeIsolated {
+                    let model = SnippetPickerViewModel()
+                    model.load()
+                    VaultAuthService.shared.authenticate(folderID: vault.identifier) { _ in }
+                    model.expandedFolderIDs.insert(vault.identifier)
+                    model.selectedID = vault.identifier
+                    model.toggleExpand(vault.identifier)
+                    return model.selectedID
+                }
+                expect(selected) == vault.identifier
+            }
+
             it("ignores an authentication that finishes after a lock") {
                 var pending: ((Bool) -> Void)?
                 let unlocked: Bool = MainActor.assumeIsolated {
