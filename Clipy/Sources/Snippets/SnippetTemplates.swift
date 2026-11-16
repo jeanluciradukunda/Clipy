@@ -276,9 +276,14 @@ struct SnippetTemplateLibrary {
             content: """
             #!/bin/bash
             TIMESTAMP="$CLIPBOARD"
+            TIMESTAMP="${TIMESTAMP#"${TIMESTAMP%%[![:space:]]*}"}"
+            TIMESTAMP="${TIMESTAMP%"${TIMESTAMP##*[![:space:]]}"}"
+            case "$TIMESTAMP" in
+                ''|*[!0-9]*) echo "[Invalid timestamp]"; exit 0 ;;
+            esac
             # Handle millisecond timestamps
             if [ ${#TIMESTAMP} -gt 10 ]; then
-                TIMESTAMP=$((TIMESTAMP / 1000))
+                TIMESTAMP=$((10#$TIMESTAMP / 1000))
             fi
             date -r "$TIMESTAMP" "+%Y-%m-%d %H:%M:%S %Z" 2>/dev/null || echo "[Invalid timestamp]"
             """,

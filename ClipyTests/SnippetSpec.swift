@@ -10,6 +10,42 @@ class SnippetSpec: QuickSpec {
             Realm.Configuration.defaultConfiguration.inMemoryIdentifier = NSUUID().uuidString
         }
 
+        describe("Epoch to Date template") {
+            func run(clipboard: String, in dir: URL) -> String {
+                let template = SnippetTemplateLibrary.templates.first { $0.name == "Epoch to Date" }!
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: template.shell)
+                process.arguments = ["-c", template.content]
+                process.currentDirectoryURL = dir
+                process.environment = ["PATH": "/usr/bin:/bin", "CLIPBOARD": clipboard, "TZ": "UTC"]
+                let pipe = Pipe()
+                process.standardOutput = pipe
+                try! process.run()
+                process.waitUntilExit()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                return String(data: data, encoding: .utf8)!.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+
+            it("treats clipboard text as data, never as a shell expression") {
+                let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                try! FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                defer { try? FileManager.default.removeItem(at: dir) }
+
+                let output = run(clipboard: "a[$(touch marker)]", in: dir)
+
+                expect(FileManager.default.fileExists(atPath: dir.appendingPathComponent("marker").path)) == false
+                expect(output) == "[Invalid timestamp]"
+                expect(run(clipboard: "17000 00000", in: dir)) == "[Invalid timestamp]"
+            }
+
+            it("still converts second and millisecond timestamps") {
+                let dir = FileManager.default.temporaryDirectory
+                expect(run(clipboard: "1700000000", in: dir)) == "2023-11-14 22:13:20 UTC"
+                expect(run(clipboard: "1700000000000", in: dir)) == "2023-11-14 22:13:20 UTC"
+                expect(run(clipboard: " 1700000000\n", in: dir)) == "2023-11-14 22:13:20 UTC"
+            }
+        }
+
         describe("Sync database") {
 
             it("Merge snippet") {
