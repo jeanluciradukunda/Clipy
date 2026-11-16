@@ -61,6 +61,24 @@ class SnippetPickerViewModel: ObservableObject {
     @Published var searchText = ""
     @Published var folders = [PickerFolder]()
     @Published var expandedFolderIDs = Set<String>()
+
+    private let vaultLockObserver = NotificationObserver(name: VaultAuthService.didLock)
+
+    init() {
+        vaultLockObserver.handler = { [weak self] in
+            guard let self else { return }
+            let lockedVaults = self.allFolders.filter { $0.isVault && !VaultAuthService.shared.isUnlocked($0.id) }
+            self.expandedFolderIDs.subtract(lockedVaults.map(\.id))
+            if lockedVaults.contains(where: { $0.snippets.contains { $0.id == self.selectedID } }) {
+                self.selectedID = ""
+            }
+            let selected = self.selectedID
+            self.applyFilter()
+            if self.visibleIDs.contains(selected) {
+                self.selectedID = selected
+            }
+        }
+    }
     @Published var selectedID: String = ""
 
     private var allFolders = [PickerFolder]()
@@ -193,7 +211,7 @@ class SnippetPickerViewModel: ObservableObject {
     private func expandVaultFolder(_ folder: PickerFolder, thenSelectFirst: Bool = false) {
         VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { [weak self] success in
             DispatchQueue.main.async {
-                if success, let self {
+                if success, let self, VaultAuthService.shared.isUnlocked(folder.id) {
                     self.expandedFolderIDs.insert(folder.id)
                     if thenSelectFirst, let first = folder.snippets.first {
                         self.selectedID = first.id
@@ -265,6 +283,10 @@ class SnippetPickerViewModel: ObservableObject {
     func pasteSnippet(withID id: String) {
         for folder in allFolders {
             if let snippet = folder.snippets.first(where: { $0.id == id }) {
+                guard !folder.isVault || VaultAuthService.shared.isUnlocked(folder.id) else {
+                    NSSound.beep()
+                    return
+                }
                 UsageMetricsService.shared.track(.snippetPasted)
 
                 if snippet.isScript {
@@ -428,7 +450,8 @@ struct SnippetPickerPanelView: View {
                                 folderRow(folder)
                                     .id(folder.id)
 
-                                if viewModel.expandedFolderIDs.contains(folder.id) {
+                                if viewModel.expandedFolderIDs.contains(folder.id)
+                                    && (!folder.isVault || VaultAuthService.shared.isUnlocked(folder.id)) {
                                     ForEach(folder.snippets) { snippet in
                                         snippetRow(snippet, rank: rankMap[snippet.id] ?? 0)
                                             .id(snippet.id)
@@ -507,7 +530,7 @@ struct SnippetPickerPanelView: View {
             if folder.isVault && !viewModel.expandedFolderIDs.contains(folder.id) {
                 VaultAuthService.shared.authenticate(folderID: folder.id, reason: "Unlock \"\(folder.title)\" vault") { success in
                     DispatchQueue.main.async {
-                        if success {
+                        if success && VaultAuthService.shared.isUnlocked(folder.id) {
                             viewModel.expandedFolderIDs.insert(folder.id)
                         }
                         NSApp.activate(ignoringOtherApps: true)
